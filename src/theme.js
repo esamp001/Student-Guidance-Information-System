@@ -8,6 +8,7 @@ const theme = createTheme({
     },
     secondary: {
       main: "#290cba", // Blue
+      second: "#f8f6ffff",
     },
     error: {
       main: "#f73a34", // Red

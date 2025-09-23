@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import PropTypes from "prop-types";
 import MenuItem from "@mui/material/MenuItem";
-import theme from "./../theme";
 import {
   Box,
   Paper,
