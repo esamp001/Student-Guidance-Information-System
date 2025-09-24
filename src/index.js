@@ -6,12 +6,15 @@ import reportWebVitals from "./reportWebVitals";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import theme from "./theme"; // <- your custom theme
+import { RoleProvider } from "./context/RoleContext";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <ThemeProvider theme={theme}>
     <CssBaseline /> {/* applies global resets & background */}
-    <App />
+    <RoleProvider>
+      <App />
+    </RoleProvider>
   </ThemeProvider>
 );
 

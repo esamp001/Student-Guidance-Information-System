@@ -19,7 +19,7 @@ const Dashboard = () => {
   };
 
   return (
-    <Box sx={{}}>
+    <Box>
       {/* Top Header */}
       <TopNavBar />
       <Box sx={{ display: "flex", minHeight: "100vh" }}>

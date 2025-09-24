@@ -3,9 +3,10 @@ import { Box, Typography } from "@mui/material";
 import { Link } from "react-router-dom";
 import { navConfig } from "./navConfig";
 import theme from "./../theme";
+import { useRole } from "../context/RoleContext";
 
 const SideNavBar = () => {
-  const role = "student";
+  const { role } = useRole();
   const navItems = navConfig[role] || [];
 
   return (
