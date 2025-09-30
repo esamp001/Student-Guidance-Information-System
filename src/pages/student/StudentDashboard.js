@@ -117,7 +117,6 @@ const StudentDashboard = () => {
       {/* Welcome Section */}
       <Box
         sx={{
-          bgcolor: theme.palette.secondary.second,
           height: "20vh",
           p: 3,
           display: "flex",
@@ -127,7 +126,7 @@ const StudentDashboard = () => {
         }}
       >
         <Typography variant="subtitle3">Friday, June 14th</Typography>
-        <Typography sx={{ fontWeight: 700 }} variant="h4">
+        <Typography sx={{ fontWeight: 700 }} variant="h3">
           Welcome, Alex Johnson
         </Typography>
       </Box>

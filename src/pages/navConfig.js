@@ -1,18 +1,5 @@
 import React from "react";
 
-// Students
-import StudentDashboard from "./student/StudentDashboard";
-import MyProfile from "./student/MyProfile";
-import History from "./student/History";
-import Appointment from "./student/Appointments";
-
-// Councilor
-import CounselorDashboard from "./councilor/CounselorDashboard";
-import AppointmentsCounselor from "./councilor/AppointmentsCounselor";
-import CaseRecords from "./councilor/CaseRecords";
-import Reports from "./councilor/Reports";
-import Students from "./councilor/Students";
-
 // Icons for Student
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
@@ -25,7 +12,13 @@ import HistoryEduIcon from "@mui/icons-material/HistoryEdu";
 import AssessmentIcon from "@mui/icons-material/Assessment";
 import PeopleIcon from "@mui/icons-material/People";
 
-// ... import other pages here
+// Icon for Admin
+import GroupsIcon from "@mui/icons-material/Groups";
+import AttributionIcon from "@mui/icons-material/Attribution";
+import ManageAccountsIcon from "@mui/icons-material/ManageAccounts";
+import CircleNotificationsIcon from "@mui/icons-material/CircleNotifications";
+import SettingsIcon from "@mui/icons-material/Settings";
+import SchoolIcon from "@mui/icons-material/School";
 
 export const navConfig = {
   student: [
@@ -46,46 +39,57 @@ export const navConfig = {
   counselor: [
     {
       label: "Dashboard",
-      path: "/counselor/dashboard",
+      path: "counselor",
       icon: <DashboardIcon />,
     },
-    { label: "Students", path: "/counselor/students", icon: <PeopleIcon /> },
+    { label: "Students", path: "students", icon: <PeopleIcon /> },
     {
       label: "Appointments",
-      path: "/counselor/appointments",
+      path: "appointments",
       icon: <EventAvailableIcon />,
     },
     {
       label: "Case Records",
-      path: "/counselor/case-records",
+      path: "caserecords",
       icon: <HistoryEduIcon />,
     },
-    { label: "Reports", path: "/counselor/reports", icon: <AssessmentIcon /> },
+    { label: "Reports", path: "reports", icon: <AssessmentIcon /> },
   ],
   admin: [
-    // {
-    //   label: "Dashboard",
-    //   path: "/admin/dashboard",
-    //   icon: <SchoolIcon />,
-    //   component: <AdminDashboard />,
-    // },
-    // {
-    //   label: "User Management",
-    //   path: "/admin/users",
-    //   icon: <SchoolIcon />,
-    //   component: <div>User management page</div>,
-    // },
-    // {
-    //   label: "Reports",
-    //   path: "/admin/reports",
-    //   icon: <EventAvailableIcon />,
-    //   component: <div>Reports page</div>,
-    // },
-    // {
-    //   label: "System Overview",
-    //   path: "/admin/system",
-    //   icon: <HistoryEduIcon />,
-    //   component: <div>System overview</div>,
-    // },
+    {
+      label: "Dashboard",
+      path: "admin",
+      icon: <SchoolIcon />,
+    },
+    {
+      label: "Student Management",
+      path: "student/management",
+      icon: <GroupsIcon />,
+    },
+    {
+      label: "Guidance Records",
+      path: "guidance/case/records",
+      icon: <AttributionIcon />,
+    },
+    {
+      label: "Reports",
+      path: "admin-reports",
+      icon: <AssessmentIcon />,
+    },
+    {
+      label: "Management",
+      path: "counselor-management",
+      icon: <ManageAccountsIcon />,
+    },
+    {
+      label: "Notifications & Alerts",
+      path: "notifications",
+      icon: <CircleNotificationsIcon />,
+    },
+    {
+      label: "System Settings",
+      path: "settings",
+      icon: <SettingsIcon />,
+    },
   ],
 };

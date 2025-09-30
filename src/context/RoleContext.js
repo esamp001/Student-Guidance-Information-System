@@ -7,7 +7,7 @@ export const RoleProvider = ({ children }) => {
 
   useEffect(() => {
     // For now, static role
-    const storedRole = "counselor";
+    const storedRole = "admin"; // student , counselor, admin
     setRole(storedRole);
   }, []);
 

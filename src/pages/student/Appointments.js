@@ -47,10 +47,7 @@ const Appointments = () => {
         </Typography>
 
         {/* Right side */}
-        <Box sx={{ display: "flex", gap: 1 }}>
-          <Button variant="contained">Student View</Button>
-          <Button variant="outlined">Counselor View</Button>
-        </Box>
+        <Box sx={{ display: "flex", gap: 1 }}></Box>
       </Box>
 
       <Box sx={{ mt: 2 }}>

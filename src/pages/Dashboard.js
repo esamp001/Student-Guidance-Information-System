@@ -1,4 +1,4 @@
-import { Box, Button, Paper, Typography, Chip } from "@mui/material";
+import { Box, Button, Paper, Typography, Chip, colors } from "@mui/material";
 import React, { useEffect } from "react";
 import theme from "./../theme";
 import { navConfig } from "./navConfig";
@@ -26,7 +26,7 @@ const Dashboard = () => {
         {/* Side Nav Items */}
         <SideNavBar />
         {/* Main Content */}
-        <Box sx={{ p: 3, width: "100%" }}>
+        <Box sx={{ p: 3, width: "100%", bgcolor: theme.palette.outletbg.main }}>
           <Outlet />
         </Box>
       </Box>

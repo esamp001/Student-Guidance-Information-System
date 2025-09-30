@@ -12,12 +12,26 @@ import MyProfile from "./pages/student/MyProfile";
 import Appointments from "./pages/student/Appointments";
 import History from "./pages/student/History";
 import Notification from "./pages/student/Notification";
+
+// Counselor
 import CounselorDashboard from "./pages/councilor/CounselorDashboard";
+import AppointmentsCounselor from "./pages/councilor/AppointmentsCounselor";
+import CaseRecords from "./pages/councilor/CaseRecords";
+import Reports from "./pages/councilor/Reports";
+import Students from "./pages/councilor/Students";
+
+// Admin
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import CounselorStaffManagement from "./pages/admin/CounselorStaffManagement";
+import GuidanceCaseRecords from "./pages/admin/GuidanceCaseRecords";
+import Notifications from "./pages/admin/Notifications";
+import AdminReports from "./pages/admin/Reports";
+import StudentManagement from "./pages/admin/StudentManagement";
+import SystemSettings from "./pages/admin/SystemSettings";
 
 import { useRole } from "./context/RoleContext";
 
 function App() {
-  // const [role, setRole] = useState(null);
   const { role } = useRole();
 
   // Mock: get role from backend after login
@@ -53,6 +67,32 @@ function App() {
             <>
               <Route index element={<CounselorDashboard />} />
               <Route path="counselor" element={<CounselorDashboard />} />
+              <Route path="appointments" element={<AppointmentsCounselor />} />
+              <Route path="caserecords" element={<CaseRecords />} />
+              <Route path="notifications" element={<Notifications />} />
+              <Route path="students" element={<Students />} />
+              <Route path="reports" element={<Reports />} />
+            </>
+          )}
+          {role === "admin" && (
+            <>
+              <Route index element={<AdminDashboard />} />
+              <Route path="admin" element={<AdminDashboard />} />
+              <Route
+                path="student/management"
+                element={<StudentManagement />}
+              />
+              <Route
+                path="guidance/case/records"
+                element={<GuidanceCaseRecords />}
+              />
+              <Route path="admin-reports" element={<AdminReports />} />
+              <Route
+                path="counselor-management"
+                element={<CounselorStaffManagement />}
+              />
+              <Route path="notifications" element={<Notifications />} />
+              <Route path="settings" element={<SystemSettings />} />
             </>
           )}
           {/* Optional: redirect unknown roles */}

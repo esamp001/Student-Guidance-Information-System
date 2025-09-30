@@ -2,9 +2,10 @@ import React from "react";
 import { Box, Typography, Button } from "@mui/material";
 import theme from "./../theme";
 import { navConfig } from "./navConfig";
+import { useRole } from "../context/RoleContext";
 
 const TopNavBar = () => {
-  const role = "student";
+  const { role } = useRole();
   const navItems = navConfig[role] || [];
 
   return (
