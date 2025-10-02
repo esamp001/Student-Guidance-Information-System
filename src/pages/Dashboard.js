@@ -1,27 +1,18 @@
-import { Box, Button, Paper, Typography, Chip, colors } from "@mui/material";
-import React, { useEffect } from "react";
+import { Box } from "@mui/material";
 import theme from "./../theme";
-import { navConfig } from "./navConfig";
-// Import Users
-import StudentDashboard from "./student/StudentDashboard";
 
 //Import SidebarNavBar and TopNavBar
 import TopNavBar from "./TopNavBar";
 import SideNavBar from "./SideNavBar";
 
+// React Router
 import { Outlet } from "react-router-dom";
 
 const Dashboard = () => {
-  const dashboardComponents = {
-    student: StudentDashboard,
-    // counselor: CounselorDashboard,
-    // admin: AdminDashboard,
-  };
-
   return (
     <Box>
       {/* Top Header */}
-      <TopNavBar />
+      <TopNavBar sx={{ position: "relative" }} />
       <Box sx={{ display: "flex", minHeight: "100vh" }}>
         {/* Side Nav Items */}
         <SideNavBar />

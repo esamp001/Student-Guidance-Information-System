@@ -1,90 +1,112 @@
 import React from "react";
 import {
   Box,
-  Stack,
-  Card,
-  CardHeader,
-  CardContent,
-  Avatar,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
   Typography,
   Chip,
+  Stack,
+  Avatar,
 } from "@mui/material";
-import EventIcon from "@mui/icons-material/Event";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import EventNoteIcon from "@mui/icons-material/EventNote";
 import SchoolIcon from "@mui/icons-material/School";
-import DescriptionIcon from "@mui/icons-material/Description";
-import PersonIcon from "@mui/icons-material/Person";
+import FavoriteIcon from "@mui/icons-material/Favorite";
 
-const historyData = [
+const studentHistory = [
   {
-    id: 1,
-    title: "Counseling Session with Guidance Counselor",
-    date: "Sept 18, 2025",
-    status: "Completed",
-    notes: "Discussed stress management strategies",
-    icon: <PersonIcon />,
-    color: "primary",
+    appointment: "2025-09-20 Counseling Session",
+    details: [
+      {
+        time: "10:00 AM",
+        description: "Discussed academic performance",
+        type: "Counseling",
+        status: "Completed",
+        icon: <EventNoteIcon />,
+      },
+      {
+        time: "10:30 AM",
+        description: "Reviewed study habits",
+        type: "Counseling",
+        status: "Completed",
+        icon: <EventNoteIcon />,
+      },
+    ],
   },
   {
-    id: 2,
-    title: "Career Seminar: Preparing for Job Interviews",
-    date: "Aug 28, 2025",
-    status: "Attended",
-    icon: <SchoolIcon />,
-    color: "success",
+    appointment: "2025-09-25 Workshop",
+    details: [
+      {
+        time: "2:00 PM",
+        description: "Time management strategies",
+        type: "Workshop",
+        status: "Completed",
+        icon: <SchoolIcon />,
+      },
+    ],
   },
   {
-    id: 3,
-    title: "Requested Good Moral Certificate",
-    date: "Jun 10, 2025",
-    status: "Pending",
-    icon: <DescriptionIcon />,
-    color: "warning",
-  },
-  {
-    id: 4,
-    title: "Academic Advising with Registrar",
-    date: "May 05, 2025",
-    status: "Completed",
-    icon: <EventIcon />,
-    color: "primary",
+    appointment: "2025-10-01 Follow-up",
+    details: [
+      {
+        time: "11:00 AM",
+        description: "Stress management progress",
+        type: "Follow-up",
+        status: "Pending",
+        icon: <FavoriteIcon />,
+      },
+    ],
   },
 ];
 
 const History = () => {
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h5" gutterBottom>
-        History
+    <Box sx={{ maxWidth: 700, p: 3 }}>
+      <Typography sx={{ fontWeight: 700, mb: 3 }} variant="h4" gutterBottom>
+        Counseling History
       </Typography>
 
-      <Stack spacing={2}>
-        {historyData.map((item) => (
-          <Card key={item.id} sx={{ borderRadius: 2, boxShadow: 2 }}>
-            <CardHeader
-              avatar={
-                <Avatar sx={{ bgcolor: `${item.color}.main` }}>
-                  {item.icon}
-                </Avatar>
-              }
-              title={<Typography variant="subtitle1">{item.title}</Typography>}
-              subheader={item.date}
-            />
-            <CardContent>
-              <Chip
-                label={item.status}
-                color={item.color}
-                size="small"
-                sx={{ mb: 1 }}
-              />
-              {item.notes && (
-                <Typography variant="body2" color="text.secondary">
-                  {item.notes}
-                </Typography>
-              )}
-            </CardContent>
-          </Card>
-        ))}
-      </Stack>
+      {studentHistory.map((session, index) => (
+        <Accordion key={index} sx={{ mb: 2 }}>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Typography variant="subtitle1">{session.appointment}</Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            <Stack spacing={2}>
+              {session.details.map((detail, idx) => (
+                <Stack
+                  key={idx}
+                  direction="row"
+                  spacing={2}
+                  alignItems="center"
+                  sx={{ p: 1, borderRadius: 1, border: "1px solid #ddd" }}
+                >
+                  <Avatar sx={{ bgcolor: "primary.main" }}>
+                    {detail.icon}
+                  </Avatar>
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="body2" color="textSecondary">
+                      {detail.time}
+                    </Typography>
+                    <Typography variant="body1">
+                      {detail.description}
+                    </Typography>
+                    <Chip
+                      label={detail.status}
+                      color={
+                        detail.status === "Completed" ? "success" : "warning"
+                      }
+                      size="small"
+                      sx={{ mt: 0.5 }}
+                    />
+                  </Box>
+                </Stack>
+              ))}
+            </Stack>
+          </AccordionDetails>
+        </Accordion>
+      ))}
     </Box>
   );
 };

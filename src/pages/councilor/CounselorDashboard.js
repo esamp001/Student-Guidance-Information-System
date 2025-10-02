@@ -13,11 +13,6 @@ import {
   Modal,
   Stack,
   ButtonGroup,
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
 } from "@mui/material";
 
 // Icons
@@ -157,20 +152,19 @@ const AppointmentsModal = ({ open, handleClose, appointments }) => {
 };
 
 const CounselorDashboard = () => {
+  // State
   const [openModal, setOpenModal] = useState(false);
   const [openViewCase, setOpenViewCase] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
-  const navigate = useNavigate();
-
   const [ViewcaseModal, setViewcaseModal] = useState(false);
 
-  const openviewCaseModal = () => setViewcaseModal(true);
-  const closeviewCaseModal = () => setViewcaseModal(false);
+  const navigate = useNavigate();
 
   // Handlers
   const handleOpenModal = () => setOpenModal(true);
   const handleCloseModal = () => setOpenModal(false);
-
+  const openviewCaseModal = () => setViewcaseModal(true);
+  const closeviewCaseModal = () => setViewcaseModal(false);
   const handleOpenViewCase = (student) => {
     setSelectedStudent(student);
     setOpenViewCase(true);
@@ -302,12 +296,12 @@ const CounselorDashboard = () => {
                     p: 0.5,
                     borderRadius: 2,
                     mb: 1.5,
-                    transition: "all 0.3s ease", // smooth transition
-                    cursor: "pointer", // show pointer on hover
+                    transition: "all 0.3s ease",
+                    cursor: "pointer",
                     "&:hover": {
-                      bgcolor: "grey.100", // background on hover
-                      boxShadow: 3, // add shadow
-                      transform: "scale(1.02)", // slightly enlarge
+                      bgcolor: "grey.100",
+                      boxShadow: 3,
+                      transform: "scale(1.02)",
                     },
                   }}
                 >

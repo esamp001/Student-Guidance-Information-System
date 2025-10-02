@@ -1,90 +1,127 @@
-import React from "react";
+import React, { useState } from "react";
 import {
-  Box,
-  Stack,
   Card,
-  CardHeader,
   CardContent,
-  Avatar,
   Typography,
   Chip,
-  Badge,
+  Button,
+  Box,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
-import NotificationsIcon from "@mui/icons-material/Notifications";
-import EventAvailableIcon from "@mui/icons-material/EventAvailable";
-import CampaignIcon from "@mui/icons-material/Campaign";
-import WarningIcon from "@mui/icons-material/Warning";
 
-const notificationsData = [
+// icons
+import MarkChatReadTwoToneIcon from "@mui/icons-material/MarkChatReadTwoTone";
+import { CalendarToday, Feedback, Info } from "@mui/icons-material";
+
+const notifications = [
   {
     id: 1,
-    title: "Tuition Payment Due",
-    message: "Your next tuition payment is due on Oct 1, 2025.",
-    date: "Sept 23, 2025",
-    read: false,
-    icon: <WarningIcon />,
-    color: "error",
+    title: "Appointment Confirmed!",
+    description:
+      "Your counseling session with Mr. David Lee on October 26th at 10:00 AM has been approved. Please prepare your topics of discussion.",
+    time: "2 hours ago",
+    status: "Unread",
+    icon: <CalendarToday fontSize="small" />,
   },
   {
     id: 2,
-    title: "Class Suspension",
-    message: "No classes on Sept 25 due to holiday.",
-    date: "Sept 21, 2025",
-    read: true,
-    icon: <CampaignIcon />,
-    color: "info",
+    title: "New Feedback Request",
+    description:
+      "A feedback request regarding your recent session has been sent. Please share your experience to help us improve.",
+    time: "4 hours ago",
+    status: "Unread",
+    icon: <Feedback fontSize="small" />,
   },
   {
     id: 3,
-    title: "Appointment Confirmed",
-    message: "Your counseling appointment with Guidance Office is confirmed.",
-    date: "Sept 18, 2025",
-    read: true,
-    icon: <EventAvailableIcon />,
-    color: "success",
+    title: "System Update Notification",
+    description:
+      "The system will undergo maintenance on Nov 15th from 2:00 AM - 4:00 AM. Services may be temporarily unavailable.",
+    time: "Yesterday",
+    status: "Unread",
+    icon: <Info fontSize="small" />,
   },
 ];
 
 const Notification = () => {
-  return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h5" gutterBottom>
-        Notifications
-      </Typography>
+  //States
+  const [filter, setFilter] = useState("");
 
-      <Stack spacing={2}>
-        {notificationsData.map((item) => (
-          <Card
-            key={item.id}
-            sx={{
-              borderRadius: 2,
-              boxShadow: 2,
-              bgcolor: item.read ? "background.paper" : "action.hover",
-            }}
-          >
-            <CardHeader
-              avatar={
-                <Badge
-                  color="error"
-                  variant="dot"
-                  invisible={item.read} // shows red dot if unread
-                >
-                  <Avatar sx={{ bgcolor: `${item.color}.main` }}>
-                    {item.icon}
-                  </Avatar>
-                </Badge>
-              }
-              title={<Typography variant="subtitle1">{item.title}</Typography>}
-              subheader={item.date}
-            />
-            <CardContent>
-              <Typography variant="body2" color="text.secondary">
-                {item.message}
+  //Handlers
+  const handleChange = (event) => {
+    setFilter(event.target.value);
+    // You can trigger filtering logic here
+  };
+
+  return (
+    <Box>
+      <Box>
+        <Typography sx={{ fontWeight: 700, mb: 3 }} variant="h4">
+          My Notification
+        </Typography>
+        <Box
+          sx={{
+            width: "100%",
+            justifyContent: "space-between",
+            display: "flex",
+            alignItems: "center",
+            mb: 2,
+          }}
+        >
+          <Button variant="contained" endIcon={<MarkChatReadTwoToneIcon />}>
+            Mark as all read
+          </Button>
+          <FormControl sx={{ width: "20%" }} size="small">
+            <InputLabel id="filter-label">Filter by Type</InputLabel>
+            <Select
+              labelId="filter-label"
+              id="filter-select"
+              value={filter}
+              label="Filter by Type"
+              onChange={handleChange}
+            >
+              <MenuItem value="all">All</MenuItem>
+              <MenuItem value="appointment">Appointments</MenuItem>
+              <MenuItem value="feedback">Feedback</MenuItem>
+              <MenuItem value="system">System Updates</MenuItem>
+              <MenuItem value="policy">Policy Updates</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
+      </Box>
+      {notifications.map((notif) => (
+        <Card key={notif.id} sx={{ mb: 2, borderRadius: 2, boxShadow: 2 }}>
+          <CardContent>
+            <Box display="flex" alignItems="center" gap={1}>
+              {notif.icon}
+              <Typography variant="subtitle1" fontWeight="bold">
+                {notif.title}
               </Typography>
-            </CardContent>
-          </Card>
-        ))}
-      </Stack>
+              <Chip
+                label={notif.status}
+                color={notif.status === "Unread" ? "success" : "default"}
+                size="small"
+              />
+            </Box>
+            <Typography variant="body2" mt={1}>
+              {notif.description}
+            </Typography>
+            <Box display="flex" justifyContent="space-between" mt={1}>
+              <Typography
+                sx={{ mt: 2 }}
+                variant="caption"
+                color="text.secondary"
+              >
+                {notif.time}
+              </Typography>
+              <Button size="small">View Details</Button>
+            </Box>
+          </CardContent>
+        </Card>
+      ))}
     </Box>
   );
 };

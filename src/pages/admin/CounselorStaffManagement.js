@@ -16,7 +16,7 @@ import {
 } from "@mui/material";
 import { Add, Edit, Delete } from "@mui/icons-material";
 
-export default function CounselorStaffManagement() {
+const CounselorStaffManagement = () => {
   const [counselors, setCounselors] = useState([
     { id: 1, name: "Maria Santos", role: "Guidance Counselor" },
     { id: 2, name: "Juan Cruz", role: "Psychologist" },
@@ -124,4 +124,6 @@ export default function CounselorStaffManagement() {
       </Dialog>
     </Box>
   );
-}
+};
+
+export default CounselorStaffManagement;

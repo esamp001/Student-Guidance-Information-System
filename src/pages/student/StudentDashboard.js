@@ -1,18 +1,16 @@
-import React from "react";
 import {
   Box,
   Button,
   Paper,
   Typography,
   Chip,
-  Grid,
   CardContent,
   Divider,
   Card,
   Stack,
 } from "@mui/material";
-import EventIcon from "@mui/icons-material/Event";
 import theme from "../../theme";
+import { useNavigate } from "react-router-dom";
 
 // Icons
 import SchoolIcon from "@mui/icons-material/School";
@@ -30,6 +28,7 @@ const studentDashboardItems = [
       "View and update your personal and academic information effortlessly.",
     buttonText: "View Profile",
     icon: <SchoolIcon color="primary" fontSize="medium" />,
+    path: "/Dashboard/profile",
   },
   {
     title: "Request Appointment",
@@ -37,6 +36,7 @@ const studentDashboardItems = [
       "Schedule a new counseling session or check available slots with ease.",
     buttonText: "Request Now",
     icon: <EventAvailableIcon color="primary" fontSize="medium" />,
+    path: "/Dashboard/appointments",
   },
   {
     title: "Counseling History",
@@ -44,12 +44,14 @@ const studentDashboardItems = [
       "Review your past counseling sessions, notes, and progress reports.",
     buttonText: "View History",
     icon: <HistoryEduIcon color="primary" fontSize="medium" />,
+    path: "/Dashboard/history",
   },
   {
     title: "Notifications",
     description: "Stay informed with important updates, alerts, and messages.",
     buttonText: "View Notifications",
     icon: <NotificationsIcon color="primary" fontSize="medium" />,
+    path: "/Dashboard/notifications",
   },
 ];
 
@@ -112,6 +114,8 @@ const notificationsData = [
 ];
 
 const StudentDashboard = () => {
+  const navigate = useNavigate();
+
   return (
     <Box sx={{ p: 3 }}>
       {/* Welcome Section */}
@@ -121,8 +125,8 @@ const StudentDashboard = () => {
           p: 3,
           display: "flex",
           flexDirection: "column",
-          justifyContent: "center", // vertical center
-          alignItems: "flex-start", // align left
+          justifyContent: "center",
+          alignItems: "flex-start",
         }}
       >
         <Typography variant="subtitle3">Friday, June 14th</Typography>
@@ -130,10 +134,7 @@ const StudentDashboard = () => {
           Welcome, Alex Johnson
         </Typography>
       </Box>
-      <Typography
-        variant="subtitle1" // use a valid variant
-        sx={{ fontWeight: 700, mt: 4 }} // mt = theme.spacing(4)
-      >
+      <Typography variant="subtitle5" sx={{ fontWeight: 700, mt: 4 }}>
         Quick Actions
       </Typography>
       <Box sx={{ display: "flex", gap: 2, mt: 2, justifyContent: "center" }}>
@@ -144,7 +145,14 @@ const StudentDashboard = () => {
               p: 2,
               width: "30%",
               display: "flex",
-              flexDirection: "column", // stack content vertically
+              flexDirection: "column",
+              transition: "all 0.3s ease",
+              cursor: "pointer",
+              "&:hover": {
+                bgcolor: "grey.100",
+                boxShadow: 3,
+                transform: "scale(1.02)",
+              },
             }}
           >
             {/* Title */}
@@ -169,7 +177,11 @@ const StudentDashboard = () => {
 
             {/* Button at bottom */}
             <Box sx={{ mt: "auto", display: "flex", justifyContent: "center" }}>
-              <Button sx={{ width: "80%", mt: 5, mb: 1 }} variant="outlined">
+              <Button
+                onClick={() => navigate(item.path)}
+                sx={{ width: "80%", mt: 5, mb: 1 }}
+                variant="outlined"
+              >
                 {item.buttonText}
               </Button>
             </Box>
@@ -204,6 +216,13 @@ const StudentDashboard = () => {
                       p: 1.5,
                       borderRadius: 1,
                       bgcolor: "grey.50",
+                      transition: "all 0.3s ease",
+                      cursor: "pointer",
+                      "&:hover": {
+                        bgcolor: "grey.100",
+                        boxShadow: 3,
+                        transform: "scale(1.02)",
+                      },
                     }}
                   >
                     <Box
@@ -267,6 +286,13 @@ const StudentDashboard = () => {
                       p: 1.5,
                       borderRadius: 1,
                       bgcolor: "grey.50",
+                      transition: "all 0.3s ease",
+                      cursor: "pointer",
+                      "&:hover": {
+                        bgcolor: "grey.100",
+                        boxShadow: 3,
+                        transform: "scale(1.02)",
+                      },
                     }}
                   >
                     <NotificationsNoneIcon color="action" fontSize="small" />

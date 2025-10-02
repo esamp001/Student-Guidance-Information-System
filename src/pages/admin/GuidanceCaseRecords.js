@@ -85,7 +85,7 @@ const defaultCases = [
 const CASE_TYPES = ["Academic", "Personal", "Behavioral"];
 const STATUS_OPTIONS = ["Open", "In Progress", "Resolved", "Closed"];
 
-export default function GuidanceCaseRecords() {
+const GuidanceCaseRecords = () => {
   const [cases, setCases] = useState(defaultCases);
   const [filterStatus, setFilterStatus] = useState("All");
   const [openForm, setOpenForm] = useState(false);
@@ -544,4 +544,6 @@ export default function GuidanceCaseRecords() {
       </Dialog>
     </Box>
   );
-}
+};
+
+export default GuidanceCaseRecords;

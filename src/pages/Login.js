@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import MenuItem from "@mui/material/MenuItem";
 import {
@@ -48,11 +48,35 @@ const courses = [
 ];
 
 const Login = () => {
-  const [value, setValue] = useState(0);
+  // Handlers
+  const handleChangeUser = (event) => {
+    setUser({
+      ...user,
+      [event.target.name]: event.target.value,
+    });
+  };
 
   const handleChange = (event, newValue) => {
     setValue(newValue);
   };
+
+  const [value, setValue] = useState(0);
+  const [user, setUser] = useState({
+    firstName: "",
+    middleName: "",
+    lastName: "",
+    studentID: "",
+    email: "",
+    password: "",
+    course: "",
+    contactNumber: "",
+  });
+
+  // Side Effect
+
+  useEffect(() => {
+    console.log(user, "user");
+  }, [user]);
 
   return (
     <Box sx={{ textAlign: "center", mt: 3 }}>
@@ -157,14 +181,16 @@ const Login = () => {
                 display: "flex",
                 flexDirection: "column",
                 gap: 2,
-                maxHeight: "350px", // set a fixed or max height
-                overflowY: "auto", // enable vertical scroll
+                maxHeight: "350px",
+                overflowY: "auto",
               }}
             >
               <TextField
+                name="firstName"
+                value={user.firstName}
+                onChange={handleChangeUser}
                 sx={{ mt: 1 }}
                 fullWidth
-                id="first-name"
                 label="First Name"
                 variant="outlined"
                 size="small"

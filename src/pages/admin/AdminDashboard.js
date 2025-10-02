@@ -4,7 +4,7 @@ import PeopleIcon from "@mui/icons-material/People";
 import HistoryEduIcon from "@mui/icons-material/HistoryEdu";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 
-export default function AdminDashboard() {
+const AdminDashboard = () => {
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h5" gutterBottom fontWeight="bold">
@@ -70,4 +70,6 @@ export default function AdminDashboard() {
       </Grid>
     </Box>
   );
-}
+};
+
+export default AdminDashboard;

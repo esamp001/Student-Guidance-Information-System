@@ -44,8 +44,7 @@ const caseTypes = [
     ],
   },
 ];
-
-export default function CaseRecords() {
+const CaseRecords = () => {
   const [offenses, setOffenses] = useState([]);
   const [formData, setFormData] = useState({
     studentName: "",
@@ -213,4 +212,6 @@ export default function CaseRecords() {
       </Paper>
     </Box>
   );
-}
+};
+
+export default CaseRecords;
