@@ -62,7 +62,7 @@ const studentHistory = [
 
 const History = () => {
   return (
-    <Box sx={{ maxWidth: 700, p: 3 }}>
+    <Box sx={{ maxWidth: "100%", p: 3 }}>
       <Typography sx={{ fontWeight: 700, mb: 3 }} variant="h4" gutterBottom>
         Counseling History
       </Typography>
