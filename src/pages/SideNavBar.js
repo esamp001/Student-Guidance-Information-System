@@ -1,6 +1,6 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { Box, Typography } from "@mui/material";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import { navConfig } from "./navConfig";
 import theme from "./../theme";
 import { useRole } from "../context/RoleContext";
@@ -8,7 +8,6 @@ import { useRole } from "../context/RoleContext";
 const SideNavBar = () => {
   const { role } = useRole();
   const navItems = navConfig[role] || [];
-  const location = useLocation(); // current URL path
 
   return (
     <Box
@@ -19,17 +18,14 @@ const SideNavBar = () => {
         flexDirection: "column",
       }}
     >
-      {navItems.map((item, index) => {
-        // Check if the current route starts with the item's path
-        const isActive = location.pathname.includes(item.path) || "";
-        location.pathname.startsWith(item.path + "/");
-
-        return (
-          <NavLink
-            key={index}
-            to={item.path}
-            style={{ textDecoration: "none" }}
-          >
+      {navItems.map((item, index) => (
+        <NavLink
+          key={index}
+          to={`/dashboard/${item.path}`}
+          end={item.path === role}
+          style={{ textDecoration: "none" }}
+        >
+          {({ isActive }) => (
             <Box
               sx={{
                 display: "flex",
@@ -39,22 +35,31 @@ const SideNavBar = () => {
                 cursor: "pointer",
                 height: 40,
                 p: 2,
+                borderRadius: 2,
                 bgcolor: isActive
                   ? theme.palette.text.secondary
                   : "transparent",
-                color: isActive ? "#ffffffff" : theme.palette.text.primary,
+                color: isActive ? "#fff" : theme.palette.text.primary,
+                transition: "all 0.2s ease",
                 "&:hover": {
                   bgcolor: theme.palette.text.secondary,
-                  color: "#ffffffff",
+                  color: "#fff",
                 },
               }}
             >
               {item.icon}
-              <Typography>{item.label}</Typography>
+              <Typography
+                sx={{
+                  fontWeight: isActive ? 600 : 400,
+                  color: "inherit",
+                }}
+              >
+                {item.label}
+              </Typography>
             </Box>
-          </NavLink>
-        );
-      })}
+          )}
+        </NavLink>
+      ))}
     </Box>
   );
 };

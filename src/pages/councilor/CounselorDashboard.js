@@ -239,7 +239,7 @@ const CounselorDashboard = () => {
         }}
       >
         {/* Left side content */}
-        <CardContent sx={{ p: 0 }}>
+        <CardContent>
           <Box
             sx={{
               display: "flex",
@@ -256,13 +256,6 @@ const CounselorDashboard = () => {
             </Typography>
           </Box>
         </CardContent>
-
-        {/* Right side avatar */}
-        <Avatar
-          alt="Counselor Avatar"
-          src="/static/images/avatar/1.jpg" // replace with dynamic user image if available
-          sx={{ width: 56, height: 56 }}
-        />
       </Card>
 
       {/* Top Row: 3 Main Cards */}

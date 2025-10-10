@@ -1,73 +1,109 @@
 import React from "react";
-import { Box, Card, CardContent, Typography, Grid, Badge } from "@mui/material";
-import PeopleIcon from "@mui/icons-material/People";
-import HistoryEduIcon from "@mui/icons-material/HistoryEdu";
-import NotificationsIcon from "@mui/icons-material/Notifications";
+import { Box, Typography, Grid, Paper } from "@mui/material";
+import { Line } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js";
+
+// Register the required components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 const AdminDashboard = () => {
+  const data = {
+    labels: [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ],
+    datasets: [
+      {
+        label: "Cases",
+        data: [40, 30, 45, 48, 41, 50, 51, 50, 55, 58, 53, 62],
+        borderColor: "#1976d2",
+        fill: false,
+        tension: 0.3,
+      },
+    ],
+  };
+
+  const StatCard = ({ title, value }) => (
+    <Paper
+      elevation={0}
+      sx={{
+        p: 2,
+        borderRadius: 3,
+        border: "1px solid #e0e0e0",
+        height: "100%",
+      }}
+    >
+      <Typography variant="subtitle2" sx={{ color: "text.secondary" }}>
+        {title}
+      </Typography>
+      <Typography variant="h5" sx={{ fontWeight: "bold" }}>
+        {value}
+      </Typography>
+    </Paper>
+  );
+
   return (
     <Box sx={{ p: 3 }}>
-      <Typography variant="h5" gutterBottom fontWeight="bold">
-        Welcome Admin
+      {/* Dashboard Header */}
+      <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold" }}>
+        Dashboard Overview
       </Typography>
 
-      <Grid container spacing={3}>
-        {/* Student Management Summary */}
-        <Grid item xs={12} sm={6} md={4}>
-          <Card sx={{ borderRadius: 3, boxShadow: 3, width: 300 }}>
-            <CardContent sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-              <PeopleIcon color="primary" fontSize="large" />
-              <Box>
-                <Typography variant="h6">Students</Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Total Registered: 1,250
-                </Typography>
-                <Typography variant="body2" color="success.main">
-                  Active: 1,180
-                </Typography>
-              </Box>
-            </CardContent>
-          </Card>
+      {/* Top Summary Cards */}
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        <Grid item xs={12} sm={4}>
+          <StatCard title="Total Students Registered" value="1,250" />
         </Grid>
-
-        {/* Guidance Records Summary */}
-        <Grid item xs={12} sm={6} md={4}>
-          <Card sx={{ borderRadius: 3, boxShadow: 3, width: 300 }}>
-            <CardContent sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-              <HistoryEduIcon color="secondary" fontSize="large" />
-              <Box>
-                <Typography variant="h6">Guidance Records</Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Open Cases: 45
-                </Typography>
-                <Typography variant="body2" color="primary">
-                  Resolved: 120
-                </Typography>
-              </Box>
-            </CardContent>
-          </Card>
+        <Grid item xs={12} sm={4}>
+          <StatCard title="Active Counselors" value="15" />
         </Grid>
-
-        {/* Notifications & Alerts */}
-        <Grid item xs={12} sm={6} md={4}>
-          <Card sx={{ borderRadius: 3, boxShadow: 3, width: 300 }}>
-            <CardContent sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-              <Badge badgeContent={7} color="error">
-                <NotificationsIcon color="action" fontSize="large" />
-              </Badge>
-              <Box>
-                <Typography variant="h6">Notifications</Typography>
-                <Typography variant="body2" color="text.secondary">
-                  3 New Alerts Today
-                </Typography>
-                <Typography variant="body2" color="warning.main">
-                  Pending Actions: 4
-                </Typography>
-              </Box>
-            </CardContent>
-          </Card>
+        <Grid item xs={12} sm={4}>
+          <StatCard title="Active Guidance Cases" value="85" />
         </Grid>
       </Grid>
+
+      {/* Monthly Case Trend Chart */}
+      <Paper
+        elevation={0}
+        sx={{
+          p: 3,
+          borderRadius: 3,
+          border: "1px solid #e0e0e0",
+        }}
+      >
+        <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 500 }}>
+          Monthly Case Trend
+        </Typography>
+
+        <Line data={data} />
+      </Paper>
     </Box>
   );
 };

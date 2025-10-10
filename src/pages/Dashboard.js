@@ -10,14 +10,20 @@ import { Outlet } from "react-router-dom";
 
 const Dashboard = () => {
   return (
-    <Box>
+    <Box sx={{ height: "100vh", overflow: "auto" }}>
       {/* Top Header */}
       <TopNavBar sx={{ position: "relative" }} />
       <Box sx={{ display: "flex", minHeight: "100vh" }}>
         {/* Side Nav Items */}
         <SideNavBar />
         {/* Main Content */}
-        <Box sx={{ p: 3, width: "100%", bgcolor: theme.palette.outletbg.main }}>
+        <Box
+          sx={{
+            p: 3,
+            width: "100%",
+            bgcolor: theme.palette.outletbg.main,
+          }}
+        >
           <Outlet />
         </Box>
       </Box>

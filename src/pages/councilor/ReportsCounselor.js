@@ -8,7 +8,7 @@ import {
   MenuItem,
 } from "@mui/material";
 
-const Reports = () => {
+const ReportsCounselor = () => {
   const [filters, setFilters] = useState({
     reportType: "Academic Performance",
     studentGroup: "All Students",
@@ -108,4 +108,4 @@ const Reports = () => {
   );
 };
 
-export default Reports;
+export default ReportsCounselor;

@@ -54,11 +54,6 @@ const AppointmentsCounselor = () => {
         <Typography variant="h5" sx={{ fontWeight: 700 }}>
           Counselor Appointments
         </Typography>
-
-        <Box sx={{ display: "flex", gap: 1 }}>
-          <Button variant="outlined">Student View</Button>
-          <Button variant="contained">Counselor View</Button>
-        </Box>
       </Box>
 
       {/* Flex Layout */}
