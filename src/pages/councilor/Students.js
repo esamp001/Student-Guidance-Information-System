@@ -120,14 +120,15 @@ const Students = () => {
 
                   <Box display="flex" gap={1}>
                     <Button
-                      onClick={() => handleOpenCase(student)}
+                      onClick={() => handleOpenCase(students)}
                       variant="contained"
                       size="small"
                     >
                       View Case
                     </Button>
                     <Button
-                      onClick={() => handleOpenProfile(students)}
+                      key={student.id}
+                      onClick={() => handleOpenProfile(index)}
                       variant="outlined"
                       size="small"
                     >

@@ -8,6 +8,7 @@ router.get("/counselor/student_lookup", async (req, res) => {
   try {
     const students = await knex("students as st")
       .select(
+        "st.id",
         "st.first_name",
         "st.last_name",
         "st.status",
