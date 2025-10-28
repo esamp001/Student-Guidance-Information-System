@@ -20,6 +20,7 @@ const Students = () => {
   const [openProfile, setOpenProfile] = useState(false);
   const [openCase, setOpenCase] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
+  const [students, setStudents] = useState([]);
   const [tab, setTab] = useState(0);
   const [loading, setLoading] = useState(true);
 
@@ -45,13 +46,13 @@ const Students = () => {
     setSelectedStudent(null);
   };
 
-  const students = [
-    { name: "Alice Johnson", status: "Active", lastSession: "Jun 10, 2024" },
-    { name: "Bob Williams", status: "On-hold", lastSession: "May 30, 2024" },
-    { name: "Charlie Davis", status: "Active", lastSession: "Jun 14, 2024" },
-    { name: "Diana Miller", status: "Active", lastSession: "Jun 12, 2024" },
-    { name: "Ethan White", status: "Inactive", lastSession: "Apr 20, 2024" },
-  ];
+  // const students = [
+  //   { name: "Alice Johnson", status: "Active", lastSession: "Jun 10, 2024" },
+  //   { name: "Bob Williams", status: "On-hold", lastSession: "May 30, 2024" },
+  //   { name: "Charlie Davis", status: "Active", lastSession: "Jun 14, 2024" },
+  //   { name: "Diana Miller", status: "Active", lastSession: "Jun 12, 2024" },
+  //   { name: "Ethan White", status: "Inactive", lastSession: "Apr 20, 2024" },
+  // ];
 
   // All students look up
   useEffect(() => {
@@ -63,7 +64,7 @@ const Students = () => {
         if (!response.ok) throw new Error("Failed to fetch students");
 
         const data = await response.json();
-        setSelectedStudent(data);
+        setStudents(data);
       } catch (error) {
         console.error("Error fetching students:", error);
       } finally {
@@ -86,10 +87,10 @@ const Students = () => {
             <Card sx={{ borderRadius: 3, boxShadow: 2 }}>
               <CardContent>
                 <Box display="flex" alignItems="center" gap={2} mb={2}>
-                  <Avatar>{student.name.charAt(0)}</Avatar>
+                  <Avatar>{student.first_name.charAt(0)}</Avatar>
                   <Box>
                     <Typography variant="subtitle1" fontWeight="bold">
-                      {student.name}
+                      {`${student.first_name} ${student.last_name}`}
                     </Typography>
                     <Chip
                       label={student.status}
@@ -109,7 +110,7 @@ const Students = () => {
                 </Box>
 
                 <Typography variant="body2" color="text.secondary" mb={2}>
-                  Last Session: {student.lastSession}
+                  Last Session: {student.last_appointment}
                 </Typography>
 
                 <Box display="flex" gap={1}>
