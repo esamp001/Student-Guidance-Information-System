@@ -14,6 +14,7 @@ exports.up = async function (knex) {
     table.string("course", 100).notNullable(); // course
     table.text("academic_record").nullable(); // academic record (text for flexibility)
     table.text("behavior_record").nullable(); // behavior record (text for flexibility)
+    table.string("status", 50).notNullable().defaultTo("active");
   });
 };
 
