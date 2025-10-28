@@ -110,7 +110,10 @@ const Students = () => {
                 </Box>
 
                 <Typography variant="body2" color="text.secondary" mb={2}>
-                  Last Session: {student.last_appointment}
+                  Last Session:{" "}
+                  {student.last_appointment
+                    ? student.last_appointment
+                    : "No Appointments yet"}
                 </Typography>
 
                 <Box display="flex" gap={1}>

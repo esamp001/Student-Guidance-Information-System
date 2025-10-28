@@ -13,7 +13,7 @@ router.get("/counselor/student_lookup", async (req, res) => {
         "st.status",
         knex.raw("apts.datetime AS last_appointment")
       )
-      .innerJoin("appointments as apts", "st.id", "apts.student_id")
+      .leftJoin("appointments as apts", "st.id", "apts.student_id")
       .innerJoin("users as u", "u.id", "st.user_id")
       .where("u.role", "student");
 
