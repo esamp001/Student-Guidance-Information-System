@@ -50,6 +50,7 @@ const adminAcademicRecords = require("./routes/adminAcademicRecordsRoutes");
 const adminAddCounselor = require("./routes/adminAddCounselor");
 const studentAppointmentSchedule = require("./routes/studentAppointmentSchedRoutes");
 const studentCounselingHistory = require("./routes/studentCounselingHistory");
+const counselorManageStudent = require("./routes/counselorManageStudentRoutes");
 
 app.use("/registerRoutes", registerRoutes);
 app.use("/loginRoutes", loginRoutes);
@@ -60,6 +61,7 @@ app.use("/adminAcademicRecordsRoutes", adminAcademicRecords);
 app.use("/adminAddCounselor", adminAddCounselor);
 app.use("/studentAppointmentSchedRoutes", studentAppointmentSchedule);
 app.use("/studentCounselingHistory", studentCounselingHistory);
+app.use("/counselorManageStudentRoutes", counselorManageStudent);
 
 // Server Start
 const PORT = process.env.PORT || 5000;

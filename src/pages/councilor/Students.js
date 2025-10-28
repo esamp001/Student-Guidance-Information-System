@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import theme from "../../theme";
 import {
   Box,
@@ -21,6 +21,7 @@ const Students = () => {
   const [openCase, setOpenCase] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [tab, setTab] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   // Handlers
   const handleOpenProfile = (student) => {
@@ -51,6 +52,9 @@ const Students = () => {
     { name: "Diana Miller", status: "Active", lastSession: "Jun 12, 2024" },
     { name: "Ethan White", status: "Inactive", lastSession: "Apr 20, 2024" },
   ];
+
+  // All students look up
+  useEffect(() => {}, []);
 
   return (
     <Box sx={{ p: 3 }}>
