@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import MenuItem from "@mui/material/MenuItem";
+import useSnackbar from "../hooks/useSnackbar";
+import { useNavigate } from "react-router-dom";
 import {
   Box,
   Paper,
@@ -10,6 +12,7 @@ import {
   TextField,
   Button,
 } from "@mui/material";
+import { useRole } from "../context/RoleContext";
 
 function CustomTabPanel(props) {
   const { children, value, index, ...other } = props;
@@ -47,12 +50,146 @@ const courses = [
   { value: "BSBA-2", label: "BSBA - 2nd Year" },
 ];
 
+const initialUser = {
+  firstName: "",
+  middleName: "",
+  lastName: "",
+  studentID: "",
+  email: "",
+  password: "",
+  confirmPassword: "",
+  course: "",
+  contactNumber: "",
+  userName: "",
+};
+
+const initialForm = {
+  email: "",
+  password: "",
+};
+
+const validateUser = (user) => {
+  const allEmpty = Object.values(user).every(
+    (value) =>
+      value === null || value === undefined || value.toString().trim() === ""
+  );
+
+  if (allEmpty) {
+    return "Please input fields.";
+  }
+
+  // 1. Required fields
+  const requiredFields = [
+    "firstName",
+    "middleName",
+    "lastName",
+    "studentID",
+    "userName",
+    "email",
+    "password",
+    "confirmPassword",
+    "course",
+  ];
+
+  for (let field of requiredFields) {
+    if (!user[field] || user[field].trim() === "") {
+      return `${field.replace(/([A-Z])/g, " $1")} is required`; // Makes "firstName" -> "first Name"
+    }
+  }
+
+  // 2. Email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(user.email)) {
+    return "Invalid email address";
+  }
+
+  // 3. Password rules
+  if (user.password.length < 8) {
+    return "Password must be at least 8 characters";
+  }
+  if (!/[A-Z]/.test(user.password)) {
+    return "Password must contain at least one uppercase letter";
+  }
+  if (!/[a-z]/.test(user.password)) {
+    return "Password must contain at least one lowercase letter";
+  }
+  if (!/[0-9]/.test(user.password)) {
+    return "Password must contain at least one number";
+  }
+  if (!/[!@#$%^&*(),.?":{}|<>]/.test(user.password)) {
+    return "Password must contain at least one special character";
+  }
+
+  // 4. Password match
+  if (user.password !== user.confirmPassword) {
+    return "Passwords do not match";
+  }
+
+  // 5. Username validation
+  if (user.userName.length < 4) {
+    return "Username must be at least 4 characters";
+  }
+  if (!/^[a-zA-Z0-9_]+$/.test(user.userName)) {
+    return "Username can only contain letters, numbers, and underscores";
+  }
+
+  // 6. Student ID validation (numeric only)
+  if (!/^\d+$/.test(user.studentID)) {
+    return "Student ID must be numeric";
+  }
+
+  // 7. Contact number validation (optional)
+  if (user.contactNumber && !/^\+?\d{10,15}$/.test(user.contactNumber)) {
+    return "Contact Number is invalid";
+  }
+
+  return null; // No errors
+};
+
+const validateLogin = (formData) => {
+  if (!formData.email) {
+    return "Please enter your email";
+  }
+
+  if (!formData.password) {
+    return "Please enter your password";
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(formData.email)) {
+    return "Invalid email format.";
+  }
+
+  if (formData.password.length < 6) {
+    return "Password must be at least 6 characters long.";
+  }
+
+  return null;
+};
+
 const Login = () => {
+  const { setUser, setRole } = useRole();
+  const navigate = useNavigate();
+  const { showSnackbar, SnackbarComponent } = useSnackbar();
+
+  // States
+  const [value, setValue] = useState(0);
+  const [userForm, setUserForm] = useState(initialUser);
+  const [formData, setformData] = useState(initialForm);
+  const [loading, setLoading] = useState(false);
+
   // Handlers
   const handleChangeUser = (event) => {
-    setUser({
-      ...user,
+    setUserForm({
+      ...userForm,
       [event.target.name]: event.target.value,
+    });
+  };
+
+  const handleChangeForm = (e) => {
+    setformData({
+      ...formData,
+      [e.target.name]: e.target.value,
     });
   };
 
@@ -60,23 +197,68 @@ const Login = () => {
     setValue(newValue);
   };
 
-  const [value, setValue] = useState(0);
-  const [user, setUser] = useState({
-    firstName: "",
-    middleName: "",
-    lastName: "",
-    studentID: "",
-    email: "",
-    password: "",
-    course: "",
-    contactNumber: "",
-  });
+  // Fetch
+  const handleRegister = async () => {
+    const error = validateUser(userForm);
+    if (error) {
+      showSnackbar(error, "error"); // show validation error
+      return; // stop submission
+    }
 
-  // Side Effect
+    try {
+      const response = await fetch("/registerRoutes/register/student", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userForm }),
+      });
 
-  useEffect(() => {
-    console.log(user, "user");
-  }, [user]);
+      if (response.ok) {
+        showSnackbar("Registration successful!", "success");
+        setUserForm(initialUser);
+      } else {
+        showSnackbar("Registration failed", "error");
+      }
+    } catch (error) {
+      showSnackbar("Something went wrong.", "error");
+    }
+  };
+
+  const handleLogin = async () => {
+    const error = validateLogin(formData);
+    if (error) {
+      showSnackbar(error, "error"); // show validation error
+      return; // stop submission
+    }
+
+    try {
+      const response = await fetch("/loginRoutes/login/students", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+        credentials: "include",
+      });
+
+      const data = await response.json();
+      console.log(data, "data");
+
+      if (response.ok && data.user) {
+        showSnackbar(data.message || "Login successful!", "success");
+        setformData(initialForm);
+
+        const userRole = data.user.role;
+        setUser(data.user);
+        setRole(userRole);
+        navigate(`/dashboard/${userRole}`);
+      } else {
+        showSnackbar(
+          data.message || "Login failed. Please try again.",
+          "error"
+        );
+      }
+    } catch (error) {
+      showSnackbar("Something went wrong.", "error");
+    }
+  };
 
   return (
     <Box sx={{ textAlign: "center", mt: 3 }}>
@@ -121,11 +303,15 @@ const Login = () => {
               alignItems: "flex-start",
             }}
           >
+            {/*Login Fields */}
             <Typography variant="subtitle2" sx={{ mb: 1 }}>
               Email
             </Typography>
             <TextField
               sx={{ width: "100%" }}
+              name="email"
+              value={formData.email}
+              onChange={handleChangeForm}
               id="outlined-basic"
               label="john.doe@gmail.com"
               variant="outlined"
@@ -142,9 +328,12 @@ const Login = () => {
             </Typography>
             <TextField
               sx={{ width: "100%" }}
+              name="password"
               id="outlined-basic"
               type="password"
-              label="*******"
+              value={formData.password}
+              onChange={handleChangeForm}
+              label="Str0nGP@ssw0rd"
               variant="outlined"
               size="small"
               InputProps={{
@@ -154,15 +343,22 @@ const Login = () => {
                 style: { fontSize: 12 },
               }}
             />
-            <Box sx={{ display: "flex", gap: 3, mt: 2 }}>
-              <Button size="small" variant="contained">
-                Login as Student
-              </Button>
-              <Button size="small" variant="contained">
-                Login as Councilor
-              </Button>
-              <Button size="small" variant="contained">
-                Login as Administrator
+            <Box
+              sx={{
+                display: "flex",
+                gap: 3,
+                mt: 2,
+                width: "100%",
+              }}
+            >
+              <Button
+                disabled={loading}
+                sx={{ width: "100%" }}
+                onClick={handleLogin}
+                size="small"
+                variant="contained"
+              >
+                {loading ? "Logging in..." : "Login"}
               </Button>
             </Box>
           </Box>
@@ -187,7 +383,7 @@ const Login = () => {
             >
               <TextField
                 name="firstName"
-                value={user.firstName}
+                value={userForm.firstName}
                 onChange={handleChangeUser}
                 sx={{ mt: 1 }}
                 fullWidth
@@ -199,6 +395,9 @@ const Login = () => {
               />
 
               <TextField
+                name="middleName"
+                value={userForm.middleName}
+                onChange={handleChangeUser}
                 fullWidth
                 id="middle-name"
                 label="Middle Name"
@@ -209,6 +408,9 @@ const Login = () => {
               />
 
               <TextField
+                name="lastName"
+                value={userForm.lastName}
+                onChange={handleChangeUser}
                 fullWidth
                 id="last-name"
                 label="Last Name"
@@ -219,6 +421,9 @@ const Login = () => {
               />
 
               <TextField
+                name="studentID"
+                value={userForm.studentID}
+                onChange={handleChangeUser}
                 fullWidth
                 id="student-id"
                 label="Student ID / LRN"
@@ -229,6 +434,23 @@ const Login = () => {
               />
 
               <TextField
+                name="userName"
+                value={userForm.userName}
+                onChange={handleChangeUser}
+                fullWidth
+                id="username"
+                type="username"
+                label="Username"
+                variant="outlined"
+                size="small"
+                InputProps={{ style: { fontSize: 12 } }}
+                InputLabelProps={{ style: { fontSize: 12 } }}
+              />
+
+              <TextField
+                name="email"
+                value={userForm.email}
+                onChange={handleChangeUser}
                 fullWidth
                 id="email"
                 type="email"
@@ -240,6 +462,9 @@ const Login = () => {
               />
 
               <TextField
+                name="password"
+                value={userForm.password}
+                onChange={handleChangeUser}
                 fullWidth
                 id="password"
                 type="password"
@@ -251,6 +476,9 @@ const Login = () => {
               />
 
               <TextField
+                name="confirmPassword"
+                value={userForm.confirmPassword}
+                onChange={handleChangeUser}
                 fullWidth
                 id="confirm-password"
                 type="password"
@@ -262,6 +490,9 @@ const Login = () => {
               />
 
               <TextField
+                name="course"
+                value={userForm.course}
+                onChange={handleChangeUser}
                 sx={{ textAlign: "start" }}
                 select
                 fullWidth
@@ -279,6 +510,9 @@ const Login = () => {
               </TextField>
 
               <TextField
+                name="contactNumber"
+                value={userForm.contactNumber}
+                onChange={handleChangeUser}
                 fullWidth
                 id="contact-number"
                 label="Contact Number (Optional)"
@@ -289,11 +523,17 @@ const Login = () => {
               />
             </Box>
           </Box>
-          <Button sx={{ mt: 3 }} size="Medium" variant="contained">
+          <Button
+            onClick={handleRegister}
+            sx={{ mt: 3 }}
+            size="Medium"
+            variant="contained"
+          >
             Register Now
           </Button>
         </CustomTabPanel>
       </Paper>
+      {SnackbarComponent}
     </Box>
   );
 };

@@ -3,6 +3,7 @@ import {
   Routes,
   Route,
   Navigate,
+  Outlet,
 } from "react-router-dom";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -33,9 +34,9 @@ import SystemSettings from "./pages/admin/SystemSettings";
 import { useRole } from "./context/RoleContext";
 
 function App() {
-  const { role } = useRole();
+  const { role, loading } = useRole();
 
-  if (!role) return <div>Loading...</div>;
+  if (loading) return <div>Loading session...</div>;
 
   return (
     <Router>

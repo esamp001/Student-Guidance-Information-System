@@ -8,9 +8,13 @@ import {
   Divider,
   Card,
   Stack,
+  Skeleton,
 } from "@mui/material";
 import theme from "../../theme";
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useRole } from "../../context/RoleContext";
+import useSnackbar from "../../hooks/useSnackbar";
 
 // Icons
 import SchoolIcon from "@mui/icons-material/School";
@@ -115,6 +119,74 @@ const notificationsData = [
 
 const StudentDashboard = () => {
   const navigate = useNavigate();
+  const { user } = useRole();
+  const [loading, setLoading] = useState(false);
+  const [studentLookUp, setStudentLookUp] = useState([]);
+  const [history, setHistory] = useState([]);
+  const { showSnackbar, SnackbarComponent } = useSnackbar();
+
+  // LOOK UP - STUDENT DASHBOARD
+  useEffect(() => {
+    setLoading(true);
+
+    const loadData = async () => {
+      try {
+        const response = await fetch(
+          `/studentDashboardRoutes/student/data/lookup?userId=${user.id}`,
+          {
+            method: "GET",
+            credentials: "include",
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch student dashboard data");
+        } else {
+          const data = await response.json();
+          setStudentLookUp(data); // now data is just the student object, not an array
+        }
+      } catch (error) {
+        console.error("Error loading navbar data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  // LOOK UP - History
+  useEffect(() => {
+    const fetchHistory = async () => {
+      if (!user?.id) return;
+
+      setLoading(true);
+
+      try {
+        const res = await fetch(
+          `/studentDashboardRoutes/counseling/history/lookup?student_id=${user.id}`,
+          {
+            method: "GET",
+            credentials: "include",
+          }
+        );
+
+        if (!res.ok) {
+          showSnackbar("Failed to fetch counseling history.", "error");
+          throw new Error("Failed to fetch history");
+        }
+
+        const data = await res.json();
+        setHistory(data);
+      } catch (err) {
+        showSnackbar("Unable to load counseling history.", "error");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHistory();
+  }, []);
 
   return (
     <Box sx={{ p: 3 }}>
@@ -129,9 +201,15 @@ const StudentDashboard = () => {
           alignItems: "flex-start",
         }}
       >
-        <Typography variant="subtitle3">Friday, June 14th</Typography>
+        <Typography variant="subtitle3">{studentLookUp.currentDate}</Typography>
         <Typography sx={{ fontWeight: 700 }} variant="h3">
-          Welcome, Alex Johnson
+          {loading ? (
+            <Skeleton width={300} height={80} />
+          ) : studentLookUp?.first_name ? (
+            `Welcome, ${studentLookUp.first_name}`
+          ) : (
+            "Welcome"
+          )}
         </Typography>
       </Box>
       <Typography variant="subtitle5" sx={{ fontWeight: 700, mt: 4 }}>
@@ -204,64 +282,72 @@ const StudentDashboard = () => {
                 Counseling History
               </Typography>
               <Divider sx={{ mb: 2 }} />
-
-              <Stack spacing={2}>
-                {historyData.map((item) => (
-                  <Box
-                    key={item.id}
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      p: 1.5,
-                      borderRadius: 1,
-                      bgcolor: "grey.50",
-                      transition: "all 0.3s ease",
-                      cursor: "pointer",
-                      "&:hover": {
-                        bgcolor: "grey.100",
-                        boxShadow: 3,
-                        transform: "scale(1.02)",
-                      },
-                    }}
-                  >
+              <Box
+                sx={{
+                  maxHeight: 400, // control your height here (px or vh)
+                  overflowY: "auto",
+                  pr: 1, // avoid scrollbar overlap
+                }}
+              >
+                <Stack spacing={2}>
+                  {history.map((item, index) => (
                     <Box
-                      sx={{ display: "flex", alignItems: "center", gap: 1.5 }}
+                      key={index}
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        p: 1.5,
+                        borderRadius: 1,
+                        bgcolor: "grey.50",
+                        transition: "all 0.3s ease",
+                        cursor: "pointer",
+                        "&:hover": {
+                          bgcolor: "grey.100",
+                          boxShadow: 3,
+                          transform: "scale(1.02)",
+                        },
+                      }}
                     >
-                      <CalendarTodayIcon color="primary" fontSize="small" />
-                      <Box>
-                        <Typography variant="body1" fontWeight="bold">
-                          {item.date}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {item.time} with {item.with}
-                        </Typography>
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", gap: 1.5 }}
+                      >
+                        <CalendarTodayIcon color="primary" fontSize="small" />
+                        <Box>
+                          <Typography variant="body1" fontWeight="bold">
+                            {item.date}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {item.time} with{" "}
+                            {`${item.first_name} ${item.last_name}`}
+                          </Typography>
+                        </Box>
                       </Box>
-                    </Box>
 
-                    <Stack direction="row" spacing={1}>
-                      <Chip
-                        label={item.status}
-                        size="small"
-                        color={
-                          item.status === "Completed"
-                            ? "success"
-                            : item.status === "Scheduled"
-                            ? "info"
-                            : "default"
-                        }
-                      />
-                      {item.feedback && (
+                      <Stack direction="row" spacing={1}>
                         <Chip
-                          label={item.feedback}
+                          label={item.status}
                           size="small"
-                          variant="outlined"
+                          color={
+                            item.status === "Completed"
+                              ? "success"
+                              : item.status === "Scheduled"
+                              ? "info"
+                              : "default"
+                          }
                         />
-                      )}
-                    </Stack>
-                  </Box>
-                ))}
-              </Stack>
+                        {item.feedback && (
+                          <Chip
+                            label={item.feedback}
+                            size="small"
+                            variant="outlined"
+                          />
+                        )}
+                      </Stack>
+                    </Box>
+                  ))}
+                </Stack>
+              </Box>
             </CardContent>
           </Card>
         </Box>

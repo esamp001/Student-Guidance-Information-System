@@ -9,18 +9,25 @@ import {
   Menu,
   MenuItem,
   Divider,
+  Skeleton,
 } from "@mui/material";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import theme from "./../theme";
 import { useRole } from "../context/RoleContext";
+import useSnackbar from "../hooks/useSnackbar";
+import { useNavigate } from "react-router-dom";
 
 const TopNavBar = () => {
-  const { role } = useRole();
+  const navigate = useNavigate();
+  const { showSnackbar, SnackbarComponent } = useSnackbar();
+  const { user, setUser, setRole } = useRole();
+  const [userData, setUserData] = useState(null);
   const [show, setShow] = useState(true); // Track visibility
   const [lastScrollY, setLastScrollY] = useState(0);
   const [avatarAnchor, setavatarAnchor] = useState(null);
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
+  const [loading, setLoading] = useState(true);
 
   // Handlers
   const handleopenAvatar = (event) => {
@@ -48,6 +55,53 @@ const TopNavBar = () => {
     }
     setLastScrollY(currentScrollY);
   };
+
+  // LOGOUT
+  const handleLogout = async () => {
+    try {
+      const res = await fetch("/loginRoutes/login/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+      const data = await res.json();
+
+      setUser(null);
+      setRole(null);
+      navigate("/"); // redirect to login or home
+
+      showSnackbar("Logged out successfully", "success");
+    } catch (error) {
+      showSnackbar("Logout failed", "error");
+    }
+  };
+
+  // TOP NAV-BAR LOOOK UP
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const response = await fetch(
+          `/topNavBarRoutes/data/lookup?userId=${user.id}`,
+          {
+            method: "GET",
+            credentials: "include",
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch user data");
+        }
+
+        const data = await response.json();
+        setUserData(data); // now data is just the student object, not an array
+      } catch (error) {
+        console.error("Error loading navbar data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (user && user?.id) loadData(); // ensure user is loaded before fetching
+  }, [user?.id]);
 
   useEffect(() => {
     window.addEventListener("scroll", handleScroll);
@@ -166,13 +220,40 @@ const TopNavBar = () => {
         </Menu>
 
         {/* User + Logout */}
-        <Typography sx={{ fontWeight: 700 }}>Alex Johnson</Typography>
-        <Avatar
-          sx={{ bgcolor: "primary.main", cursor: "pointer" }}
-          onClick={handleopenAvatar}
-        >
-          A
-        </Avatar>
+        <Box display="flex" alignItems="center" gap={2}>
+          {/* Loading for session/global */}
+          {loading ? (
+            <>
+              <Skeleton variant="text" width={120} height={24} />
+              <Skeleton variant="circular" width={40} height={40} />
+            </>
+          ) : (
+            <>
+              {/* Loading for userData fetch */}
+              {!userData ? (
+                <>
+                  <Skeleton variant="text" width={120} height={24} />
+                  <Skeleton variant="circular" width={40} height={40} />
+                </>
+              ) : (
+                <>
+                  <Typography sx={{ fontWeight: 700 }}>
+                    {`${userData.first_name || ""} ${
+                      userData.last_name || ""
+                    }`.trim()}
+                  </Typography>
+
+                  <Avatar
+                    sx={{ bgcolor: "primary.main", cursor: "pointer" }}
+                    onClick={handleopenAvatar}
+                  >
+                    {userData.first_name?.charAt(0)}
+                  </Avatar>
+                </>
+              )}
+            </>
+          )}
+        </Box>
         <>
           <Menu
             anchorEl={avatarAnchor}
@@ -189,7 +270,7 @@ const TopNavBar = () => {
           >
             <Typography sx={{ px: 2, py: 1 }}>Account</Typography>
             <Divider />
-            <MenuItem>Logout</MenuItem>
+            <MenuItem onClick={handleLogout}>Logout</MenuItem>
           </Menu>
         </>
       </Box>
