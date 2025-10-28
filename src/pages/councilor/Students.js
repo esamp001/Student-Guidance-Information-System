@@ -20,13 +20,14 @@ const Students = () => {
   const [openProfile, setOpenProfile] = useState(false);
   const [openCase, setOpenCase] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
+  console.log(selectedStudent, "selected student");
   const [students, setStudents] = useState([]);
   const [tab, setTab] = useState(0);
   const [loading, setLoading] = useState(true);
 
   // Handlers
-  const handleOpenProfile = (student) => {
-    setSelectedStudent(student);
+  const handleOpenProfile = (students) => {
+    setSelectedStudent(students);
     setOpenProfile(true);
   };
 
@@ -82,60 +83,79 @@ const Students = () => {
       </Typography>
 
       <Grid container spacing={4}>
-        {students.map((student, index) => (
-          <Grid item xs={12} md={6} lg={4} key={index}>
-            <Card sx={{ borderRadius: 3, boxShadow: 2 }}>
-              <CardContent>
-                <Box display="flex" alignItems="center" gap={2} mb={2}>
-                  <Avatar>{student.first_name.charAt(0)}</Avatar>
-                  <Box>
-                    <Typography variant="subtitle1" fontWeight="bold">
-                      {`${student.first_name} ${student.last_name}`}
-                    </Typography>
-                    <Chip
-                      label={student.status}
-                      size="small"
-                      sx={{
-                        mt: 0.5,
-                        backgroundColor:
-                          student.status === "Active"
-                            ? theme.palette.primary.tertiary
-                            : student.status === "On-hold"
-                            ? theme.palette.primary.red
-                            : theme.palette.grey[500],
-                        color: "#fff",
-                      }}
-                    />
+        {students && students.length > 0 ? (
+          students.map((student, index) => (
+            <Grid item xs={12} md={6} lg={4} key={index}>
+              <Card sx={{ borderRadius: 3, boxShadow: 2 }}>
+                <CardContent>
+                  <Box display="flex" alignItems="center" gap={2} mb={2}>
+                    <Avatar>{student.first_name.charAt(0)}</Avatar>
+                    <Box>
+                      <Typography variant="subtitle1" fontWeight="bold">
+                        {`${student.first_name} ${student.last_name}`}
+                      </Typography>
+                      <Chip
+                        label={student.status}
+                        size="small"
+                        sx={{
+                          mt: 0.5,
+                          backgroundColor:
+                            student.status === "Active"
+                              ? theme.palette.primary.tertiary
+                              : student.status === "On-hold"
+                              ? theme.palette.primary.red
+                              : theme.palette.grey[500],
+                          color: "#fff",
+                        }}
+                      />
+                    </Box>
                   </Box>
-                </Box>
 
-                <Typography variant="body2" color="text.secondary" mb={2}>
-                  Last Session:{" "}
-                  {student.last_appointment
-                    ? student.last_appointment
-                    : "No Appointments yet"}
-                </Typography>
+                  <Typography variant="body2" color="text.secondary" mb={2}>
+                    Last Session:{" "}
+                    {student.last_appointment
+                      ? student.last_appointment
+                      : "No Appointments yet"}
+                  </Typography>
 
-                <Box display="flex" gap={1}>
-                  <Button
-                    onClick={() => handleOpenCase(student)}
-                    variant="contained"
-                    size="small"
-                  >
-                    View Case
-                  </Button>
-                  <Button
-                    onClick={() => handleOpenProfile(student)}
-                    variant="outlined"
-                    size="small"
-                  >
-                    View Profile
-                  </Button>
-                </Box>
-              </CardContent>
-            </Card>
+                  <Box display="flex" gap={1}>
+                    <Button
+                      onClick={() => handleOpenCase(student)}
+                      variant="contained"
+                      size="small"
+                    >
+                      View Case
+                    </Button>
+                    <Button
+                      onClick={() => handleOpenProfile(students)}
+                      variant="outlined"
+                      size="small"
+                    >
+                      View Profile
+                    </Button>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))
+        ) : (
+          <Grid item xs={12}>
+            <Box
+              display="flex"
+              flexDirection="column"
+              alignItems="center"
+              justifyContent="center"
+              sx={{ py: 6 }}
+            >
+              <Typography variant="h6" color="text.secondary" gutterBottom>
+                No students found
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                It looks like there are no students to display right now.
+              </Typography>
+            </Box>
           </Grid>
-        ))}
+        )}
       </Grid>
 
       {/* Profile Modal */}
@@ -159,7 +179,7 @@ const Students = () => {
             <>
               <Box display="flex" justifyContent="space-between" mb={2}>
                 <Typography variant="h6">
-                  Student Profile: {selectedStudent.name}
+                  Student Profile: {selectedStudent.first_name}
                 </Typography>
                 <Button
                   onClick={handleCloseProfile}
@@ -185,10 +205,13 @@ const Students = () => {
 
               {tab === 0 && (
                 <Box>
-                  <Typography>Name: {selectedStudent.name}</Typography>
-                  <Typography>Status: {selectedStudent.status}</Typography>
+                  <Typography>Name: {selectedStudent[0].first_name}</Typography>
+                  <Typography>Status: {selectedStudent[0].status}</Typography>
                   <Typography>
-                    Last Session: {selectedStudent.lastSession}
+                    Last Session:{" "}
+                    {selectedStudent[0].last_appointment
+                      ? selectedStudent[0].last_appointment
+                      : "No Appointment yet"}
                   </Typography>
                 </Box>
               )}
