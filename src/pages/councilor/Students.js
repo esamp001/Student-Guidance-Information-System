@@ -204,11 +204,46 @@ const Students = () => {
               <Divider sx={{ mb: 2 }} />
 
               {tab === 0 && (
-                <Box>
-                  <Typography>Name: {selectedStudent[0].first_name}</Typography>
-                  <Typography>Status: {selectedStudent[0].status}</Typography>
-                  <Typography>
-                    Last Session:{" "}
+                <Box
+                  sx={{
+                    p: 3,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 1.5,
+                  }}
+                >
+                  <Typography
+                    variant="h6"
+                    fontWeight="bold"
+                    color="text.primary"
+                  >
+                    Student Details
+                  </Typography>
+
+                  <Typography variant="body1" color="text.secondary">
+                    <strong>Name:</strong> {selectedStudent[0].first_name}
+                  </Typography>
+
+                  <Typography variant="body1" color="text.secondary">
+                    <strong>Status:</strong>{" "}
+                    <Chip
+                      label={selectedStudent[0].status}
+                      size="small"
+                      sx={{
+                        backgroundColor:
+                          selectedStudent[0].status === "Active"
+                            ? "success.main"
+                            : selectedStudent[0].status === "On-hold"
+                            ? "warning.main"
+                            : "grey.500",
+                        color: "#fff",
+                        fontWeight: 500,
+                      }}
+                    />
+                  </Typography>
+
+                  <Typography variant="body1" color="text.secondary">
+                    <strong>Last Session:</strong>{" "}
                     {selectedStudent[0].last_appointment
                       ? selectedStudent[0].last_appointment
                       : "No Appointment yet"}

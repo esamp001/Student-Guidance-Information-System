@@ -11,6 +11,7 @@ router.get("/counselor/student_lookup", async (req, res) => {
         "st.first_name",
         "st.last_name",
         "st.status",
+        "st.student_no",
         knex.raw("apts.datetime AS last_appointment")
       )
       .leftJoin("appointments as apts", "st.id", "apts.student_id")
