@@ -4,7 +4,7 @@ const git = simpleGit();
 
 // Schedule every 10 seconds
 cron.schedule(
-  "*/10 * * * * *",
+  "0 */10 * * * *",
   async () => {
     const now = new Date().toLocaleString();
     console.log(`⏱️ Running auto commit at ${now}...`);
