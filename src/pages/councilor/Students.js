@@ -221,6 +221,10 @@ const Students = () => {
                   </Typography>
 
                   <Typography variant="body1" color="text.secondary">
+                    <strong>Student ID:</strong> {selectedStudent[0].student_no}
+                  </Typography>
+
+                  <Typography variant="body1" color="text.secondary">
                     <strong>Name:</strong> {selectedStudent[0].first_name}
                   </Typography>
 

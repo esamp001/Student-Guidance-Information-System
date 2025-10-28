@@ -12,11 +12,12 @@ router.get("/counselor/student_lookup", async (req, res) => {
         "st.last_name",
         "st.status",
         "st.student_no",
-        knex.raw("apts.datetime AS last_appointment")
+        knex.raw("MAX(apts.datetime) AS last_appointment")
       )
       .leftJoin("appointments as apts", "st.id", "apts.student_id")
       .innerJoin("users as u", "u.id", "st.user_id")
-      .where("u.role", "student");
+      .where("u.role", "student")
+      .groupBy("st.first_name", "st.last_name", "st.status", "st.student_no");
 
     // Format last_appointment (e.g. May 30, 2024)
     const formattedStudents = students.map((st) => ({
@@ -27,7 +28,7 @@ router.get("/counselor/student_lookup", async (req, res) => {
             day: "2-digit",
             year: "numeric",
           })
-        : null,
+        : "No Appointment yet",
     }));
 
     console.log(formattedStudents, "students");
