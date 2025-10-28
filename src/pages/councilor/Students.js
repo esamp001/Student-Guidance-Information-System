@@ -26,8 +26,8 @@ const Students = () => {
   const [loading, setLoading] = useState(true);
 
   // Handlers
-  const handleOpenProfile = (students) => {
-    setSelectedStudent(students);
+  const handleOpenProfile = (student) => {
+    setSelectedStudent(student);
     setOpenProfile(true);
   };
 
@@ -77,7 +77,13 @@ const Students = () => {
   }, []);
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box
+      sx={{
+        p: 3,
+        width: "100%",
+        border: "1px solid red",
+      }}
+    >
       <Typography variant="h5" fontWeight="bold" mb={3}>
         My Students
       </Typography>
@@ -120,15 +126,14 @@ const Students = () => {
 
                   <Box display="flex" gap={1}>
                     <Button
-                      onClick={() => handleOpenCase(students)}
+                      onClick={() => handleOpenCase(student)}
                       variant="contained"
                       size="small"
                     >
                       View Case
                     </Button>
                     <Button
-                      key={student.id}
-                      onClick={() => handleOpenProfile(index)}
+                      onClick={() => handleOpenProfile(student)}
                       variant="outlined"
                       size="small"
                     >
@@ -146,7 +151,10 @@ const Students = () => {
               flexDirection="column"
               alignItems="center"
               justifyContent="center"
-              sx={{ py: 6 }}
+              sx={{
+                py: 6,
+                border: "1px solid",
+              }}
             >
               <Typography variant="h6" color="text.secondary" gutterBottom>
                 No students found
