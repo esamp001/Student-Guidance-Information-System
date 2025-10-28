@@ -13,11 +13,24 @@ router.get("/counselor/student_lookup", async (req, res) => {
         "st.status",
         knex.raw("apts.datetime AS last_appointment")
       )
-      .innerJoin("appointments as apts", "st.id", "apts.student_id");
+      .innerJoin("appointments as apts", "st.id", "apts.student_id")
+      .innerJoin("users as u", "u.id", "st.user_id")
+      .where("u.role", "student");
 
-    console.log(students, "students");
+    // Format last_appointment (e.g. May 30, 2024)
+    const formattedStudents = students.map((st) => ({
+      ...st,
+      last_appointment: st.last_appointment
+        ? new Date(st.last_appointment).toLocaleDateString("en-US", {
+            month: "long",
+            day: "2-digit",
+            year: "numeric",
+          })
+        : null,
+    }));
 
-    res.json(students);
+    console.log(formattedStudents, "students");
+    res.json(formattedStudents);
   } catch (error) {
     console.error("Error fetching students:", error);
     res.status(500).json({ error: "Internal Server Error" });

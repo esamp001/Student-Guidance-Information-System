@@ -54,7 +54,25 @@ const Students = () => {
   ];
 
   // All students look up
-  useEffect(() => {}, []);
+  useEffect(() => {
+    const fetchStudents = async () => {
+      try {
+        const response = await fetch(
+          "/counselorManageStudentRoutes/counselor/student_lookup"
+        );
+        if (!response.ok) throw new Error("Failed to fetch students");
+
+        const data = await response.json();
+        setSelectedStudent(data);
+      } catch (error) {
+        console.error("Error fetching students:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStudents();
+  }, []);
 
   return (
     <Box sx={{ p: 3 }}>
