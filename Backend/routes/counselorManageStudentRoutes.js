@@ -39,4 +39,24 @@ router.get("/counselor/student_lookup", async (req, res) => {
   }
 });
 
+router.post("/counselor/update/inactive/students", async (req, res) => {
+  try {
+    const { studentIds } = req.body; // expect an array of student IDs
+
+    if (!studentIds || studentIds.length === 0) {
+      return res.status(400).json({ message: "No students selected." });
+    }
+
+    // Update multiple students to "Inactive"
+    await knex("students")
+      .whereIn("id", studentIds)
+      .update({ status: "Inactive" });
+
+    res.json({ message: "Selected students marked as inactive successfully." });
+  } catch (error) {
+    console.error("Error updating students:", error);
+    res.status(500).json({ message: "Internal server error." });
+  }
+});
+
 module.exports = router;
