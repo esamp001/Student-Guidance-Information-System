@@ -52,8 +52,18 @@ const Students = () => {
     fetchStudents();
   }, []);
 
-  const handleInactiveStatus = async () => {
+  const handleStatus = async () => {
     try {
+      // Determine the new status based on the first selected student's current status
+      const firstStudent = students.find((s) =>
+        markSelectedStudents.includes(s.student_no)
+      );
+
+      if (!firstStudent) return; // no student selected
+
+      const newStatus =
+        firstStudent.status === "Active" ? "Inactive" : "Active";
+
       const response = await fetch(
         `/counselorManageStudentRoutes/students/status/bulk`,
         {
@@ -61,7 +71,7 @@ const Students = () => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             studentNos: markSelectedStudents,
-            status: "Inactive",
+            status: newStatus,
           }),
         }
       );
@@ -70,6 +80,25 @@ const Students = () => {
 
       const result = await response.json();
       console.log("Users updated:", result);
+
+      // ✅ Update local state immediately to reflect the new status
+      setStudents((prev) =>
+        prev.map((student) =>
+          markSelectedStudents.includes(student.student_no)
+            ? { ...student, status: newStatus }
+            : student
+        )
+      );
+
+      // ✅ Also update filteredStudents if you’re using search
+      setFilteredStudents((prev) =>
+        prev.map((student) =>
+          markSelectedStudents.includes(student.student_no)
+            ? { ...student, status: newStatus }
+            : student
+        )
+      );
+
       setMarkSelectedStudents([]);
     } catch (error) {
       console.error("Error updating users:", error);
@@ -81,6 +110,7 @@ const Students = () => {
     setSelectedStudent(student);
     setOpenProfile(true);
   };
+
   const handleCloseProfile = () => {
     setOpenProfile(false);
     setSelectedStudent(null);
@@ -118,7 +148,7 @@ const Students = () => {
           variant="contained"
           color="primary"
         >
-          SET INACTIVE STUDENTS
+          SET ACTIVE/INACTIVE STUDENTS
         </Button>
       </Box>
 
@@ -157,7 +187,7 @@ const Students = () => {
         >
           <InfoOutlinedIcon color="info" fontSize="small" />
           <Typography color="info.main" fontSize="0.875rem">
-            Click all students you want to make as inactive
+            Click all students you want to make as active/inactive
           </Typography>
         </Box>
       )}
@@ -176,15 +206,17 @@ const Students = () => {
                   cursor: "pointer",
                 }}
                 onClick={() => {
-                  setMarkSelectedStudents((prev) => {
-                    if (prev.includes(student.student_no)) {
-                      // remove from selected if already clicked
-                      return prev.filter((id) => id !== student.student_no);
-                    } else {
-                      // add to selected
-                      return [...prev, student.student_no];
-                    }
-                  });
+                  if (isEditing) {
+                    setMarkSelectedStudents((prev) => {
+                      if (prev.includes(student.student_no)) {
+                        // remove from selected if already clicked
+                        return prev.filter((id) => id !== student.student_no);
+                      } else {
+                        // add to selected
+                        return [...prev, student.student_no];
+                      }
+                    });
+                  }
                 }}
               >
                 <CardContent>
@@ -263,11 +295,7 @@ const Students = () => {
 
       {/* Modals remain the same */}
       {isEditing && (
-        <Button
-          onClick={handleInactiveStatus}
-          sx={{ mt: 3 }}
-          variant="outlined"
-        >
+        <Button onClick={handleStatus} sx={{ mt: 3 }} variant="outlined">
           SAVE CHANGES
         </Button>
       )}
