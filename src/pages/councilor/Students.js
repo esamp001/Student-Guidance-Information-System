@@ -52,31 +52,27 @@ const Students = () => {
     fetchStudents();
   }, []);
 
-  const handleInactiveStatus = async (userId) => {
+  const handleInactiveStatus = async () => {
     try {
-      const response = await fetch(`/api/users/${userId}/status`, {
-        method: "PUT", // use PUT or PATCH for updates
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ status: "Inactive" }),
-      });
+      const response = await fetch(
+        `/counselorManageStudentRoutes/students/status/bulk`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            studentNos: markSelectedStudents,
+            status: "Inactive",
+          }),
+        }
+      );
 
-      if (!response.ok) {
-        throw new Error("Failed to update status");
-      }
+      if (!response.ok) throw new Error("Failed to update users");
 
       const result = await response.json();
-      console.log("User status updated:", result);
-
-      // Optional: show feedback or update local state
-      // setUsers((prev) =>
-      //   prev.map((user) =>
-      //     user.id === userId ? { ...user, status: "Inactive" } : user
-      //   )
-      // );
+      console.log("Users updated:", result);
+      setMarkSelectedStudents([]);
     } catch (error) {
-      console.error("Error updating user status:", error);
+      console.error("Error updating users:", error);
     }
   };
 
