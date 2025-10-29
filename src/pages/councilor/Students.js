@@ -201,7 +201,7 @@ const Students = () => {
                   borderRadius: 3,
                   boxShadow: 2,
                   border: markSelectedStudents.includes(student.student_no)
-                    ? "2px solid rgba(255, 0, 0, 0.5)" // soft red
+                    ? `2px solid ${theme.palette.primary.main}` // use theme primary color
                     : "none",
                   cursor: "pointer",
                 }}
@@ -294,6 +294,159 @@ const Students = () => {
       </Grid>
 
       {/* Modals remain the same */}
+      {/* Profile Modal */}
+      <Modal open={openProfile} onClose={handleCloseProfile}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: "70%",
+            bgcolor: "background.paper",
+            borderRadius: 3,
+            boxShadow: 24,
+            p: 3,
+            maxHeight: "90vh",
+            overflowY: "auto",
+          }}
+        >
+          {selectedStudent && (
+            <>
+              <Box display="flex" justifyContent="space-between" mb={2}>
+                <Typography variant="h6">
+                  Student Profile: {selectedStudent.first_name}
+                </Typography>
+                <Button
+                  onClick={handleCloseProfile}
+                  variant="outlined"
+                  size="small"
+                >
+                  Close
+                </Button>
+              </Box>
+
+              {/* Tabs */}
+              <Tabs
+                value={tab}
+                onChange={(e, val) => setTab(val)}
+                sx={{ mb: 2 }}
+              >
+                <Tab label="Personal Details" />
+                <Tab label="Academic Records" />
+                <Tab label="Behavioral History" />
+              </Tabs>
+
+              <Divider sx={{ mb: 2 }} />
+
+              {tab === 0 && (
+                <Box
+                  sx={{
+                    p: 3,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 1.5,
+                  }}
+                >
+                  <Typography
+                    variant="h6"
+                    fontWeight="bold"
+                    color="text.primary"
+                  >
+                    Student Details
+                  </Typography>
+
+                  <Typography variant="body1" color="text.secondary">
+                    <strong>Student ID:</strong> {selectedStudent.student_no}
+                  </Typography>
+
+                  <Typography variant="body1" color="text.secondary">
+                    <strong>Name:</strong> {selectedStudent.first_name}
+                  </Typography>
+
+                  <Typography variant="body1" color="text.secondary">
+                    <strong>Status:</strong>{" "}
+                    <Chip
+                      label={selectedStudent.status}
+                      size="small"
+                      sx={{
+                        backgroundColor:
+                          selectedStudent.status === "Active"
+                            ? "success.main"
+                            : selectedStudent.status === "On-hold"
+                            ? "warning.main"
+                            : "grey.500",
+                        color: "#fff",
+                        fontWeight: 500,
+                      }}
+                    />
+                  </Typography>
+
+                  <Typography variant="body1" color="text.secondary">
+                    <strong>Last Session:</strong>{" "}
+                    {selectedStudent.last_appointment
+                      ? selectedStudent.last_appointment
+                      : "No Appointment yet"}
+                  </Typography>
+                </Box>
+              )}
+              {tab === 1 && <Typography>Academic Records...</Typography>}
+              {tab === 2 && <Typography>Behavioral History...</Typography>}
+            </>
+          )}
+        </Box>
+      </Modal>
+
+      {/* Case Modal */}
+      <Modal open={openCase} onClose={handleCloseCase}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: "60%",
+            bgcolor: "background.paper",
+            borderRadius: 3,
+            boxShadow: 24,
+            p: 3,
+            maxHeight: "80vh",
+            overflowY: "auto",
+          }}
+        >
+          {selectedStudent && (
+            <>
+              <Box display="flex" justifyContent="space-between" mb={2}>
+                <Typography variant="h6">
+                  Case Details: {selectedStudent.first_name}
+                </Typography>
+                <Button
+                  onClick={handleCloseCase}
+                  variant="outlined"
+                  size="small"
+                >
+                  Close
+                </Button>
+              </Box>
+
+              <Divider sx={{ mb: 2 }} />
+
+              <Typography variant="body1" mb={2}>
+                Case notes and history for {selectedStudent.first_name} will be
+                displayed here.
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Example: Last counseling session was on{" "}
+                {selectedStudent.last_appointment
+                  ? selectedStudent.last_appointment
+                  : "N/A"}
+                .
+              </Typography>
+            </>
+          )}
+        </Box>
+      </Modal>
+
       {isEditing && (
         <Button onClick={handleStatus} sx={{ mt: 3 }} variant="outlined">
           SAVE CHANGES
