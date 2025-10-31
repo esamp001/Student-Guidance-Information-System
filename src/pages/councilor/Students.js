@@ -28,6 +28,9 @@ const Students = () => {
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [markSelectedStudents, setMarkSelectedStudents] = useState([]);
+  const [fetchStudentId, setFetchStudentId] = useState(null);
+  console.log(fetchStudentId, "fetchStudentId");
+  const [records, setRecords] = useState([]);
 
   console.log(markSelectedStudents, "mark selectedStudents");
 
@@ -50,6 +53,26 @@ const Students = () => {
       }
     };
     fetchStudents();
+  }, []);
+
+  // Academic Lookup
+  useEffect(() => {
+    const fetchRecords = async () => {
+      try {
+        const response = await fetch(
+          `/api/academic_records/${fetchStudentId.id}`
+        );
+        if (!response.ok) throw new Error("Failed to fetch records");
+        const data = await response.json();
+        setRecords(data);
+      } catch (error) {
+        console.error("Error fetching academic records:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRecords();
   }, []);
 
   const handleStatus = async () => {
@@ -81,7 +104,7 @@ const Students = () => {
       const result = await response.json();
       console.log("Users updated:", result);
 
-      // ✅ Update local state immediately to reflect the new status
+      // Update local state immediately to reflect the new status
       setStudents((prev) =>
         prev.map((student) =>
           markSelectedStudents.includes(student.student_no)
@@ -90,7 +113,7 @@ const Students = () => {
         )
       );
 
-      // ✅ Also update filteredStudents if you’re using search
+      // Also update filteredStudents if you’re using search
       setFilteredStudents((prev) =>
         prev.map((student) =>
           markSelectedStudents.includes(student.student_no)
@@ -107,6 +130,7 @@ const Students = () => {
 
   // Handlers
   const handleOpenProfile = (student) => {
+    setFetchStudentId(student);
     setSelectedStudent(student);
     setOpenProfile(true);
   };

@@ -8,6 +8,7 @@ router.get("/counselor/student_lookup", async (req, res) => {
   try {
     const students = await knex("students as st")
       .select(
+        "st.id",
         "st.first_name",
         "st.last_name",
         "st.status",
@@ -17,7 +18,13 @@ router.get("/counselor/student_lookup", async (req, res) => {
       .leftJoin("appointments as apts", "st.id", "apts.student_id")
       .innerJoin("users as u", "u.id", "st.user_id")
       .where("u.role", "student")
-      .groupBy("st.first_name", "st.last_name", "st.status", "st.student_no");
+      .groupBy(
+        "st.id",
+        "st.first_name",
+        "st.last_name",
+        "st.status",
+        "st.student_no"
+      );
 
     // Format last_appointment (e.g. May 30, 2024)
     const formattedStudents = students.map((st) => ({
