@@ -44,6 +44,11 @@ function App() {
         {/* Public login route */}
         <Route path="/" element={<Login />} />
 
+          // If role is not yet set, redirect to login to avoid blank routes
+  if (!role && window.location.pathname !== "/") {
+    return <Navigate to="/" replace />;
+  }
+
         {/* Dashboard route */}
         <Route path="/dashboard" element={<Dashboard />}>
           {/* ----------- STUDENT ----------- */}
