@@ -60,7 +60,7 @@ const Students = () => {
     const fetchRecords = async () => {
       try {
         const response = await fetch(
-          `/api/academic_records/${fetchStudentId.id}`
+          `/counselorManageStudentRoutes/academic_records/${fetchStudentId.id}`
         );
         if (!response.ok) throw new Error("Failed to fetch records");
         const data = await response.json();

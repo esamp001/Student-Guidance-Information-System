@@ -46,6 +46,24 @@ router.get("/counselor/student_lookup", async (req, res) => {
   }
 });
 
+// Look up for counselor - Get
+router.get("/academic_records/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const records = await knex("academic_records")
+      .select("course", "grade")
+      .where("student_id", id);
+
+    console.log(records, "all records");
+
+    res.json(records);
+  } catch (error) {
+    console.error("Error fetching academic records:", error);
+    res.status(500).json({ message: "Error fetching academic records" });
+  }
+});
+
 router.put("/students/status/bulk", async (req, res) => {
   const { studentNos, status } = req.body;
 
