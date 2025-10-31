@@ -7,6 +7,7 @@ import {
 } from "react-router-dom";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import { CircularProgress, Box, Typography } from "@mui/material";
 
 // Student
 import StudentDashboard from "./pages/student/StudentDashboard";
@@ -36,18 +37,34 @@ import { useRole } from "./context/RoleContext";
 function App() {
   const { role, loading } = useRole();
 
-  if (loading) return <div>Loading session...</div>;
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "100vh",
+          gap: 2,
+        }}
+      >
+        <CircularProgress color="primary" />
+        <Typography variant="body1">Loading session...</Typography>
+      </Box>
+    );
+  }
+
+  // If role is not yet set, redirect to login to avoid blank routes
+  if (!role && window.location.pathname !== "/") {
+    return <Navigate to="/" replace />;
+  }
 
   return (
     <Router>
       <Routes>
         {/* Public login route */}
         <Route path="/" element={<Login />} />
-
-          // If role is not yet set, redirect to login to avoid blank routes
-  if (!role && window.location.pathname !== "/") {
-    return <Navigate to="/" replace />;
-  }
 
         {/* Dashboard route */}
         <Route path="/dashboard" element={<Dashboard />}>
