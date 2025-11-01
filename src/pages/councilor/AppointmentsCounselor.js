@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import theme from "../../theme";
 import {
   Box,
@@ -16,36 +16,67 @@ import EventIcon from "@mui/icons-material/Event";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import PersonIcon from "@mui/icons-material/Person";
 import Appointments from "./../student/Appointments";
+import { useRole } from "../../context/RoleContext";
 
 const AppointmentsCounselor = () => {
   const [selected, setSelected] = useState(null);
+  const [appointments, setAppointments] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const { user } = useRole();
 
-  const appointments = [
-    {
-      id: 1,
-      student: "Alice Johnson",
-      type: "Academic Counseling",
-      date: "2024-07-25",
-      time: "10:00 AM",
-      status: "Pending",
-    },
-    {
-      id: 2,
-      student: "Charlie Davis",
-      type: "Behavioral Support",
-      date: "2024-07-26",
-      time: "02:30 PM",
-      status: "Confirmed",
-    },
-    {
-      id: 3,
-      student: "Diana Miller",
-      type: "Career Guidance",
-      date: "2024-07-27",
-      time: "11:00 AM",
-      status: "Completed",
-    },
-  ];
+  // const appointments = [
+  //   {
+  //     id: 1,
+  //     student: "Alice Johnson",
+  //     type: "Academic Counseling",
+  //     date: "2024-07-25",
+  //     time: "10:00 AM",
+  //     status: "Pending",
+  //   },
+  //   {
+  //     id: 2,
+  //     student: "Charlie Davis",
+  //     type: "Behavioral Support",
+  //     date: "2024-07-26",
+  //     time: "02:30 PM",
+  //     status: "Confirmed",
+  //   },
+  //   {
+  //     id: 3,
+  //     student: "Diana Miller",
+  //     type: "Career Guidance",
+  //     date: "2024-07-27",
+  //     time: "11:00 AM",
+  //     status: "Completed",
+  //   },
+  // ];
+
+  useEffect(() => {
+    if (!user.id) return; // Don't fetch if no ID
+
+    const fetchAppointments = async () => {
+      setLoading(true);
+
+      try {
+        const response = await fetch(
+          `/appointmentRequest/counselor/appointments_lookup?counselorUserId=${user.id}`
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch appointments");
+        }
+
+        const data = await response.json();
+        setAppointments(data); // set the fetched appointments
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAppointments();
+  }, []);
 
   return (
     <Box>
@@ -80,7 +111,7 @@ const AppointmentsCounselor = () => {
               <List>
                 {appointments.map((appt) => (
                   <ListItem
-                    key={appt.id}
+                    key={appt.appointment_id}
                     button
                     onClick={() => setSelected(appt)}
                     sx={{
@@ -88,13 +119,15 @@ const AppointmentsCounselor = () => {
                       borderRadius: 2,
                       mb: 1,
                       bgcolor:
-                        selected?.id === appt.id ? "grey.100" : "transparent",
+                        selected?.id === appt.appointment_id
+                          ? "grey.100"
+                          : "transparent",
                     }}
                   >
                     <ListItemText
                       primary={
                         <Typography fontWeight="bold">
-                          {appt.student}
+                          {`${appt.student_first_name} ${appt.student_last_name}`}
                         </Typography>
                       }
                       secondary={
