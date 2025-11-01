@@ -80,10 +80,17 @@ const AppointmentsCounselor = () => {
       // Show success snackbar
       showSnackbar("Appointment confirmed successfully!", "success");
 
+      // ✅ Only update the specific appointment
       setAppointments((prev) =>
         prev.map((a) =>
           a.id === appointment.id ? { ...a, status: "Confirmed" } : a
         )
+      );
+
+      setSelected((prev) =>
+        prev && prev.id === appointment.id
+          ? { ...prev, status: "Confirmed" }
+          : prev
       );
     } catch (error) {
       console.error("Error confirming appointment:", error);
