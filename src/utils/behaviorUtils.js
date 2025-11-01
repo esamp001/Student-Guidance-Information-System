@@ -81,7 +81,7 @@ export const analyzeBehavior = (note) => {
   } else if (score === 0) {
     label = "Average Performance";
     color = "info.main";
-    emoji = "🟢";
+    emoji = "👌";
   } else if (score === -1) {
     label = "Needs Attention";
     color = "warning.main";
@@ -89,7 +89,7 @@ export const analyzeBehavior = (note) => {
   } else if (score <= -2) {
     label = "Concerning Behavior";
     color = "error.main";
-    emoji = "🚫";
+    emoji = "👎";
   }
 
   return { label, color, emoji, score };
