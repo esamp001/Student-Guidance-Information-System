@@ -396,7 +396,12 @@ const Appointments = () => {
                 </Grid>
 
                 {/* Right Column */}
-                <Grid item xs={12} md={6} sx={{ width: "55%" }}>
+                <Grid
+                  item
+                  xs={12}
+                  md={6}
+                  sx={{ width: "55%", border: "1px solid" }}
+                >
                   <Typography
                     variant="h6"
                     sx={{

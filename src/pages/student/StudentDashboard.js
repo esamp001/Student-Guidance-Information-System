@@ -23,6 +23,7 @@ import HistoryEduIcon from "@mui/icons-material/HistoryEdu";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
+import MessageIcon from "@mui/icons-material/Message"; // make sure to import the icon
 
 //  Example data (you can import instead if defined elsewhere)
 const studentDashboardItems = [
@@ -32,7 +33,7 @@ const studentDashboardItems = [
       "View and update your personal and academic information effortlessly.",
     buttonText: "View Profile",
     icon: <SchoolIcon color="primary" fontSize="medium" />,
-    path: "/Dashboard/profile",
+    path: "/dashboard/student/profile",
   },
   {
     title: "Request Appointment",
@@ -40,7 +41,7 @@ const studentDashboardItems = [
       "Schedule a new counseling session or check available slots with ease.",
     buttonText: "Request Now",
     icon: <EventAvailableIcon color="primary" fontSize="medium" />,
-    path: "/Dashboard/appointments",
+    path: "/dashboard/student/appointments",
   },
   {
     title: "Counseling History",
@@ -48,14 +49,15 @@ const studentDashboardItems = [
       "Review your past counseling sessions, notes, and progress reports.",
     buttonText: "View History",
     icon: <HistoryEduIcon color="primary" fontSize="medium" />,
-    path: "/Dashboard/history",
+    path: "/dashboard/student/history",
   },
   {
-    title: "Notifications",
-    description: "Stay informed with important updates, alerts, and messages.",
-    buttonText: "View Notifications",
-    icon: <NotificationsIcon color="primary" fontSize="medium" />,
-    path: "/Dashboard/notifications",
+    title: "Guidance Messages",
+    description:
+      "Receive updates, alerts, and messages regarding your online counseling appointments.",
+    buttonText: "View Messages",
+    icon: <MessageIcon color="primary" fontSize="medium" />, // could also use a MessageIcon
+    path: "/dashboard/student/messages",
   },
 ];
 
@@ -289,64 +291,84 @@ const StudentDashboard = () => {
                   pr: 1, // avoid scrollbar overlap
                 }}
               >
-                <Stack spacing={2}>
-                  {history.map((item, index) => (
-                    <Box
-                      key={index}
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        p: 1.5,
-                        borderRadius: 1,
-                        bgcolor: "grey.50",
-                        transition: "all 0.3s ease",
-                        cursor: "pointer",
-                        "&:hover": {
-                          bgcolor: "grey.100",
-                          boxShadow: 3,
-                          transform: "scale(1.02)",
-                        },
-                      }}
-                    >
+                {history.length > 0 ? (
+                  <Stack spacing={2}>
+                    {history.map((item, index) => (
                       <Box
-                        sx={{ display: "flex", alignItems: "center", gap: 1.5 }}
+                        key={index}
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          p: 1.5,
+                          borderRadius: 1,
+                          bgcolor: "grey.50",
+                          transition: "all 0.3s ease",
+                          cursor: "pointer",
+                          "&:hover": {
+                            bgcolor: "grey.100",
+                            boxShadow: 3,
+                            transform: "scale(1.02)",
+                          },
+                        }}
                       >
-                        <CalendarTodayIcon color="primary" fontSize="small" />
-                        <Box>
-                          <Typography variant="body1" fontWeight="bold">
-                            {item.date}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            {item.time} with{" "}
-                            {`${item.first_name} ${item.last_name}`}
-                          </Typography>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1.5,
+                          }}
+                        >
+                          <CalendarTodayIcon color="primary" fontSize="small" />
+                          <Box>
+                            <Typography variant="body1" fontWeight="bold">
+                              {item.date}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              {item.time} with{" "}
+                              {`${item.first_name} ${item.last_name}`}
+                            </Typography>
+                          </Box>
                         </Box>
-                      </Box>
 
-                      <Stack direction="row" spacing={1}>
-                        <Chip
-                          label={item.status}
-                          size="small"
-                          color={
-                            item.status === "Completed"
-                              ? "success"
-                              : item.status === "Scheduled"
-                              ? "info"
-                              : "default"
-                          }
-                        />
-                        {item.feedback && (
+                        <Stack direction="row" spacing={1}>
                           <Chip
-                            label={item.feedback}
+                            label={item.status}
                             size="small"
-                            variant="outlined"
+                            color={
+                              item.status === "Completed"
+                                ? "success"
+                                : item.status === "Scheduled"
+                                ? "info"
+                                : "default"
+                            }
                           />
-                        )}
-                      </Stack>
-                    </Box>
-                  ))}
-                </Stack>
+                          {item.feedback && (
+                            <Chip
+                              label={item.feedback}
+                              size="small"
+                              variant="outlined"
+                            />
+                          )}
+                        </Stack>
+                      </Box>
+                    ))}
+                  </Stack>
+                ) : (
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      height: 200,
+                      color: "text.secondary",
+                    }}
+                  >
+                    <Typography variant="body1">
+                      No counseling history available yet.
+                    </Typography>
+                  </Box>
+                )}
               </Box>
             </CardContent>
           </Card>
