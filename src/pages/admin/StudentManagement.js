@@ -483,6 +483,15 @@ const StudentManagement = () => {
                   handleOverallNoteChange(selectedStudent?.id, e.target.value)
                 }
               />
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ mt: 0.5 }}
+              >
+                💡 Tip: Include keywords like “excellent,” “good,” “average,”
+                “warning,” or “poor” to automatically generate a smart behavior
+                tag.
+              </Typography>
 
               {/* Save Button */}
               <Box
