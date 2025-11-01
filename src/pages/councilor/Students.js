@@ -556,34 +556,108 @@ const Students = () => {
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          backgroundColor: AllRecords.overallNote
-                            .toLowerCase()
-                            .includes("good")
-                            ? "success.light"
-                            : AllRecords.overallNote
-                                .toLowerCase()
-                                .includes("warning")
-                            ? "warning.light"
-                            : "error.light",
-                          color: AllRecords.overallNote
-                            .toLowerCase()
-                            .includes("good")
-                            ? "success.dark"
-                            : AllRecords.overallNote
-                                .toLowerCase()
-                                .includes("warning")
-                            ? "warning.dark"
-                            : "error.dark",
+                          backgroundColor: (() => {
+                            const note = AllRecords.overallNote.toLowerCase();
+                            if (
+                              note.includes("excellent") ||
+                              note.includes("outstanding") ||
+                              note.includes("great")
+                            )
+                              return "success.light";
+                            if (
+                              note.includes("good") ||
+                              note.includes("improving") ||
+                              note.includes("progress")
+                            )
+                              return "success.light";
+                            if (
+                              note.includes("average") ||
+                              note.includes("satisfactory")
+                            )
+                              return "info.light";
+                            if (
+                              note.includes("warning") ||
+                              note.includes("attention") ||
+                              note.includes("needs improvement")
+                            )
+                              return "warning.light";
+                            if (
+                              note.includes("poor") ||
+                              note.includes("disciplinary") ||
+                              note.includes("bad")
+                            )
+                              return "error.light";
+                            return "grey.300";
+                          })(),
+                          color: (() => {
+                            const note = AllRecords.overallNote.toLowerCase();
+                            if (
+                              note.includes("excellent") ||
+                              note.includes("outstanding") ||
+                              note.includes("great")
+                            )
+                              return "success.dark";
+                            if (
+                              note.includes("good") ||
+                              note.includes("improving") ||
+                              note.includes("progress")
+                            )
+                              return "success.dark";
+                            if (
+                              note.includes("average") ||
+                              note.includes("satisfactory")
+                            )
+                              return "info.dark";
+                            if (
+                              note.includes("warning") ||
+                              note.includes("attention") ||
+                              note.includes("needs improvement")
+                            )
+                              return "warning.dark";
+                            if (
+                              note.includes("poor") ||
+                              note.includes("disciplinary") ||
+                              note.includes("bad")
+                            )
+                              return "error.dark";
+                            return "text.secondary";
+                          })(),
                           fontSize: "1.8rem",
                         }}
                       >
-                        {AllRecords.overallNote.toLowerCase().includes("good")
-                          ? "🌟"
-                          : AllRecords.overallNote
-                              .toLowerCase()
-                              .includes("warning")
-                          ? "⚠️"
-                          : "🚫"}
+                        {(() => {
+                          const note = AllRecords.overallNote.toLowerCase();
+                          if (
+                            note.includes("excellent") ||
+                            note.includes("outstanding") ||
+                            note.includes("great")
+                          )
+                            return "🌟";
+                          if (
+                            note.includes("good") ||
+                            note.includes("improving") ||
+                            note.includes("progress")
+                          )
+                            return "👍";
+                          if (
+                            note.includes("average") ||
+                            note.includes("satisfactory")
+                          )
+                            return "🟢";
+                          if (
+                            note.includes("warning") ||
+                            note.includes("attention") ||
+                            note.includes("needs improvement")
+                          )
+                            return "⚠️";
+                          if (
+                            note.includes("poor") ||
+                            note.includes("disciplinary") ||
+                            note.includes("bad")
+                          )
+                            return "🚫";
+                          return "💬";
+                        })()}
                       </Box>
 
                       {/* Content */}
@@ -611,7 +685,7 @@ const Students = () => {
 
                             let label = "General Behavior";
                             let color = "default";
-                            let emoji = "💬";
+                            let emoji = "";
 
                             if (
                               note.includes("excellent") ||
@@ -620,7 +694,6 @@ const Students = () => {
                             ) {
                               label = "Excellent Behavior";
                               color = "success.main";
-                              emoji = "🌟";
                             } else if (
                               note.includes("good") ||
                               note.includes("improving") ||
@@ -628,14 +701,12 @@ const Students = () => {
                             ) {
                               label = "Positive Behavior";
                               color = "success.main";
-                              emoji = "👍";
                             } else if (
                               note.includes("average") ||
                               note.includes("satisfactory")
                             ) {
                               label = "Average Performance";
                               color = "info.main";
-                              emoji = "🟢";
                             } else if (
                               note.includes("warning") ||
                               note.includes("attention") ||
@@ -643,7 +714,6 @@ const Students = () => {
                             ) {
                               label = "Needs Attention";
                               color = "warning.main";
-                              emoji = "⚠️";
                             } else if (
                               note.includes("poor") ||
                               note.includes("disciplinary") ||
@@ -651,7 +721,6 @@ const Students = () => {
                             ) {
                               label = "Concerning Behavior";
                               color = "error.main";
-                              emoji = "🚫";
                             }
 
                             return (

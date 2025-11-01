@@ -16,7 +16,7 @@ router.get("/admin/all_students/lookup", async (req, res) => {
         "st.course"
       )
       .leftJoin("users as us", "us.id", "st.user_id") // join users
-      .where("us.role", "student") // ✅ filter only user role = student
+      .where("us.role", "student")
       .andWhere(function () {
         this.whereRaw(
           "concat_ws(' ', st.first_name, st.middle_name, st.last_name) ILIKE ?",

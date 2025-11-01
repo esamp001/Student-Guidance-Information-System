@@ -488,9 +488,9 @@ const StudentManagement = () => {
                 color="text.secondary"
                 sx={{ mt: 0.5 }}
               >
-                💡 Tip: Include keywords like “excellent,” “good,” “average,”
-                “warning,” or “poor” to automatically generate a smart behavior
-                tag.
+                💡 Tip: Use keywords like “excellent,” “good,” “average,”
+                “warning,” or “poor” in your overall note to automatically
+                display the matching behavior icon and smart tag.
               </Typography>
 
               {/* Save Button */}
