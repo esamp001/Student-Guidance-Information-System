@@ -56,24 +56,39 @@ const Students = () => {
   }, []);
 
   // Academic Lookup
-  useEffect(() => {
-    const fetchRecords = async () => {
-      try {
-        const response = await fetch(
-          `/counselorManageStudentRoutes/academic_records/${fetchStudentId.id}`
-        );
-        if (!response.ok) throw new Error("Failed to fetch records");
-        const data = await response.json();
-        setRecords(data);
-      } catch (error) {
-        console.error("Error fetching academic records:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // useEffect(() => {
+  //   const fetchRecords = async () => {
+  //     try {
+  //       const response = await fetch(
+  //         `/counselorManageStudentRoutes/academic_records/${fetchStudentId.id}`
+  //       );
+  //       if (!response.ok) throw new Error("Failed to fetch records");
+  //       const data = await response.json();
+  //       setRecords(data);
+  //     } catch (error) {
+  //       console.error("Error fetching academic records:", error);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
 
-    fetchRecords();
-  }, []);
+  //   fetchRecords();
+  // }, []);
+
+  const fetchRecords = async (studentId) => {
+    try {
+      const response = await fetch(
+        `/counselorManageStudentRoutes/academic_records/${studentId}`
+      );
+      if (!response.ok) throw new Error("Failed to fetch records");
+      const data = await response.json();
+      setRecords(data);
+    } catch (error) {
+      console.error("Error fetching academic records:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleStatus = async () => {
     try {
@@ -286,6 +301,7 @@ const Students = () => {
                       onClick={(e) => {
                         e.stopPropagation(); // prevent card click
                         handleOpenProfile(student);
+                        fetchRecords(student.id);
                       }}
                       variant="outlined"
                       size="small"

@@ -38,7 +38,6 @@ router.get("/counselor/student_lookup", async (req, res) => {
         : "No Appointment yet",
     }));
 
-    console.log(formattedStudents, "students");
     res.json(formattedStudents);
   } catch (error) {
     console.error("Error fetching students:", error);
@@ -66,9 +65,6 @@ router.get("/academic_records/:id", async (req, res) => {
 
 router.put("/students/status/bulk", async (req, res) => {
   const { studentNos, status } = req.body;
-
-  console.log(studentNos, "studentNos");
-  console.log(status, "status");
 
   if (!Array.isArray(studentNos) || !status) {
     return res.status(400).json({ message: "Invalid request body" });
