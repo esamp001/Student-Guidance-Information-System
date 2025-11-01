@@ -53,11 +53,43 @@ router.get("/counselor/appointments_lookup", async (req, res) => {
       };
     });
 
-    console.log(formattedAppointments, "formatted appointments");
     res.json(formattedAppointments);
   } catch (error) {
     console.error("Error fetching appointments:", error);
     res.status(500).json({ error: "Failed to fetch appointments" });
+  }
+});
+
+// PUT /appointmentRequest/appointments/:id
+router.put("/appointments/:id", async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  console.log(id, "id");
+  console.log(status, "status");
+
+  if (!status) {
+    return res.status(400).json({ message: "Status is required" });
+  }
+
+  try {
+    // Update the appointment status
+    const updated = await knex("appointments")
+      .where({ id: id })
+      .update({ status })
+      .returning("*"); // returns updated row(s), may vary based on DB
+
+    if (!updated || updated.length === 0) {
+      return res.status(404).json({ message: "Appointment not found" });
+    }
+
+    res.json({
+      message: "Appointment updated successfully",
+      appointment: updated[0],
+    });
+  } catch (error) {
+    console.error("Error updating appointment:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 

@@ -34,8 +34,6 @@ const CounselorStaffManagement = () => {
   const [open, setOpen] = useState(false);
   const [formMode, setFormMode] = useState("add");
 
-  console.log(counselors, "counselors");
-
   const handleOpen = (mode, id) => {
     setFormMode(mode);
     if (mode === "edit") {

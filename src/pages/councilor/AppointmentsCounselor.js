@@ -25,31 +25,6 @@ const AppointmentsCounselor = () => {
   const [loading, setLoading] = useState(false);
   const { showSnackbar, SnackbarComponent } = useSnackbar();
   const { user } = useRole();
-  //   {
-  //     id: 1,
-  //     student: "Alice Johnson",
-  //     type: "Academic Counseling",
-  //     date: "2024-07-25",
-  //     time: "10:00 AM",
-  //     status: "Pending",
-  //   },
-  //   {
-  //     id: 2,
-  //     student: "Charlie Davis",
-  //     type: "Behavioral Support",
-  //     date: "2024-07-26",
-  //     time: "02:30 PM",
-  //     status: "Confirmed",
-  //   },
-  //   {
-  //     id: 3,
-  //     student: "Diana Miller",
-  //     type: "Career Guidance",
-  //     date: "2024-07-27",
-  //     time: "11:00 AM",
-  //     status: "Completed",
-  //   },
-  // ];
 
   useEffect(() => {
     if (!user.id) return; // Don't fetch if no ID
@@ -78,19 +53,19 @@ const AppointmentsCounselor = () => {
     fetchAppointments();
   }, []);
 
-  const handleApprove = async (appointmentId) => {
+  const handleApprove = async (appointment) => {
     setLoading(true);
 
     try {
       const response = await fetch(
-        `/appointmentRequest/appointments/${appointmentId}`,
+        `/appointmentRequest/appointments/${appointment.appointment_id}`,
         {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            ...appointments, // include all existing fields
+            ...appointment, // include all existing fields
             status: "Confirmed", // update only the status
           }),
         }
@@ -101,13 +76,15 @@ const AppointmentsCounselor = () => {
       }
 
       const data = await response.json();
-      console.log("Appointment confirmed:", data);
 
       // Show success snackbar
       showSnackbar("Appointment confirmed successfully!", "success");
 
-      // Optionally update local state if you keep a list of appointments
-      // setAppointments(prev => prev.map(a => a.id === appointmentId ? {...a, status: "Confirmed"} : a));
+      setAppointments((prev) =>
+        prev.map((a) =>
+          a.id === appointment.id ? { ...a, status: "Confirmed" } : a
+        )
+      );
     } catch (error) {
       console.error("Error confirming appointment:", error);
       showSnackbar("Failed to confirm appointment.", "error");
@@ -250,7 +227,7 @@ const AppointmentsCounselor = () => {
                     {selected.status === "Pending" && (
                       <>
                         <Button
-                          onClick={handleApprove}
+                          onClick={() => handleApprove(selected)}
                           variant="contained"
                           color="success"
                         >

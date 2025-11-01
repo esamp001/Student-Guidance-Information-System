@@ -1,7 +1,6 @@
 const express = require("express");
 const router = express.Router();
 const knex = require("../db/db"); // adjust the path based on your setup
-const bcrypt = require("bcryptjs");
 
 // Look up student - Get
 router.get("/counselor/student_lookup", async (req, res) => {
@@ -68,8 +67,6 @@ router.get("/academic_records/:id", async (req, res) => {
     const records = await knex("academic_records")
       .select("course", "grade", "overall_note")
       .where("student_id", id);
-
-    console.log(records, "all records");
 
     // Compute GPA
     let totalPoints = 0;

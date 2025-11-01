@@ -31,8 +31,6 @@ const Students = () => {
   const [markSelectedStudents, setMarkSelectedStudents] = useState([]);
   const [AllRecords, setAllRecords] = useState([]);
 
-  console.log(AllRecords, "AllRecords");
-
   // Fetch students
   useEffect(() => {
     const fetchStudents = async () => {
@@ -97,7 +95,6 @@ const Students = () => {
       if (!response.ok) throw new Error("Failed to update users");
 
       const result = await response.json();
-      console.log("Users updated:", result);
 
       // Update local state immediately to reflect the new status
       setStudents((prev) =>
