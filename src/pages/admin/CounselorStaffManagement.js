@@ -34,6 +34,8 @@ const CounselorStaffManagement = () => {
   const [open, setOpen] = useState(false);
   const [formMode, setFormMode] = useState("add");
 
+  console.log(counselors, "counselors");
+
   const handleOpen = (mode, id) => {
     setFormMode(mode);
     if (mode === "edit") {
@@ -288,8 +290,10 @@ const CounselorStaffManagement = () => {
           <Grid item xs={12} sm={6} md={4} key={c.id}>
             <Card sx={{ borderRadius: 3, boxShadow: 3, width: 300, p: 1 }}>
               <CardContent>
-                <Typography variant="h6">{c.first_name}</Typography>
-                <Typography color="text.secondary">{c.last_name}</Typography>
+                <Typography variant="h6">{`${c.first_name} ${c.last_name}`}</Typography>
+                <Typography color="text.secondary">
+                  {c.specialization}
+                </Typography>
               </CardContent>
               <CardActions sx={{ justifyContent: "flex-end", gap: 2 }}>
                 <Typography
