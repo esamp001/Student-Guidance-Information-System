@@ -61,34 +61,29 @@ const AppointmentsCounselor = () => {
         `/appointmentRequest/appointments/${appointment.appointment_id}`,
         {
           method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            ...appointment, // include all existing fields
-            status: "Confirmed", // update only the status
-          }),
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...appointment, status: "Confirmed" }),
         }
       );
 
-      if (!response.ok) {
-        throw new Error("Failed to confirm appointment");
-      }
+      if (!response.ok) throw new Error("Failed to confirm appointment");
 
       const data = await response.json();
 
-      // Show success snackbar
       showSnackbar("Appointment confirmed successfully!", "success");
 
-      // ✅ Only update the specific appointment
+      // Update appointments list
       setAppointments((prev) =>
         prev.map((a) =>
-          a.id === appointment.id ? { ...a, status: "Confirmed" } : a
+          a.appointment_id === appointment.appointment_id
+            ? { ...a, status: "Confirmed" }
+            : a
         )
       );
 
+      // Update selected appointment only
       setSelected((prev) =>
-        prev && prev.id === appointment.id
+        prev && prev.appointment_id === appointment.appointment_id
           ? { ...prev, status: "Confirmed" }
           : prev
       );
@@ -130,7 +125,15 @@ const AppointmentsCounselor = () => {
               </Typography>
               <Divider sx={{ mb: 2 }} />
 
-              <List>
+              <List
+                sx={{
+                  border: "1px solid",
+                  borderRadius: 2,
+                  height: 400, // fixed height in px (adjust as needed)
+                  overflowY: "auto", // vertical scroll when content exceeds height
+                  p: 1, // optional padding
+                }}
+              >
                 {appointments.map((appt) => (
                   <ListItem
                     key={appt.appointment_id}
@@ -141,7 +144,7 @@ const AppointmentsCounselor = () => {
                       borderRadius: 2,
                       mb: 1,
                       bgcolor:
-                        selected?.id === appt.appointment_id
+                        selected?.appointment_id === appt.appointment_id
                           ? "grey.100"
                           : "transparent",
                     }}
@@ -175,7 +178,7 @@ const AppointmentsCounselor = () => {
                             : appt.status === "Confirmed"
                             ? theme.palette.primary.red
                             : appt.status === "Completed"
-                            ? theme.palette.primary.secondary // or any color you want for Completed
+                            ? theme.palette.primary.secondary
                             : theme.palette.grey[500],
                         color: "#fff",
                       }}
