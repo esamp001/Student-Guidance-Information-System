@@ -430,7 +430,7 @@ const Students = () => {
                     <Typography color="text.secondary">
                       Loading records...
                     </Typography>
-                  ) : AllRecords && AllRecords.length > 0 ? (
+                  ) : AllRecords.records && AllRecords.records.length > 0 ? (
                     <Box
                       sx={{
                         display: "flex",
@@ -438,7 +438,7 @@ const Students = () => {
                         gap: 1.5,
                       }}
                     >
-                      {AllRecords.map((record, index) => (
+                      {AllRecords.records?.map((record, index) => (
                         <Box
                           key={index}
                           sx={{
@@ -446,9 +446,6 @@ const Students = () => {
                             justifyContent: "space-between",
                             alignItems: "center",
                             p: 2,
-                            borderRadius: 2,
-                            boxShadow: 1,
-                            backgroundColor: "background.paper",
                           }}
                         >
                           <Typography
@@ -511,7 +508,140 @@ const Students = () => {
                 </Box>
               )}
 
-              {tab === 2 && <Typography>Behavioral History...</Typography>}
+              {tab === 2 && (
+                <Box
+                  sx={{
+                    p: 3,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 2,
+                  }}
+                >
+                  <Typography
+                    variant="h6"
+                    fontWeight="bold"
+                    color="text.primary"
+                  >
+                    Behavioral History
+                  </Typography>
+
+                  {loading ? (
+                    <Typography color="text.secondary">
+                      Loading history...
+                    </Typography>
+                  ) : loading && loading.length > 0 ? (
+                    <Box
+                      sx={{ display: "flex", flexDirection: "column", gap: 2 }}
+                    >
+                      {behavioralHistory.map((entry, index) => (
+                        <Box
+                          key={index}
+                          sx={{
+                            display: "flex",
+                            alignItems: "flex-start",
+                            gap: 2,
+                            p: 2,
+                            borderRadius: 3,
+                            boxShadow: 2,
+                            backgroundColor: "background.paper",
+                            transition:
+                              "transform 0.2s ease, box-shadow 0.2s ease",
+                            "&:hover": {
+                              transform: "scale(1.02)",
+                              boxShadow: 4,
+                            },
+                          }}
+                        >
+                          {/* Icon or emoji based on type */}
+                          <Box
+                            sx={{
+                              width: 40,
+                              height: 40,
+                              borderRadius: "50%",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              backgroundColor:
+                                entry.type === "Good"
+                                  ? "success.light"
+                                  : entry.type === "Warning"
+                                  ? "warning.light"
+                                  : "error.light",
+                              color:
+                                entry.type === "Good"
+                                  ? "success.dark"
+                                  : entry.type === "Warning"
+                                  ? "warning.dark"
+                                  : "error.dark",
+                              fontWeight: "bold",
+                              fontSize: "1.2rem",
+                            }}
+                          >
+                            {entry.type === "Good"
+                              ? "👍"
+                              : entry.type === "Warning"
+                              ? "⚠️"
+                              : "🚫"}
+                          </Box>
+
+                          {/* Content */}
+                          <Box sx={{ flex: 1 }}>
+                            <Typography
+                              variant="subtitle1"
+                              fontWeight="bold"
+                              color="text.primary"
+                            >
+                              {entry.title}
+                            </Typography>
+
+                            <Typography
+                              variant="body2"
+                              color="text.secondary"
+                              sx={{ mt: 0.5 }}
+                            >
+                              {entry.description}
+                            </Typography>
+
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                mt: 1.5,
+                              }}
+                            >
+                              <Chip
+                                label={entry.type}
+                                size="small"
+                                sx={{
+                                  backgroundColor:
+                                    entry.type === "Good"
+                                      ? "success.main"
+                                      : entry.type === "Warning"
+                                      ? "warning.main"
+                                      : "error.main",
+                                  color: "#fff",
+                                  fontWeight: 500,
+                                }}
+                              />
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                              >
+                                {new Date(entry.date).toLocaleDateString()}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        </Box>
+                      ))}
+                    </Box>
+                  ) : (
+                    <Typography color="text.secondary">
+                      No behavioral history available.
+                    </Typography>
+                  )}
+                </Box>
+              )}
             </>
           )}
         </Box>

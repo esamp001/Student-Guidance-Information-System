@@ -49,7 +49,6 @@ router.get("/counselor/student_lookup", async (req, res) => {
 router.get("/academic_records/:id", async (req, res) => {
   const { id } = req.params;
 
-  // Grade → Point mapping
   const gradeToPoint = {
     "A+": 4.0,
     A: 4.0,
@@ -65,13 +64,14 @@ router.get("/academic_records/:id", async (req, res) => {
   };
 
   try {
+    // Fetch all records for this student
     const records = await knex("academic_records")
-      .select("course", "grade")
+      .select("course", "grade", "overall_note")
       .where("student_id", id);
 
     console.log(records, "all records");
 
-    // Compute total grade points (average / GPA)
+    // Compute GPA
     let totalPoints = 0;
     let validCount = 0;
 
@@ -85,10 +85,14 @@ router.get("/academic_records/:id", async (req, res) => {
 
     const gpa = validCount > 0 ? totalPoints / validCount : 0;
 
-    // Send both records and computed total grade
+    // Extract one overall_note only (if exists)
+    const overallNote = records.length > 0 ? records[0].overall_note : null;
+
+    // Send one overall_note + records + GPA
     res.json({
-      records,
-      totalGrades: gpa.toFixed(2), // e.g. 3.45
+      records: records.map(({ overall_note, ...rest }) => rest), // remove duplicate notes
+      totalGrades: gpa.toFixed(2),
+      overallNote,
     });
   } catch (error) {
     console.error("Error fetching academic records:", error);
