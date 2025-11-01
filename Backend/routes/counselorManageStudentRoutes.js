@@ -49,6 +49,21 @@ router.get("/counselor/student_lookup", async (req, res) => {
 router.get("/academic_records/:id", async (req, res) => {
   const { id } = req.params;
 
+  // Grade → Point mapping
+  const gradeToPoint = {
+    "A+": 4.0,
+    A: 4.0,
+    "A-": 3.7,
+    "B+": 3.3,
+    B: 3.0,
+    "B-": 2.7,
+    "C+": 2.3,
+    C: 2.0,
+    "C-": 1.7,
+    D: 1.0,
+    F: 0.0,
+  };
+
   try {
     const records = await knex("academic_records")
       .select("course", "grade")
@@ -56,7 +71,25 @@ router.get("/academic_records/:id", async (req, res) => {
 
     console.log(records, "all records");
 
-    res.json(records);
+    // Compute total grade points (average / GPA)
+    let totalPoints = 0;
+    let validCount = 0;
+
+    records.forEach((rec) => {
+      const point = gradeToPoint[rec.grade];
+      if (point !== undefined) {
+        totalPoints += point;
+        validCount++;
+      }
+    });
+
+    const gpa = validCount > 0 ? totalPoints / validCount : 0;
+
+    // Send both records and computed total grade
+    res.json({
+      records,
+      totalGrades: gpa.toFixed(2), // e.g. 3.45
+    });
   } catch (error) {
     console.error("Error fetching academic records:", error);
     res.status(500).json({ message: "Error fetching academic records" });

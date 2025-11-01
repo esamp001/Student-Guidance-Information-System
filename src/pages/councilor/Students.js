@@ -28,8 +28,6 @@ const Students = () => {
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [markSelectedStudents, setMarkSelectedStudents] = useState([]);
-  const [fetchStudentId, setFetchStudentId] = useState(null);
-  console.log(fetchStudentId, "fetchStudentId");
   const [records, setRecords] = useState([]);
 
   console.log(markSelectedStudents, "mark selectedStudents");
@@ -56,25 +54,6 @@ const Students = () => {
   }, []);
 
   // Academic Lookup
-  // useEffect(() => {
-  //   const fetchRecords = async () => {
-  //     try {
-  //       const response = await fetch(
-  //         `/counselorManageStudentRoutes/academic_records/${fetchStudentId.id}`
-  //       );
-  //       if (!response.ok) throw new Error("Failed to fetch records");
-  //       const data = await response.json();
-  //       setRecords(data);
-  //     } catch (error) {
-  //       console.error("Error fetching academic records:", error);
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
-
-  //   fetchRecords();
-  // }, []);
-
   const fetchRecords = async (studentId) => {
     try {
       const response = await fetch(
@@ -145,7 +124,6 @@ const Students = () => {
 
   // Handlers
   const handleOpenProfile = (student) => {
-    setFetchStudentId(student);
     setSelectedStudent(student);
     setOpenProfile(true);
   };
@@ -430,7 +408,109 @@ const Students = () => {
                   </Typography>
                 </Box>
               )}
-              {tab === 1 && <Typography>Academic Records...</Typography>}
+              {tab === 1 && (
+                <Box
+                  sx={{
+                    p: 3,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 2,
+                  }}
+                >
+                  <Typography
+                    variant="h6"
+                    fontWeight="bold"
+                    color="text.primary"
+                  >
+                    Academic Records
+                  </Typography>
+
+                  {/* Records Section */}
+                  {loading ? (
+                    <Typography color="text.secondary">
+                      Loading records...
+                    </Typography>
+                  ) : records && records.length > 0 ? (
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 1.5,
+                      }}
+                    >
+                      {records.map((record, index) => (
+                        <Box
+                          key={index}
+                          sx={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            p: 2,
+                            borderRadius: 2,
+                            boxShadow: 1,
+                            backgroundColor: "background.paper",
+                          }}
+                        >
+                          <Typography
+                            variant="body1"
+                            fontWeight={500}
+                            color="text.primary"
+                          >
+                            {record.course}
+                          </Typography>
+                          <Chip
+                            label={record.grade}
+                            size="small"
+                            sx={{
+                              backgroundColor:
+                                record.grade === "A+" || record.grade === "A"
+                                  ? "success.main"
+                                  : record.grade.startsWith("B")
+                                  ? "info.main"
+                                  : record.grade.startsWith("C")
+                                  ? "warning.main"
+                                  : "error.main",
+                              color: "#fff",
+                              fontWeight: "bold",
+                            }}
+                          />
+                        </Box>
+                      ))}
+                    </Box>
+                  ) : (
+                    <Typography color="text.secondary">
+                      No academic records available.
+                    </Typography>
+                  )}
+
+                  {/* GPA / Total Grades */}
+                  {totalGrades && (
+                    <Box
+                      sx={{
+                        mt: 2,
+                        p: 2,
+                        borderRadius: 2,
+                        backgroundColor: "grey.100",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
+                      <Typography variant="body1" fontWeight="bold">
+                        Total GPA:
+                      </Typography>
+                      <Typography
+                        variant="h6"
+                        fontWeight="bold"
+                        color="primary"
+                      >
+                        {records.totalGrades}
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
+              )}
+
               {tab === 2 && <Typography>Behavioral History...</Typography>}
             </>
           )}
