@@ -127,7 +127,6 @@ const AppointmentsCounselor = () => {
 
               <List
                 sx={{
-                  border: "1px solid",
                   borderRadius: 2,
                   height: 400, // fixed height in px (adjust as needed)
                   overflowY: "auto", // vertical scroll when content exceeds height
