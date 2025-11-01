@@ -194,10 +194,7 @@ const AppointmentsCounselor = () => {
                   <Box display="flex" alignItems="center" gap={1} mb={2}>
                     <AccessTimeIcon color="action" />
                     <Typography>
-                      {new Date(selected.datetime_readable).toLocaleTimeString(
-                        [],
-                        { hour: "2-digit", minute: "2-digit" }
-                      )}
+                      {selected.datetime_readable.split(" - ")[1]}
                     </Typography>
                   </Box>
 
