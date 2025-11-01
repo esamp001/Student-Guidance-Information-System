@@ -24,8 +24,6 @@ const AppointmentsCounselor = () => {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(false);
   const { user } = useRole();
-
-  // const appointments = [
   //   {
   //     id: 1,
   //     student: "Alice Johnson",
@@ -212,7 +210,11 @@ const AppointmentsCounselor = () => {
                   <Box display="flex" gap={1}>
                     {selected.status === "Pending" && (
                       <>
-                        <Button variant="contained" color="success">
+                        <Button
+                          onClick={handleApprove}
+                          variant="contained"
+                          color="success"
+                        >
                           Approve
                         </Button>
                         <Button variant="outlined" color="error">

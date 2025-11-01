@@ -334,7 +334,8 @@ const Students = () => {
             <>
               <Box display="flex" justifyContent="space-between" mb={2}>
                 <Typography variant="h6">
-                  Student Profile: {selectedStudent.first_name}
+                  Student Profile:{" "}
+                  {`${selectedStudent.first_name} ${selectedStudent.last_name}`}
                 </Typography>
                 <Button
                   onClick={handleCloseProfile}
@@ -380,7 +381,8 @@ const Students = () => {
                   </Typography>
 
                   <Typography variant="body1" color="text.secondary">
-                    <strong>Name:</strong> {selectedStudent.first_name}
+                    <strong>Name:</strong>{" "}
+                    {`${selectedStudent.first_name} ${selectedStudent.last_name}`}
                   </Typography>
 
                   <Typography variant="body1" color="text.secondary">

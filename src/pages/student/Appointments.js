@@ -396,12 +396,7 @@ const Appointments = () => {
                 </Grid>
 
                 {/* Right Column */}
-                <Grid
-                  item
-                  xs={12}
-                  md={6}
-                  sx={{ width: "55%", border: "1px solid" }}
-                >
+                <Grid item xs={12} md={6} sx={{ width: "55%" }}>
                   <Typography
                     variant="h6"
                     sx={{
@@ -439,6 +434,8 @@ const Appointments = () => {
                             alignItems: "center",
                             p: 2,
                             borderRadius: 3,
+                            border: "2px solid",
+                            borderColor: "primary.main",
                             boxShadow: 1,
                             backgroundColor: "#f9f9f9",
                           }}
