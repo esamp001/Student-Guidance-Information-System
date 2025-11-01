@@ -17,7 +17,7 @@ import {
 } from "@mui/material";
 import theme from "../../theme";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
-import { getBehaviorLabel } from "@/utils/getBehaviorLabel";
+import { analyzeBehavior } from "../../utils/behaviorUtils";
 
 const Students = () => {
   const [openProfile, setOpenProfile] = useState(false);
@@ -531,199 +531,63 @@ const Students = () => {
                       Loading history...
                     </Typography>
                   ) : AllRecords && AllRecords.overallNote ? (
-                    <Box
-                      sx={{
-                        p: 3,
-                        borderRadius: 3,
-                        boxShadow: 3,
-                        backgroundColor: "background.paper",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 3,
-                        transition:
-                          "transform 0.25s ease, box-shadow 0.25s ease",
-                        "&:hover": {
-                          transform: "scale(1.02)",
-                          boxShadow: 5,
-                        },
-                      }}
-                    >
-                      {/* Icon */}
-                      <Box
-                        sx={{
-                          width: 60,
-                          height: 60,
-                          borderRadius: "50%",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          backgroundColor: (() => {
-                            const note = AllRecords.overallNote.toLowerCase();
-                            if (
-                              note.includes("excellent") ||
-                              note.includes("outstanding") ||
-                              note.includes("great")
-                            )
-                              return "success.light";
-                            if (
-                              note.includes("good") ||
-                              note.includes("improving") ||
-                              note.includes("progress")
-                            )
-                              return "success.light";
-                            if (
-                              note.includes("average") ||
-                              note.includes("satisfactory")
-                            )
-                              return "info.light";
-                            if (
-                              note.includes("warning") ||
-                              note.includes("attention") ||
-                              note.includes("needs improvement")
-                            )
-                              return "warning.light";
-                            if (
-                              note.includes("poor") ||
-                              note.includes("disciplinary") ||
-                              note.includes("bad")
-                            )
-                              return "error.light";
-                            return "grey.300";
-                          })(),
-                          color: (() => {
-                            const note = AllRecords.overallNote.toLowerCase();
-                            if (
-                              note.includes("excellent") ||
-                              note.includes("outstanding") ||
-                              note.includes("great")
-                            )
-                              return "success.dark";
-                            if (
-                              note.includes("good") ||
-                              note.includes("improving") ||
-                              note.includes("progress")
-                            )
-                              return "success.dark";
-                            if (
-                              note.includes("average") ||
-                              note.includes("satisfactory")
-                            )
-                              return "info.dark";
-                            if (
-                              note.includes("warning") ||
-                              note.includes("attention") ||
-                              note.includes("needs improvement")
-                            )
-                              return "warning.dark";
-                            if (
-                              note.includes("poor") ||
-                              note.includes("disciplinary") ||
-                              note.includes("bad")
-                            )
-                              return "error.dark";
-                            return "text.secondary";
-                          })(),
-                          fontSize: "1.8rem",
-                        }}
-                      >
-                        {(() => {
-                          const note = AllRecords.overallNote.toLowerCase();
-                          if (
-                            note.includes("excellent") ||
-                            note.includes("outstanding") ||
-                            note.includes("great")
-                          )
-                            return "🌟";
-                          if (
-                            note.includes("good") ||
-                            note.includes("improving") ||
-                            note.includes("progress")
-                          )
-                            return "👍";
-                          if (
-                            note.includes("average") ||
-                            note.includes("satisfactory")
-                          )
-                            return "🟢";
-                          if (
-                            note.includes("warning") ||
-                            note.includes("attention") ||
-                            note.includes("needs improvement")
-                          )
-                            return "⚠️";
-                          if (
-                            note.includes("poor") ||
-                            note.includes("disciplinary") ||
-                            note.includes("bad")
-                          )
-                            return "🚫";
-                          return "💬";
-                        })()}
-                      </Box>
+                    (() => {
+                      const { label, color, emoji } = analyzeBehavior(
+                        AllRecords.overallNote
+                      );
 
-                      {/* Content */}
-                      <Box sx={{ flex: 1 }}>
-                        <Typography
-                          variant="subtitle1"
-                          fontWeight="bold"
-                          color="text.primary"
+                      return (
+                        <Box
+                          sx={{
+                            p: 3,
+                            borderRadius: 3,
+                            boxShadow: 3,
+                            backgroundColor: "background.paper",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 3,
+                            transition:
+                              "transform 0.25s ease, box-shadow 0.25s ease",
+                            "&:hover": {
+                              transform: "scale(1.02)",
+                              boxShadow: 5,
+                            },
+                          }}
                         >
-                          Summary
-                        </Typography>
+                          {/* Icon */}
+                          <Box
+                            sx={{
+                              width: 60,
+                              height: 60,
+                              borderRadius: "50%",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              backgroundColor: `${color.split(".")[0]}.light`,
+                              color: `${color.split(".")[0]}.dark`,
+                              fontSize: "1.8rem",
+                            }}
+                          >
+                            {emoji}
+                          </Box>
 
-                        <Typography
-                          variant="body1"
-                          color="text.secondary"
-                          sx={{ mt: 0.5, lineHeight: 1.6 }}
-                        >
-                          {AllRecords.overallNote}
-                        </Typography>
-
-                        {/* Smart tag detection */}
-                        <Box sx={{ mt: 1.5 }}>
-                          {(() => {
-                            const note = AllRecords.overallNote.toLowerCase();
-
-                            let label = "General Behavior";
-                            let color = "default";
-
-                            if (
-                              note.includes("excellent") ||
-                              note.includes("outstanding") ||
-                              note.includes("great")
-                            ) {
-                              label = "Excellent Behavior";
-                              color = "success.main";
-                            } else if (
-                              note.includes("good") ||
-                              note.includes("improving") ||
-                              note.includes("progress")
-                            ) {
-                              label = "Positive Behavior";
-                              color = "success.main";
-                            } else if (
-                              note.includes("average") ||
-                              note.includes("satisfactory")
-                            ) {
-                              label = "Average Performance";
-                              color = "info.main";
-                            } else if (
-                              note.includes("warning") ||
-                              note.includes("attention") ||
-                              note.includes("needs improvement")
-                            ) {
-                              label = "Needs Attention";
-                              color = "warning.main";
-                            } else if (
-                              note.includes("poor") ||
-                              note.includes("disciplinary") ||
-                              note.includes("bad")
-                            ) {
-                              label = "Concerning Behavior";
-                              color = "error.main";
-                            }
-
-                            return (
+                          {/* Content */}
+                          <Box sx={{ flex: 1 }}>
+                            <Typography
+                              variant="subtitle1"
+                              fontWeight="bold"
+                              color="text.primary"
+                            >
+                              Summary
+                            </Typography>
+                            <Typography
+                              variant="body1"
+                              color="text.secondary"
+                              sx={{ mt: 0.5, lineHeight: 1.6 }}
+                            >
+                              {AllRecords.overallNote}
+                            </Typography>
+                            <Box sx={{ mt: 1.5 }}>
                               <Chip
                                 label={label}
                                 sx={{
@@ -732,11 +596,11 @@ const Students = () => {
                                   fontWeight: 500,
                                 }}
                               />
-                            );
-                          })()}
+                            </Box>
+                          </Box>
                         </Box>
-                      </Box>
-                    </Box>
+                      );
+                    })()
                   ) : (
                     <Typography color="text.secondary">
                       No behavioral history available.
