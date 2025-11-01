@@ -15,7 +15,7 @@ import {
 import EventIcon from "@mui/icons-material/Event";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import PersonIcon from "@mui/icons-material/Person";
-import Appointments from "./../student/Appointments";
+import useSnackbar from "../../hooks/useSnackbar";
 import { useRole } from "../../context/RoleContext";
 
 const AppointmentsCounselor = () => {
@@ -23,6 +23,7 @@ const AppointmentsCounselor = () => {
   console.log(selected, "selected");
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(false);
+  const { showSnackbar, SnackbarComponent } = useSnackbar();
   const { user } = useRole();
   //   {
   //     id: 1,
@@ -76,6 +77,44 @@ const AppointmentsCounselor = () => {
 
     fetchAppointments();
   }, []);
+
+  const handleApprove = async (appointmentId) => {
+    setLoading(true);
+
+    try {
+      const response = await fetch(
+        `/appointmentRequest/appointments/${appointmentId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            ...appointments, // include all existing fields
+            status: "Confirmed", // update only the status
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to confirm appointment");
+      }
+
+      const data = await response.json();
+      console.log("Appointment confirmed:", data);
+
+      // Show success snackbar
+      showSnackbar("Appointment confirmed successfully!", "success");
+
+      // Optionally update local state if you keep a list of appointments
+      // setAppointments(prev => prev.map(a => a.id === appointmentId ? {...a, status: "Confirmed"} : a));
+    } catch (error) {
+      console.error("Error confirming appointment:", error);
+      showSnackbar("Failed to confirm appointment.", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <Box>
