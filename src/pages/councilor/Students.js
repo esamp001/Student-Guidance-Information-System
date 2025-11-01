@@ -529,111 +529,144 @@ const Students = () => {
                     <Typography color="text.secondary">
                       Loading history...
                     </Typography>
-                  ) : loading && loading.length > 0 ? (
+                  ) : AllRecords && AllRecords.overallNote ? (
                     <Box
-                      sx={{ display: "flex", flexDirection: "column", gap: 2 }}
+                      sx={{
+                        p: 3,
+                        borderRadius: 3,
+                        boxShadow: 3,
+                        backgroundColor: "background.paper",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 3,
+                        transition:
+                          "transform 0.25s ease, box-shadow 0.25s ease",
+                        "&:hover": {
+                          transform: "scale(1.02)",
+                          boxShadow: 5,
+                        },
+                      }}
                     >
-                      {behavioralHistory.map((entry, index) => (
-                        <Box
-                          key={index}
-                          sx={{
-                            display: "flex",
-                            alignItems: "flex-start",
-                            gap: 2,
-                            p: 2,
-                            borderRadius: 3,
-                            boxShadow: 2,
-                            backgroundColor: "background.paper",
-                            transition:
-                              "transform 0.2s ease, box-shadow 0.2s ease",
-                            "&:hover": {
-                              transform: "scale(1.02)",
-                              boxShadow: 4,
-                            },
-                          }}
+                      {/* Icon */}
+                      <Box
+                        sx={{
+                          width: 60,
+                          height: 60,
+                          borderRadius: "50%",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          backgroundColor: AllRecords.overallNote
+                            .toLowerCase()
+                            .includes("good")
+                            ? "success.light"
+                            : AllRecords.overallNote
+                                .toLowerCase()
+                                .includes("warning")
+                            ? "warning.light"
+                            : "error.light",
+                          color: AllRecords.overallNote
+                            .toLowerCase()
+                            .includes("good")
+                            ? "success.dark"
+                            : AllRecords.overallNote
+                                .toLowerCase()
+                                .includes("warning")
+                            ? "warning.dark"
+                            : "error.dark",
+                          fontSize: "1.8rem",
+                        }}
+                      >
+                        {AllRecords.overallNote.toLowerCase().includes("good")
+                          ? "🌟"
+                          : AllRecords.overallNote
+                              .toLowerCase()
+                              .includes("warning")
+                          ? "⚠️"
+                          : "🚫"}
+                      </Box>
+
+                      {/* Content */}
+                      <Box sx={{ flex: 1 }}>
+                        <Typography
+                          variant="subtitle1"
+                          fontWeight="bold"
+                          color="text.primary"
                         >
-                          {/* Icon or emoji based on type */}
-                          <Box
-                            sx={{
-                              width: 40,
-                              height: 40,
-                              borderRadius: "50%",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              backgroundColor:
-                                entry.type === "Good"
-                                  ? "success.light"
-                                  : entry.type === "Warning"
-                                  ? "warning.light"
-                                  : "error.light",
-                              color:
-                                entry.type === "Good"
-                                  ? "success.dark"
-                                  : entry.type === "Warning"
-                                  ? "warning.dark"
-                                  : "error.dark",
-                              fontWeight: "bold",
-                              fontSize: "1.2rem",
-                            }}
-                          >
-                            {entry.type === "Good"
-                              ? "👍"
-                              : entry.type === "Warning"
-                              ? "⚠️"
-                              : "🚫"}
-                          </Box>
+                          Summary
+                        </Typography>
 
-                          {/* Content */}
-                          <Box sx={{ flex: 1 }}>
-                            <Typography
-                              variant="subtitle1"
-                              fontWeight="bold"
-                              color="text.primary"
-                            >
-                              {entry.title}
-                            </Typography>
+                        <Typography
+                          variant="body1"
+                          color="text.secondary"
+                          sx={{ mt: 0.5, lineHeight: 1.6 }}
+                        >
+                          {AllRecords.overallNote}
+                        </Typography>
 
-                            <Typography
-                              variant="body2"
-                              color="text.secondary"
-                              sx={{ mt: 0.5 }}
-                            >
-                              {entry.description}
-                            </Typography>
+                        {/* Smart tag detection */}
+                        <Box sx={{ mt: 1.5 }}>
+                          {(() => {
+                            const note = AllRecords.overallNote.toLowerCase();
 
-                            <Box
-                              sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "space-between",
-                                mt: 1.5,
-                              }}
-                            >
+                            let label = "General Behavior";
+                            let color = "default";
+                            let emoji = "💬";
+
+                            if (
+                              note.includes("excellent") ||
+                              note.includes("outstanding") ||
+                              note.includes("great")
+                            ) {
+                              label = "Excellent Behavior";
+                              color = "success.main";
+                              emoji = "🌟";
+                            } else if (
+                              note.includes("good") ||
+                              note.includes("improving") ||
+                              note.includes("progress")
+                            ) {
+                              label = "Positive Behavior";
+                              color = "success.main";
+                              emoji = "👍";
+                            } else if (
+                              note.includes("average") ||
+                              note.includes("satisfactory")
+                            ) {
+                              label = "Average Performance";
+                              color = "info.main";
+                              emoji = "🟢";
+                            } else if (
+                              note.includes("warning") ||
+                              note.includes("attention") ||
+                              note.includes("needs improvement")
+                            ) {
+                              label = "Needs Attention";
+                              color = "warning.main";
+                              emoji = "⚠️";
+                            } else if (
+                              note.includes("poor") ||
+                              note.includes("disciplinary") ||
+                              note.includes("bad")
+                            ) {
+                              label = "Concerning Behavior";
+                              color = "error.main";
+                              emoji = "🚫";
+                            }
+
+                            return (
                               <Chip
-                                label={entry.type}
-                                size="small"
+                                label={`${emoji} ${label}`}
                                 sx={{
-                                  backgroundColor:
-                                    entry.type === "Good"
-                                      ? "success.main"
-                                      : entry.type === "Warning"
-                                      ? "warning.main"
-                                      : "error.main",
+                                  backgroundColor: color,
                                   color: "#fff",
                                   fontWeight: 500,
                                 }}
                               />
-                              <Typography
-                                variant="caption"
-                                color="text.secondary"
-                              >
-                                {new Date(entry.date).toLocaleDateString()}
-                              </Typography>
-                            </Box>
-                          </Box>
+                            );
+                          })()}
                         </Box>
-                      ))}
+                      </Box>
                     </Box>
                   ) : (
                     <Typography color="text.secondary">
