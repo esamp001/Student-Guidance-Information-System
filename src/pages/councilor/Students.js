@@ -28,9 +28,9 @@ const Students = () => {
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [markSelectedStudents, setMarkSelectedStudents] = useState([]);
-  const [records, setRecords] = useState([]);
+  const [AllRecords, setAllRecords] = useState([]);
 
-  console.log(markSelectedStudents, "mark selectedStudents");
+  console.log(AllRecords, "AllRecords");
 
   // Fetch students
   useEffect(() => {
@@ -61,7 +61,7 @@ const Students = () => {
       );
       if (!response.ok) throw new Error("Failed to fetch records");
       const data = await response.json();
-      setRecords(data);
+      setAllRecords(data);
     } catch (error) {
       console.error("Error fetching academic records:", error);
     } finally {
@@ -430,7 +430,7 @@ const Students = () => {
                     <Typography color="text.secondary">
                       Loading records...
                     </Typography>
-                  ) : records && records.length > 0 ? (
+                  ) : AllRecords && AllRecords.length > 0 ? (
                     <Box
                       sx={{
                         display: "flex",
@@ -438,7 +438,7 @@ const Students = () => {
                         gap: 1.5,
                       }}
                     >
-                      {records.map((record, index) => (
+                      {AllRecords.map((record, index) => (
                         <Box
                           key={index}
                           sx={{
@@ -484,7 +484,7 @@ const Students = () => {
                   )}
 
                   {/* GPA / Total Grades */}
-                  {totalGrades && (
+                  {AllRecords.totalGrades && (
                     <Box
                       sx={{
                         mt: 2,
@@ -504,7 +504,7 @@ const Students = () => {
                         fontWeight="bold"
                         color="primary"
                       >
-                        {records.totalGrades}
+                        {AllRecords.totalGrades}
                       </Typography>
                     </Box>
                   )}
