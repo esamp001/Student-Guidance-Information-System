@@ -17,6 +17,7 @@ import {
 } from "@mui/material";
 import theme from "../../theme";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import { getBehaviorLabel } from "@/utils/getBehaviorLabel";
 
 const Students = () => {
   const [openProfile, setOpenProfile] = useState(false);
@@ -685,7 +686,6 @@ const Students = () => {
 
                             let label = "General Behavior";
                             let color = "default";
-                            let emoji = "";
 
                             if (
                               note.includes("excellent") ||
@@ -725,7 +725,7 @@ const Students = () => {
 
                             return (
                               <Chip
-                                label={`${emoji} ${label}`}
+                                label={label}
                                 sx={{
                                   backgroundColor: color,
                                   color: "#fff",
