@@ -416,6 +416,8 @@ const Students = () => {
                     display: "flex",
                     flexDirection: "column",
                     gap: 2,
+                    maxHeight: 300, // maximum height in px, adjust as needed
+                    overflowY: "auto", // vertical scroll
                   }}
                 >
                   <Typography
