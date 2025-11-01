@@ -20,6 +20,7 @@ import { useRole } from "../../context/RoleContext";
 
 const AppointmentsCounselor = () => {
   const [selected, setSelected] = useState(null);
+  console.log(selected, "selected");
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(false);
   const { user } = useRole();
@@ -127,14 +128,18 @@ const AppointmentsCounselor = () => {
                     <ListItemText
                       primary={
                         <Typography fontWeight="bold">
-                          {`${appt.student_first_name} ${appt.student_last_name}`}
+                          {`${appt.student_first_name} ${
+                            appt.student_middle_name
+                              ? appt.student_middle_name + " "
+                              : ""
+                          }${appt.student_last_name}`}
                         </Typography>
                       }
                       secondary={
                         <>
                           <Typography variant="body2">{appt.type}</Typography>
                           <Typography variant="caption" color="text.secondary">
-                            {appt.date} • {appt.time}
+                            {appt.datetime_readable}
                           </Typography>
                         </>
                       }
@@ -174,15 +179,26 @@ const AppointmentsCounselor = () => {
 
                   <Box display="flex" alignItems="center" gap={1} mb={1}>
                     <PersonIcon color="action" />
-                    <Typography>{selected.student}</Typography>
+                    <Typography>
+                      {`${selected.student_first_name} ${
+                        selected.student_middle_name
+                          ? selected.student_middle_name + " "
+                          : ""
+                      }${selected.student_last_name}`}
+                    </Typography>
                   </Box>
                   <Box display="flex" alignItems="center" gap={1} mb={1}>
                     <EventIcon color="action" />
-                    <Typography>{selected.date}</Typography>
+                    <Typography>{selected.datetime_readable}</Typography>
                   </Box>
                   <Box display="flex" alignItems="center" gap={1} mb={2}>
                     <AccessTimeIcon color="action" />
-                    <Typography>{selected.time}</Typography>
+                    <Typography>
+                      {new Date(selected.datetime_readable).toLocaleTimeString(
+                        [],
+                        { hour: "2-digit", minute: "2-digit" }
+                      )}
+                    </Typography>
                   </Box>
 
                   <Chip
