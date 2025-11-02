@@ -122,15 +122,17 @@ router.put("/appointments/reject/:id", async (req, res) => {
 });
 
 // PUT: Update appointment status and rescheduled time
-router.put("/:appointment_id/reschedule", async (req, res) => {
+router.put("/:id/reschedule", async (req, res) => {
   const { id } = req.params;
   console.log(id, "id");
   const { status, rescheduled_time } = req.body;
 
+  console.log(rescheduled_time, "rescheduled_time");
+
   try {
     await knex("appointments").where({ id }).update({
       status,
-      rescheduled_time,
+      datetime: rescheduled_time,
       updated_at: new Date(),
     });
 

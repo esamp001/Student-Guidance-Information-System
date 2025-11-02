@@ -69,7 +69,19 @@ const AppointmentsCounselor = () => {
       }
 
       const data = await response.json();
-      console.log("Appointment updated:", data);
+
+      // update local state so UI refreshes immediately
+      setAppointments((prev) =>
+        prev.map((appt) =>
+          appt.id === selected.appointment_id
+            ? {
+                ...appt,
+                status: "Pending Reschedule",
+                datetime: selectedDateTime, // update the date locally too
+              }
+            : appt
+        )
+      );
 
       setOpen(false);
       showSnackbar("Reschedule request sent!", "success");
