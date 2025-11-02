@@ -324,14 +324,27 @@ const AppointmentsCounselor = () => {
                           Reschedule
                         </Button>
 
-                        <Dialog open={open} onClose={handleClose}>
+                        <Dialog
+                          open={open}
+                          onClose={handleClose}
+                          sx={{
+                            "& .MuiDialog-paper": {
+                              position: "absolute",
+                              top: "10%", // distance from top of the viewport
+                              margin: 0,
+                              transform: "none", // remove default centering transform
+                            },
+                          }}
+                        >
                           <DialogTitle>Reschedule Appointment</DialogTitle>
+
                           <DialogContent
                             sx={{
                               height: 100,
                               display: "flex",
-                              justifyContent: "column",
+                              flexDirection: "column", // fix layout
                               alignItems: "center",
+                              border: "1px solid",
                             }}
                           >
                             <LocalizationProvider dateAdapter={AdapterDateFns}>
