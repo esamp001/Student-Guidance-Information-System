@@ -43,29 +43,7 @@ const AppointmentsCounselor = () => {
 
   console.log(selectedDateTime, "selectedDateTime");
 
-  const handleClickOpen = (selected) => {
-    // setSelected(selected);
-
-    // if (selected?.datetime_readable) {
-    //   try {
-    //     const parsedDate = parse(
-    //       selected.datetime_readable,
-    //       "EEE, MMM dd, yyyy - hh:mm a",
-    //       new Date()
-    //     );
-    //     setSelectedDateTime(parsedDate);
-    //   } catch (error) {
-    //     console.error("Failed to parse datetime_readable:", error);
-    //     // fallback to current date
-    //     setSelectedDateTime(new Date());
-    //   }
-    // } else {
-    //   // fallback when datetime_readable is missing
-    //   setSelectedDateTime(new Date());
-    // }
-
-    setOpen(true);
-  };
+  const handleClickOpen = () => setOpen(true);
 
   const handleClose = () => setOpen(false);
 
@@ -73,7 +51,7 @@ const AppointmentsCounselor = () => {
     console.log(selected, "selected");
     try {
       const response = await fetch(
-        `/appointmentRequest/appointments/${selected.appointment_id}/reschedule`,
+        `/appointmentRequest/${selected.appointment_id}/reschedule`,
         {
           method: "PUT",
           headers: {
@@ -127,6 +105,13 @@ const AppointmentsCounselor = () => {
 
     fetchAppointments();
   }, []);
+
+  //  When the appointment changes, update the picker
+  useEffect(() => {
+    if (selected && selected.datetime) {
+      setSelectedDateTime(new Date(selected.datetime));
+    }
+  }, [selected]);
 
   const handleApprove = async (appointment) => {
     setLoading(true);
