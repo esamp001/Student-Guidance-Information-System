@@ -95,6 +95,48 @@ const AppointmentsCounselor = () => {
     }
   };
 
+  const handleReject = async (appointment) => {
+    setLoading(true);
+
+    try {
+      const response = await fetch(
+        `/appointmentRequest/appointments/reject/${appointment.appointment_id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...appointment, status: "Rejected" }),
+        }
+      );
+
+      if (!response.ok) throw new Error("Failed to confirm appointment");
+
+      const data = await response.json();
+
+      showSnackbar("Appointment confirmed successfully!", "success");
+
+      // Update appointments list
+      setAppointments((prev) =>
+        prev.map((a) =>
+          a.appointment_id === appointment.appointment_id
+            ? { ...a, status: "Confirmed" }
+            : a
+        )
+      );
+
+      // Update selected appointment only
+      setSelected((prev) =>
+        prev && prev.appointment_id === appointment.appointment_id
+          ? { ...prev, status: "Confirmed" }
+          : prev
+      );
+    } catch (error) {
+      console.error("Error confirming appointment:", error);
+      showSnackbar("Failed to confirm appointment.", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Box>
       {/* Header */}
@@ -178,6 +220,8 @@ const AppointmentsCounselor = () => {
                             ? theme.palette.primary.red
                             : appt.status === "Completed"
                             ? theme.palette.primary.secondary
+                            : appt.status === "Rejected"
+                            ? theme.palette.error.main // or any custom color you prefer
                             : theme.palette.grey[500],
                         color: "#fff",
                       }}
@@ -242,7 +286,11 @@ const AppointmentsCounselor = () => {
                         >
                           Approve
                         </Button>
-                        <Button variant="outlined" color="error">
+                        <Button
+                          onClick={() => handleReject(selected)}
+                          variant="outlined"
+                          color="error"
+                        >
                           Reject
                         </Button>
                       </>
@@ -268,6 +316,7 @@ const AppointmentsCounselor = () => {
           </Card>
         </Box>
       </Box>
+      {SnackbarComponent}
     </Box>
   );
 };
