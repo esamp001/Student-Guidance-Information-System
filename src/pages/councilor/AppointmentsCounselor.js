@@ -40,9 +40,32 @@ const AppointmentsCounselor = () => {
   const handleClickOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
 
-  const handleSave = () => {
-    console.log("Rescheduled to:", selectedDateTime.format("YYYY-MM-DD HH:mm"));
-    setOpen(false);
+  const handleSave = async () => {
+    try {
+      // Example API endpoint — adjust to match your backend route
+      const response = await fetch(`/api/appointments/${appointmentId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          status: "Pending Reschedule",
+          rescheduled_time: selectedDateTime, // send selected datetime
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update appointment");
+      }
+
+      const data = await response.json();
+      console.log("Update successful:", data);
+
+      // Close the dialog after successful save
+      setOpen(false);
+    } catch (error) {
+      console.error("Error updating appointment:", error);
+    }
   };
 
   useEffect(() => {
