@@ -20,7 +20,6 @@ import { useRole } from "../../context/RoleContext";
 
 const AppointmentsCounselor = () => {
   const [selected, setSelected] = useState(null);
-  console.log(selected, "selected");
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(false);
   const { showSnackbar, SnackbarComponent } = useSnackbar();
