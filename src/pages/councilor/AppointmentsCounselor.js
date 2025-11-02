@@ -108,17 +108,17 @@ const AppointmentsCounselor = () => {
         }
       );
 
-      if (!response.ok) throw new Error("Failed to confirm appointment");
+      if (!response.ok) throw new Error("Failed to reject appointment");
 
       const data = await response.json();
 
-      showSnackbar("Appointment confirmed successfully!", "success");
+      showSnackbar("Appointment rejected successfully!", "success");
 
       // Update appointments list
       setAppointments((prev) =>
         prev.map((a) =>
           a.appointment_id === appointment.appointment_id
-            ? { ...a, status: "Confirmed" }
+            ? { ...a, status: "Rejected" }
             : a
         )
       );
@@ -126,12 +126,12 @@ const AppointmentsCounselor = () => {
       // Update selected appointment only
       setSelected((prev) =>
         prev && prev.appointment_id === appointment.appointment_id
-          ? { ...prev, status: "Confirmed" }
+          ? { ...prev, status: "Rejected" }
           : prev
       );
     } catch (error) {
-      console.error("Error confirming appointment:", error);
-      showSnackbar("Failed to confirm appointment.", "error");
+      console.error("Error rejecting appointment:", error);
+      showSnackbar("Failed to reject appointment.", "error");
     } finally {
       setLoading(false);
     }
@@ -221,7 +221,7 @@ const AppointmentsCounselor = () => {
                             : appt.status === "Completed"
                             ? theme.palette.primary.secondary
                             : appt.status === "Rejected"
-                            ? theme.palette.error.main // or any custom color you prefer
+                            ? theme.palette.error.main
                             : theme.palette.grey[500],
                         color: "#fff",
                       }}
