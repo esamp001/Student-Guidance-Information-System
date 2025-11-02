@@ -37,7 +37,9 @@ const AppointmentsCounselor = () => {
   const { showSnackbar, SnackbarComponent } = useSnackbar();
   const { user } = useRole();
   const [open, setOpen] = useState(false);
-  const [selectedDateTime, setSelectedDateTime] = useState(new Date());
+  const [selectedDateTime, setSelectedDateTime] = useState(
+    selected ? new Date(selected.datetime) : null
+  );
 
   console.log(selectedDateTime, "selectedDateTime");
 
