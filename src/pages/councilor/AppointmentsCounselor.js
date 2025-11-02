@@ -17,6 +17,17 @@ import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import PersonIcon from "@mui/icons-material/Person";
 import useSnackbar from "../../hooks/useSnackbar";
 import { useRole } from "../../context/RoleContext";
+import {
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from "@mui/material";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import dayjs from "dayjs";
 
 const AppointmentsCounselor = () => {
   const [selected, setSelected] = useState(null);
@@ -24,6 +35,11 @@ const AppointmentsCounselor = () => {
   const [loading, setLoading] = useState(false);
   const { showSnackbar, SnackbarComponent } = useSnackbar();
   const { user } = useRole();
+  const [open, setOpen] = useState(false);
+  const [selectedDateTime, setSelectedDateTime] = useState(dayjs());
+
+  const handleClickOpen = () => setOpen(true);
+  const handleClose = () => setOpen(false);
 
   useEffect(() => {
     if (!user.id) return; // Don't fetch if no ID
@@ -295,9 +311,41 @@ const AppointmentsCounselor = () => {
                       </>
                     )}
                     {selected.status === "Confirmed" && (
-                      <Button variant="outlined" color="warning">
-                        Reschedule
-                      </Button>
+                      <>
+                        <Button
+                          variant="outlined"
+                          color="warning"
+                          onClick={handleClickOpen}
+                        >
+                          Reschedule
+                        </Button>
+
+                        <Dialog open={open} onClose={handleClose}>
+                          <DialogTitle>Reschedule Appointment</DialogTitle>
+                          <DialogContent>
+                            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                              <DateTimePicker
+                                label="Select new date & time"
+                                value={selectedDateTime}
+                                onChange={(newValue) =>
+                                  setSelectedDateTime(newValue)
+                                }
+                                sx={{ mt: 2 }}
+                              />
+                            </LocalizationProvider>
+                          </DialogContent>
+                          <DialogActions>
+                            <Button onClick={handleClose}>Cancel</Button>
+                            <Button
+                              onClick={handleSave}
+                              variant="contained"
+                              color="warning"
+                            >
+                              Save
+                            </Button>
+                          </DialogActions>
+                        </Dialog>
+                      </>
                     )}
                   </Box>
                 </>
