@@ -27,10 +27,12 @@ import { useRole } from "../../context/RoleContext";
 import { LocalizationProvider, DateTimePicker } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import { format } from "date-fns";
 
 const AppointmentsCounselor = () => {
   const [selected, setSelected] = useState(null);
   const [appointments, setAppointments] = useState([]);
+  console.log(appointments, "appointments");
   const [loading, setLoading] = useState(false);
   const { showSnackbar, SnackbarComponent } = useSnackbar();
   const { user } = useRole();
@@ -181,6 +183,20 @@ const AppointmentsCounselor = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDateTimeChange = (newValue) => {
+    if (!newValue) return;
+
+    const formatted = format(newValue, "EEE, MMM dd, yyyy - hh:mm a");
+
+    setAppointments((prev) =>
+      prev.map((appt) =>
+        appt.appointment_id === selected.appointment_id
+          ? { ...appt, datetime_readable: formatted }
+          : appt
+      )
+    );
   };
 
   return (
@@ -379,9 +395,7 @@ const AppointmentsCounselor = () => {
                               <DateTimePicker
                                 label="Select new date & time"
                                 value={selectedDateTime}
-                                onChange={(newValue) =>
-                                  setSelectedDateTime(newValue)
-                                }
+                                onChange={handleDateTimeChange}
                                 renderInput={(params) => (
                                   <TextField
                                     {...params}
