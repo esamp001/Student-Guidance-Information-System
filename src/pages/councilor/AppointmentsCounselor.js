@@ -73,11 +73,20 @@ const AppointmentsCounselor = () => {
       // update local state so UI refreshes immediately
       setAppointments((prev) =>
         prev.map((appt) =>
-          appt.id === selected.appointment_id
+          appt.appointment_id === selected.appointment_id
             ? {
                 ...appt,
                 status: "Pending Reschedule",
-                datetime: selectedDateTime, // update the date locally too
+                datetime: selectedDateTime, // keep this up to date
+                datetime_readable: selectedDateTime.toLocaleString("en-US", {
+                  weekday: "short",
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  hour12: true,
+                }),
               }
             : appt
         )
@@ -294,6 +303,8 @@ const AppointmentsCounselor = () => {
                             ? theme.palette.primary.secondary
                             : appt.status === "Rejected"
                             ? theme.palette.error.main
+                            : appt.status === "Pending Reschedule"
+                            ? theme.palette.warning.main // or any custom color like theme.palette.primary.orange
                             : theme.palette.grey[500],
                         color: "#fff",
                       }}

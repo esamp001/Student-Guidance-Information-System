@@ -149,15 +149,17 @@ const History = () => {
           <TableBody>
             {records.map((session, index) => (
               <TableRow key={index}>
-                <TableCell>{session.datetime}</TableCell>
+                <TableCell>{session.datetime || "N/A"}</TableCell>
                 <TableCell>
                   {[session.first_name, session.last_name]
                     .filter(Boolean)
-                    .join(" ")}
+                    .join(" ") || "N/A"}
                 </TableCell>
-                <TableCell>{session.type}</TableCell>
-                <TableCell>{session.reason}</TableCell>
-                <TableCell>{getStatusChip(session.status)}</TableCell>
+                <TableCell>{session.type || "N/A"}</TableCell>
+                <TableCell>{session.reason || "N/A"}</TableCell>
+                <TableCell>
+                  {getStatusChip(session.status || "Unknown")}
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>

@@ -9,6 +9,10 @@ import {
   TextField,
   MenuItem,
   Paper,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 // Icon
 
@@ -43,7 +47,8 @@ const Appointments = () => {
   const [counselors, setCounselors] = useState([]);
   const [loading, setLoading] = useState(false);
   const [upcomingAppointments, setUpcomingAppointments] = useState([]);
-  // const [loadingAppointments, setLoadingAppointments] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
     type: "", // Appointment Type
     counselor_id: "", // Selected Counselor
@@ -173,6 +178,16 @@ const Appointments = () => {
         "error"
       );
     }
+  };
+
+  const handleOpen = (appt) => {
+    setSelectedAppointment(appt);
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+    setSelectedAppointment(null);
   };
 
   useEffect(() => {
@@ -426,8 +441,10 @@ const Appointments = () => {
                     ) : (
                       upcomingAppointments.map((appt) => (
                         <Paper
+                          onClick={() => handleOpen(appt)} // Click to open modal
                           key={appt.id}
                           sx={{
+                            cursor: "pointer",
                             display: "flex",
                             justifyContent: "space-between",
                             alignItems: "center",
@@ -470,6 +487,49 @@ const Appointments = () => {
                       ))
                     )}
                   </Box>
+                  <Dialog
+                    open={open}
+                    onClose={handleClose}
+                    maxWidth="sm"
+                    fullWidth
+                  >
+                    <DialogTitle>Appointment Details</DialogTitle>
+                    <DialogContent dividers>
+                      {selectedAppointment ? (
+                        <>
+                          <Typography variant="subtitle1" fontWeight={600}>
+                            {selectedAppointment.type || "N/A"} Appointment
+                          </Typography>
+                          <Typography variant="body2" sx={{ mt: 1 }}>
+                            <strong>Counselor:</strong>{" "}
+                            {selectedAppointment.counselorName || "N/A"}
+                          </Typography>
+                          <Typography variant="body2" sx={{ mt: 1 }}>
+                            <strong>Date & Time:</strong>{" "}
+                            {selectedAppointment.datetime
+                              ? new Date(
+                                  selectedAppointment.datetime
+                                ).toLocaleString("en-PH", {
+                                  dateStyle: "medium",
+                                  timeStyle: "short",
+                                })
+                              : "N/A"}
+                          </Typography>
+                          <Typography variant="body2" sx={{ mt: 1 }}>
+                            <strong>Status:</strong>{" "}
+                            {selectedAppointment.status || "Pending"}
+                          </Typography>
+                        </>
+                      ) : (
+                        <Typography>No appointment selected.</Typography>
+                      )}
+                    </DialogContent>
+                    <DialogActions>
+                      <Button onClick={handleClose}>Close</Button>
+                      {/* Optional: add actions like */}
+                      {/* <Button variant="contained" color="primary">Reschedule</Button> */}
+                    </DialogActions>
+                  </Dialog>
                 </Grid>
               </Grid>
             </CardContent>
