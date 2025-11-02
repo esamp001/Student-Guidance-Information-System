@@ -342,9 +342,10 @@ const AppointmentsCounselor = () => {
                             sx={{
                               height: 100,
                               display: "flex",
-                              flexDirection: "column", // fix layout
+                              flexDirection: "column",
                               alignItems: "center",
-                              border: "1px solid",
+                              justifyContent: "flex-end",
+                              position: "relative",
                             }}
                           >
                             <LocalizationProvider dateAdapter={AdapterDateFns}>
