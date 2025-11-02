@@ -305,7 +305,7 @@ const AppointmentsCounselor = () => {
               ) : (
                 <Box textAlign="center" sx={{ alignItems: "center" }} py={4}>
                   <Typography variant="h6" color="text.secondary">
-                    No appointments yet.
+                    No appointments selected yet.
                   </Typography>
                   <Typography variant="subtitle2">
                     Please select an appointment to view its details.
