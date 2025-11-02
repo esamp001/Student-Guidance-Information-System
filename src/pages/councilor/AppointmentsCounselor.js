@@ -27,19 +27,44 @@ import { useRole } from "../../context/RoleContext";
 import { LocalizationProvider, DateTimePicker } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
-import { format } from "date-fns";
+import { parse } from "date-fns";
 
 const AppointmentsCounselor = () => {
   const [selected, setSelected] = useState(null);
+  console.log(selected, "selected");
   const [appointments, setAppointments] = useState([]);
-  console.log(appointments, "appointments");
   const [loading, setLoading] = useState(false);
   const { showSnackbar, SnackbarComponent } = useSnackbar();
   const { user } = useRole();
   const [open, setOpen] = useState(false);
   const [selectedDateTime, setSelectedDateTime] = useState(new Date());
 
-  const handleClickOpen = () => setOpen(true);
+  console.log(selectedDateTime, "selectedDateTime");
+
+  const handleClickOpen = (selected) => {
+    // setSelected(selected);
+
+    // if (selected?.datetime_readable) {
+    //   try {
+    //     const parsedDate = parse(
+    //       selected.datetime_readable,
+    //       "EEE, MMM dd, yyyy - hh:mm a",
+    //       new Date()
+    //     );
+    //     setSelectedDateTime(parsedDate);
+    //   } catch (error) {
+    //     console.error("Failed to parse datetime_readable:", error);
+    //     // fallback to current date
+    //     setSelectedDateTime(new Date());
+    //   }
+    // } else {
+    //   // fallback when datetime_readable is missing
+    //   setSelectedDateTime(new Date());
+    // }
+
+    setOpen(true);
+  };
+
   const handleClose = () => setOpen(false);
 
   const handleSave = async (selected) => {
@@ -183,20 +208,6 @@ const AppointmentsCounselor = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleDateTimeChange = (newValue) => {
-    if (!newValue) return;
-
-    const formatted = format(newValue, "EEE, MMM dd, yyyy - hh:mm a");
-
-    setAppointments((prev) =>
-      prev.map((appt) =>
-        appt.appointment_id === selected.appointment_id
-          ? { ...appt, datetime_readable: formatted }
-          : appt
-      )
-    );
   };
 
   return (
@@ -395,7 +406,9 @@ const AppointmentsCounselor = () => {
                               <DateTimePicker
                                 label="Select new date & time"
                                 value={selectedDateTime}
-                                onChange={handleDateTimeChange}
+                                onChange={(newValue) =>
+                                  setSelectedDateTime(newValue)
+                                }
                                 renderInput={(params) => (
                                   <TextField
                                     {...params}
