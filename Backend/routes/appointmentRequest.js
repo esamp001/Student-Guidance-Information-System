@@ -65,9 +65,6 @@ router.put("/appointments/:id", async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
 
-  console.log(id, "id");
-  console.log(status, "status");
-
   if (!status) {
     return res.status(400).json({ message: "Status is required" });
   }
@@ -121,6 +118,25 @@ router.put("/appointments/reject/:id", async (req, res) => {
   } catch (error) {
     console.error("Error rejecting appointment:", error);
     res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+// PUT: Update appointment status and rescheduled time
+router.put("/:appointment_id/reschedule", async (req, res) => {
+  const { appointment_id } = req.params;
+  const { status, rescheduled_time } = req.body;
+
+  try {
+    await db("appointments").where({ appointment_id }).update({
+      status,
+      rescheduled_time,
+      updated_at: new Date(),
+    });
+
+    res.json({ message: "Appointment updated successfully" });
+  } catch (error) {
+    console.error("Error updating appointment:", error);
+    res.status(500).json({ error: "Failed to update appointment" });
   }
 });
 

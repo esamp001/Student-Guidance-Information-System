@@ -40,31 +40,35 @@ const AppointmentsCounselor = () => {
   const handleClickOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
 
-  const handleSave = async () => {
+  const handleSave = async (selected) => {
+    console.log(selected, "selected");
     try {
-      // Example API endpoint — adjust to match your backend route
-      const response = await fetch(`/api/appointments/${appointmentId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          status: "Pending Reschedule",
-          rescheduled_time: selectedDateTime, // send selected datetime
-        }),
-      });
+      const response = await fetch(
+        `/appointmentRequest/appointments/${selected.appointment_id}/reschedule`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            status: "Pending Reschedule",
+            rescheduled_time: selectedDateTime.toISOString(), // ISO for safety
+          }),
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Failed to update appointment");
       }
 
       const data = await response.json();
-      console.log("Update successful:", data);
+      console.log("Appointment updated:", data);
 
-      // Close the dialog after successful save
       setOpen(false);
+      showSnackbar("Reschedule request sent!", "success");
     } catch (error) {
       console.error("Error updating appointment:", error);
+      showSnackbar("Failed to update appointment.", "error");
     }
   };
 
@@ -402,7 +406,7 @@ const AppointmentsCounselor = () => {
                           <DialogActions>
                             <Button onClick={handleClose}>Cancel</Button>
                             <Button
-                              onClick={handleSave}
+                              onClick={() => handleSave(selected)}
                               variant="contained"
                               color="warning"
                             >
