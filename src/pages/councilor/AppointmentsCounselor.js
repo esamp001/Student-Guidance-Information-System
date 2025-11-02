@@ -11,23 +11,22 @@ import {
   List,
   ListItem,
   ListItemText,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  InputAdornment,
+  IconButton,
 } from "@mui/material";
 import EventIcon from "@mui/icons-material/Event";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import PersonIcon from "@mui/icons-material/Person";
 import useSnackbar from "../../hooks/useSnackbar";
 import { useRole } from "../../context/RoleContext";
-import {
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-} from "@mui/material";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import dayjs from "dayjs";
+import { LocalizationProvider, DateTimePicker } from "@mui/x-date-pickers";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 
 const AppointmentsCounselor = () => {
   const [selected, setSelected] = useState(null);
@@ -36,10 +35,15 @@ const AppointmentsCounselor = () => {
   const { showSnackbar, SnackbarComponent } = useSnackbar();
   const { user } = useRole();
   const [open, setOpen] = useState(false);
-  const [selectedDateTime, setSelectedDateTime] = useState(dayjs());
+  const [selectedDateTime, setSelectedDateTime] = useState(new Date());
 
   const handleClickOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
+
+  const handleSave = () => {
+    console.log("Rescheduled to:", selectedDateTime.format("YYYY-MM-DD HH:mm"));
+    setOpen(false);
+  };
 
   useEffect(() => {
     if (!user.id) return; // Don't fetch if no ID
@@ -322,18 +326,42 @@ const AppointmentsCounselor = () => {
 
                         <Dialog open={open} onClose={handleClose}>
                           <DialogTitle>Reschedule Appointment</DialogTitle>
-                          <DialogContent>
-                            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                          <DialogContent
+                            sx={{
+                              height: 100,
+                              display: "flex",
+                              justifyContent: "column",
+                              alignItems: "center",
+                            }}
+                          >
+                            <LocalizationProvider dateAdapter={AdapterDateFns}>
                               <DateTimePicker
                                 label="Select new date & time"
                                 value={selectedDateTime}
                                 onChange={(newValue) =>
                                   setSelectedDateTime(newValue)
                                 }
-                                sx={{ mt: 2 }}
+                                renderInput={(params) => (
+                                  <TextField
+                                    {...params}
+                                    fullWidth
+                                    sx={{ mt: 2 }}
+                                    InputProps={{
+                                      ...params.InputProps,
+                                      endAdornment: (
+                                        <InputAdornment position="end">
+                                          <IconButton>
+                                            <CalendarTodayIcon />
+                                          </IconButton>
+                                        </InputAdornment>
+                                      ),
+                                    }}
+                                  />
+                                )}
                               />
                             </LocalizationProvider>
                           </DialogContent>
+
                           <DialogActions>
                             <Button onClick={handleClose}>Cancel</Button>
                             <Button
