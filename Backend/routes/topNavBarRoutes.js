@@ -34,7 +34,7 @@ router.get("/data/lookup", async (req, res) => {
         .innerJoin("users as us", "us.id", "cl.user_id")
         .where("us.id", userId)
         .first();
-    } else {
+    } else if (user.role === "admin") {
       data = await knex("administrator as am")
         .select("am.first_name", "am.middle_name", "am.last_name")
         .innerJoin("users as us", "us.id", "cl.user_id")
