@@ -175,6 +175,7 @@ const Login = () => {
   // States
   const [value, setValue] = useState(0);
   const [userForm, setUserForm] = useState(initialUser);
+  console.log(userForm, "userForm");
   const [formData, setformData] = useState(initialForm);
   const [loading, setLoading] = useState(false);
 
@@ -239,7 +240,6 @@ const Login = () => {
       });
 
       const data = await response.json();
-      console.log(data, "data");
 
       if (response.ok && data.user) {
         showSnackbar(data.message || "Login successful!", "success");
