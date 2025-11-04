@@ -183,7 +183,6 @@ const Appointments = () => {
   // Handle api accept reject
 
   const handleAcceptReschedule = async (appointment) => {
-    console.log(appointment, "appointment");
     setLoading(true);
 
     try {
