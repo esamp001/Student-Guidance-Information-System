@@ -180,6 +180,92 @@ const Appointments = () => {
     }
   };
 
+  // Handle api accept reject
+
+  const handleAcceptReschedule = async (appointment) => {
+    setLoading(true);
+
+    try {
+      const response = await fetch(
+        `/appointmentRequest/appointments/${appointment.appointment_id}/reschedule`,
+        {
+          method: "PUT", // or PATCH depending on your API
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...appointment, status: "Accepted" }),
+        }
+      );
+
+      if (!response.ok) throw new Error("Failed to accept reschedule");
+
+      const data = await response.json();
+
+      showSnackbar("Reschedule accepted successfully!", "success");
+
+      // // Update appointments list
+      // setUpcomingAppointments((prev) =>
+      //   prev.map((a) =>
+      //     a.appointment_id === appointment.appointment_id
+      //       ? { ...a, status: "Accepted" }
+      //       : a
+      //   )
+      // );
+
+      // Update selected appointment only
+      // setSelected((prev) =>
+      //   prev && prev.appointment_id === appointment.appointment_id
+      //     ? { ...prev, status: "Accepted" }
+      //     : prev
+      // );
+    } catch (error) {
+      console.error("Error accepting reschedule:", error);
+      showSnackbar("Failed to accept reschedule.", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRejectReschedule = async (appointment) => {
+    setLoading(true);
+
+    try {
+      const response = await fetch(
+        `/appointmentRequest/appointments/${appointment.appointment_id}/reschedule`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...appointment, status: "Rejected" }),
+        }
+      );
+
+      if (!response.ok) throw new Error("Failed to reject reschedule");
+
+      const data = await response.json();
+
+      showSnackbar("Reschedule rejected successfully!", "success");
+
+      // Update appointments list
+      // setUpcomingAppointments((prev) =>
+      //   prev.map((a) =>
+      //     a.appointment_id === appointment.appointment_id
+      //       ? { ...a, status: "Rejected" }
+      //       : a
+      //   )
+      // );
+
+      // // Update selected appointment only
+      // setSelected((prev) =>
+      //   prev && prev.appointment_id === appointment.appointment_id
+      //     ? { ...prev, status: "Rejected" }
+      //     : prev
+      // );
+    } catch (error) {
+      console.error("Error rejecting reschedule:", error);
+      showSnackbar("Failed to reject reschedule.", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleOpen = (appt) => {
     setSelectedAppointment(appt);
     setOpen(true);
@@ -519,6 +605,69 @@ const Appointments = () => {
                             <strong>Status:</strong>{" "}
                             {selectedAppointment.status || "Pending"}
                           </Typography>
+
+                          {selectedAppointment.status ===
+                            "Pending Reschedule" && (
+                            <Box
+                              sx={{
+                                p: 2,
+                                mb: 2,
+                                mt: 2,
+                                border: "1px solid #ccc",
+                                borderRadius: 2,
+                                backgroundColor: "#f9f9f9",
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: 2,
+                              }}
+                            >
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  width: "100%",
+                                  justifyContent: "center",
+                                  alignItems: "center",
+                                }}
+                              >
+                                <Typography variant="body1">
+                                  Counselor request for reschedule, do you want
+                                  to accept?
+                                </Typography>
+                              </Box>
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  gap: 1,
+                                  justifyContent: "center",
+                                  alignItems: "center",
+                                }}
+                              >
+                                <Button
+                                  onClick={() =>
+                                    handleAcceptReschedule(
+                                      selectedAppointment.id
+                                    )
+                                  }
+                                  variant="contained"
+                                  color="primary"
+                                >
+                                  Accept
+                                </Button>
+
+                                <Button
+                                  onClick={() =>
+                                    handleRejectReschedule(
+                                      selectedAppointment.id
+                                    )
+                                  }
+                                  variant="outlined"
+                                  color="error"
+                                >
+                                  Reject
+                                </Button>
+                              </Box>
+                            </Box>
+                          )}
                         </>
                       ) : (
                         <Typography>No appointment selected.</Typography>
