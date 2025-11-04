@@ -207,7 +207,7 @@ const Students = () => {
         </Box>
       )}
 
-      <Grid container spacing={4}>
+      <Grid sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }} container spacing={4}>
         {filteredStudents && filteredStudents.length > 0 ? (
           filteredStudents.map((student, index) => (
             <Grid item xs={12} md={6} lg={4} key={index}>
@@ -250,8 +250,8 @@ const Students = () => {
                             student.status === "Active"
                               ? theme.palette.primary.tertiary
                               : student.status === "On-hold"
-                              ? theme.palette.primary.red
-                              : theme.palette.grey[500],
+                                ? theme.palette.primary.red
+                                : theme.palette.grey[500],
                           color: "#fff",
                         }}
                       />
@@ -296,7 +296,7 @@ const Students = () => {
               flexDirection="column"
               alignItems="center"
               justifyContent="center"
-              sx={{ py: 6 }}
+              sx={{ py: 6, width: '100%' }}
             >
               <Typography variant="h6" color="text.secondary" gutterBottom>
                 No students found
@@ -392,8 +392,8 @@ const Students = () => {
                           selectedStudent.status === "Active"
                             ? "success.main"
                             : selectedStudent.status === "On-hold"
-                            ? "warning.main"
-                            : "grey.500",
+                              ? "warning.main"
+                              : "grey.500",
                         color: "#fff",
                         fontWeight: 500,
                       }}
@@ -465,10 +465,10 @@ const Students = () => {
                                 record.grade === "A+" || record.grade === "A"
                                   ? "success.main"
                                   : record.grade.startsWith("B")
-                                  ? "info.main"
-                                  : record.grade.startsWith("C")
-                                  ? "warning.main"
-                                  : "error.main",
+                                    ? "info.main"
+                                    : record.grade.startsWith("C")
+                                      ? "warning.main"
+                                      : "error.main",
                               color: "#fff",
                               fontWeight: "bold",
                             }}
