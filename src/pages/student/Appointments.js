@@ -183,11 +183,12 @@ const Appointments = () => {
   // Handle api accept reject
 
   const handleAcceptReschedule = async (appointment) => {
+    console.log(appointment, "appointment");
     setLoading(true);
 
     try {
       const response = await fetch(
-        `/appointmentRequest/appointments/${appointment.appointment_id}/reschedule`,
+        `/appointmentRequest/appointments/${appointment}/reschedule/accept`,
         {
           method: "PUT", // or PATCH depending on your API
           headers: { "Content-Type": "application/json" },
@@ -229,7 +230,7 @@ const Appointments = () => {
 
     try {
       const response = await fetch(
-        `/appointmentRequest/appointments/${appointment.appointment_id}/reschedule`,
+        `/appointmentRequest/appointments/${appointment}/reschedule/reject`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
