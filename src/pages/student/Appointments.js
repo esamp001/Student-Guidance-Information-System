@@ -23,23 +23,6 @@ import { format, toZonedTime } from "date-fns-tz";
 import useSnackbar from "../../hooks/useSnackbar";
 import { useRole } from "../../context/RoleContext";
 
-const upcomingAppointments = [
-  {
-    id: 1,
-    type: "Academic",
-    counselorName: "John Doe",
-    datetime: "2025-10-26T10:30:00+08:00",
-    status: "Confirmed",
-  },
-  {
-    id: 2,
-    type: "Personal",
-    counselorName: "Jane Smith",
-    datetime: "2025-10-27T14:00:00+08:00",
-    status: "Pending",
-  },
-];
-
 const Appointments = () => {
   // States
   const { user } = useRole();
@@ -47,6 +30,7 @@ const Appointments = () => {
   const [counselors, setCounselors] = useState([]);
   const [loading, setLoading] = useState(false);
   const [upcomingAppointments, setUpcomingAppointments] = useState([]);
+  console.log(upcomingAppointments, "upcomingAppointments");
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -187,35 +171,35 @@ const Appointments = () => {
 
     try {
       const response = await fetch(
-        `/studentAppointmentReschedule/appointmentsReschedule/accept${appointment}`,
+        `/studentAppointmentReschedule/appointment/accept/${appointment}`,
         {
-          method: "PUT", // or PATCH depending on your API
+          method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...appointment, status: "Accepted" }),
+          credentials: "include",
+          body: JSON.stringify({ status: "Confirmed Reschedule" }), // only send necessary fields
         }
       );
 
       if (!response.ok) throw new Error("Failed to accept reschedule");
 
-      const data = await response.json();
+      const updatedData = await response.json();
 
       showSnackbar("Reschedule accepted successfully!", "success");
 
-      // // Update appointments list
-      // setUpcomingAppointments((prev) =>
-      //   prev.map((a) =>
-      //     a.appointment_id === appointment.appointment_id
-      //       ? { ...a, status: "Accepted" }
-      //       : a
-      //   )
-      // );
+      // Update the UI immediately
+      //  Update in-memory appointment list
+      setUpcomingAppointments((prev) =>
+        prev.map((a) =>
+          a.id === appointment ? { ...a, status: "Confirmed Reschedule" } : a
+        )
+      );
 
-      // Update selected appointment only
-      // setSelected((prev) =>
-      //   prev && prev.appointment_id === appointment.appointment_id
-      //     ? { ...prev, status: "Accepted" }
-      //     : prev
-      // );
+      // If you want the modal details to reflect instantly too
+      setSelectedAppointment((prev) =>
+        prev && (prev.id === appointment || prev.appointment_id === appointment)
+          ? { ...prev, status: "Confirmed Reschedule" }
+          : prev
+      );
     } catch (error) {
       console.error("Error accepting reschedule:", error);
       showSnackbar("Failed to accept reschedule.", "error");
@@ -229,7 +213,7 @@ const Appointments = () => {
 
     try {
       const response = await fetch(
-        `/studentAppointmentReschedule/appointmentsReschedule/reject${appointment}`,
+        `/studentAppointmentReschedule/appointment/reject/${appointment}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -244,20 +228,20 @@ const Appointments = () => {
       showSnackbar("Reschedule rejected successfully!", "success");
 
       // Update appointments list
-      // setUpcomingAppointments((prev) =>
-      //   prev.map((a) =>
-      //     a.appointment_id === appointment.appointment_id
-      //       ? { ...a, status: "Rejected" }
-      //       : a
-      //   )
-      // );
+      setUpcomingAppointments((prev) =>
+        prev.map((a) =>
+          a.id === appointment || a.appointment_id === appointment
+            ? { ...a, status: "Rejected Reschedule" }
+            : a
+        )
+      );
 
-      // // Update selected appointment only
-      // setSelected((prev) =>
-      //   prev && prev.appointment_id === appointment.appointment_id
-      //     ? { ...prev, status: "Rejected" }
-      //     : prev
-      // );
+      // Update selected appointment only
+      setSelectedAppointment((prev) =>
+        prev && (prev.id === appointment || prev.appointment_id === appointment)
+          ? { ...prev, status: "Rejected Reschedule" }
+          : prev
+      );
     } catch (error) {
       console.error("Error rejecting reschedule:", error);
       showSnackbar("Failed to reject reschedule.", "error");
@@ -560,13 +544,19 @@ const Appointments = () => {
                             <Typography
                               variant="caption"
                               sx={{
-                                color:
-                                  appt.status?.toLowerCase() === "confirmed"
-                                    ? "green"
-                                    : "orange",
+                                fontWeight: 600,
+                                color: appt.status
+                                  ?.toLowerCase()
+                                  .includes("confirmed")
+                                  ? "green"
+                                  : appt.status
+                                      ?.toLowerCase()
+                                      .includes("rejected")
+                                  ? "red"
+                                  : "orange",
                               }}
                             >
-                              {appt.status}
+                              {appt.status || "Pending"}
                             </Typography>
                           </Box>
                         </Paper>

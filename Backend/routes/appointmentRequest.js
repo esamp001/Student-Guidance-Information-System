@@ -95,8 +95,6 @@ router.put("/appointments/reject/:id", async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
 
-  console.log("Reject endpoint hit with:", { id, status });
-
   if (!status || status !== "Rejected") {
     return res.status(400).json({ message: "Invalid or missing status" });
   }
@@ -113,6 +111,35 @@ router.put("/appointments/reject/:id", async (req, res) => {
 
     res.json({
       message: "Appointment rejected successfully",
+      appointment: updated[0],
+    });
+  } catch (error) {
+    console.error("Error rejecting appointment:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+// PUT Completed
+router.put("/appointments/completed/:id", async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  if (!status || status !== "Completed") {
+    return res.status(400).json({ message: "Invalid or missing status" });
+  }
+
+  try {
+    const updated = await knex("appointments")
+      .where({ id })
+      .update({ status })
+      .returning("*");
+
+    if (!updated || updated.length === 0) {
+      return res.status(404).json({ message: "Appointment not found" });
+    }
+
+    res.json({
+      message: "Appointment Comppleted successfully",
       appointment: updated[0],
     });
   } catch (error) {
@@ -140,67 +167,6 @@ router.put("/:id/reschedule", async (req, res) => {
   } catch (error) {
     console.error("Error updating appointment:", error);
     res.status(500).json({ error: "Failed to update appointment" });
-  }
-});
-
-// PUT: Reschedule Confirm - Student Side
-// PUT Reschedule Status
-router.put("/appointments/:id/reschedule/accept", async (req, res) => {
-  const { id } = req.params;
-  const { status } = req.body;
-
-  if (!status) {
-    return res.status(400).json({ message: "Status is required" });
-  }
-
-  try {
-    // Update the appointment status in the database
-    const updated = await knex("appointments")
-      .where({ id })
-      .update({ status })
-      .returning("*"); // returns the updated row(s)
-
-    if (!updated || updated.length === 0) {
-      return res.status(404).json({ message: "Appointment not found" });
-    }
-
-    res.json({
-      message: `Reschedule ${status.toLowerCase()} successfully`,
-      appointment: updated[0],
-    });
-  } catch (error) {
-    console.error("Error updating appointment:", error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-});
-
-// PUT Reschedule Status
-router.put("/appointments/:id/reschedule/reject", async (req, res) => {
-  const { id } = req.params;
-  const { status } = req.body;
-
-  if (!status) {
-    return res.status(400).json({ message: "Status is required" });
-  }
-
-  try {
-    // Update the appointment status in the database
-    const updated = await knex("appointments")
-      .where({ id })
-      .update({ status })
-      .returning("*"); // returns the updated row(s)
-
-    if (!updated || updated.length === 0) {
-      return res.status(404).json({ message: "Appointment not found" });
-    }
-
-    res.json({
-      message: `Reschedule ${status.toLowerCase()} successfully`,
-      appointment: updated[0],
-    });
-  } catch (error) {
-    console.error("Error updating appointment:", error);
-    res.status(500).json({ message: "Internal server error" });
   }
 });
 

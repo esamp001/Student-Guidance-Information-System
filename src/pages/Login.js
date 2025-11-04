@@ -175,7 +175,6 @@ const Login = () => {
   // States
   const [value, setValue] = useState(0);
   const [userForm, setUserForm] = useState(initialUser);
-  console.log(userForm, "userForm");
   const [formData, setformData] = useState(initialForm);
   const [loading, setLoading] = useState(false);
 

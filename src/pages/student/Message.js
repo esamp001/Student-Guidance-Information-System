@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -7,97 +7,169 @@ import {
   TextField,
   Button,
   IconButton,
+  Divider,
+  InputAdornment,
 } from "@mui/material";
-
-// Icon
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import SearchIcon from "@mui/icons-material/Search";
+import socket from "../../hooks/socket";
+import { useRole } from "../../context/RoleContext";
 
 const Message = () => {
+  const { user } = useRole();
+  const [messages, setMessages] = useState([]);
+  const [conversationList, setConversationList] = useState([]);
+  console.log(conversationList, "conversationList");
+  console.log(messages, "messages");
+  const [text, setText] = useState("");
+  console.log(text, "text");
+
+  useEffect(() => {
+    socket.on("receive_message", (data) => {
+      setMessages((prev) => [...prev, data]);
+    });
+
+    return () => socket.off("receive_message");
+  }, []);
+
+  useEffect(() => {
+    if (user.id) {
+      socket.emit("register_user", user.id);
+    }
+  }, [user.id]);
+
+  useEffect(() => {
+    if (!user.id) return; // don't fetch if no userId
+
+    const fetchStudents = async () => {
+      try {
+        const response = await fetch(
+          `/studentMessages/conversationList/completed?userId=${user.id}`
+        );
+        if (!response.ok) throw new Error("Network response was not ok");
+        const data = await response.json();
+        setConversationList(data); // save the students in state
+      } catch (error) {
+        console.error("Error fetching students:", error);
+      }
+    };
+
+    fetchStudents();
+  }, [user.id]); // re-run if userId changes
+
+  const sendMessage = () => {
+    if (!text.trim()) return;
+    const messageData = {
+      author: "You",
+      content: text,
+      time: new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    };
+    socket.emit("send_message", messageData);
+    setText("");
+  };
+
   return (
-    <Paper sx={{ display: "flex", height: 770 }}>
+    <Paper
+      elevation={2}
+      sx={{
+        display: "flex",
+        height: 650,
+        borderRadius: 3,
+        overflow: "hidden",
+        backgroundColor: "#f9fafb",
+      }}
+    >
+      {/* Left Sidebar */}
       <Box
         sx={{
           width: "30%",
           p: 2,
-          borderRight: ".5px solid",
+          borderRight: "1px solid #e0e0e0",
+          backgroundColor: "white",
+          display: "flex",
+          flexDirection: "column",
         }}
       >
-        <Typography sx={{ fontWeight: 600 }}>Conversations</Typography>
-        <Box sx={{ display: "flex", gap: 1, mt: 2, alignItems: "center" }}>
-          <Avatar></Avatar>
-          <Box>
-            <Typography sx={{ fontWeight: 700 }}>John Doe</Typography>
-            <Typography
-              sx={{
-                width: 200,
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                fontSize: 12,
-              }}
-            >
-              Sure, let's connect next week. I’ll share the calendar invite and
-              agenda shortly after confirming the time.
+        <Typography sx={{ fontWeight: 700, mb: 2 }}>Conversations</Typography>
+
+        <TextField
+          size="small"
+          placeholder="Search..."
+          variant="outlined"
+          fullWidth
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon fontSize="small" />
+              </InputAdornment>
+            ),
+          }}
+          sx={{ mb: 2 }}
+        />
+
+        {/* Contact List */}
+        {["John Doe", "Alexander Sprite", "Juan Dela Cruz"].map((name, i) => (
+          <Box
+            key={i}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              p: 1,
+              borderRadius: 2,
+              cursor: "pointer",
+              "&:hover": { backgroundColor: "#f0f0f0" },
+              ...(i === 0 && { backgroundColor: "#e8f0fe" }), // Active chat
+            }}
+          >
+            <Avatar />
+            <Box sx={{ flexGrow: 1 }}>
+              <Typography sx={{ fontWeight: 700, fontSize: 14 }}>
+                {name}
+              </Typography>
+              <Typography
+                sx={{
+                  fontSize: 12,
+                  color: "text.secondary",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                Sure, let's connect next week...
+              </Typography>
+            </Box>
+            <Typography variant="caption" sx={{ color: "text.secondary" }}>
+              10:30 AM
             </Typography>
           </Box>
-        </Box>
-        <Box sx={{ display: "flex", gap: 1, mt: 2, alignItems: "center" }}>
-          <Avatar></Avatar>
-          <Box>
-            <Typography sx={{ fontWeight: 700 }}>Alexander Sprite</Typography>
-            <Typography
-              sx={{
-                width: 200,
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                fontSize: 12,
-              }}
-            >
-              Sure, let's connect next week. I’ll share the calendar invite and
-              agenda shortly after confirming the time.
-            </Typography>
-          </Box>
-        </Box>
-        <Box sx={{ display: "flex", gap: 1, mt: 2, alignItems: "center" }}>
-          <Avatar></Avatar>
-          <Box>
-            <Typography sx={{ fontWeight: 700 }}>Juan Dela Cruz</Typography>
-            <Typography
-              sx={{
-                width: 200,
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                fontSize: 12,
-              }}
-            >
-              Sure, let's connect next week. I’ll share the calendar invite and
-              agenda shortly after confirming the time.
-            </Typography>
-          </Box>
-        </Box>
+        ))}
       </Box>
+
+      {/* Right Chat Section */}
       <Box
         sx={{
           width: "70%",
           display: "flex",
           flexDirection: "column",
-          justifyContent: "space-between",
+          backgroundColor: "white",
         }}
       >
+        {/* Header */}
         <Box
           sx={{
-            borderBottom: "1px solid",
+            borderBottom: "1px solid #e0e0e0",
             height: 70,
-            px: 2,
+            px: 3,
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            backgroundColor: "background.paper",
+            backgroundColor: "#fefefe",
           }}
         >
-          {/* User Info */}
           <Box sx={{ display: "flex", alignItems: "center" }}>
             <Avatar />
             <Box sx={{ ml: 1 }}>
@@ -107,70 +179,96 @@ const Message = () => {
               </Typography>
             </Box>
           </Box>
-
-          {/* Action Button with Icon */}
-          <IconButton color="primary">
+          <IconButton>
             <InfoOutlinedIcon />
           </IconButton>
         </Box>
-        {/* Messages History */}
+
+        {/* Message History */}
         <Box
           sx={{
-            flexGrow: 1, // fills space between header and input
-            overflowY: "auto", // scroll if too many messages
-            p: 2,
+            flexGrow: 1,
+            overflowY: "auto",
+            px: 3,
+            py: 2,
             display: "flex",
             flexDirection: "column",
             gap: 2,
+            backgroundColor: "#f9fafb",
           }}
         >
-          {/* Example Message (Other User) */}
-          <Box sx={{ display: "flex", alignItems: "flex-start" }}>
-            <Avatar sx={{ mr: 1 }} />
-            <Box>
-              <Typography sx={{ fontWeight: 700 }}>John Doe</Typography>
-              <Typography>Hello! How can I help you today?</Typography>
-              <Typography variant="caption" color="text.secondary">
-                10:30 AM
-              </Typography>
+          {messages.map((msg, index) => (
+            <Box
+              key={index}
+              sx={{
+                display: "flex",
+                justifyContent:
+                  msg.author === "You" ? "flex-end" : "flex-start",
+                alignItems: "flex-end",
+                gap: 1,
+              }}
+            >
+              {msg.author !== "You" && <Avatar />}
+              <Box
+                sx={{
+                  textAlign: msg.author === "You" ? "right" : "left",
+                }}
+              >
+                <Box
+                  sx={{
+                    backgroundColor:
+                      msg.author === "You" ? "#1976d2" : "#ffffff",
+                    color: msg.author === "You" ? "white" : "black",
+                    px: 2,
+                    py: 1,
+                    borderRadius: 3,
+                    boxShadow: 1,
+                    maxWidth: "70%",
+                    ml: msg.author === "You" ? "auto" : 0,
+                  }}
+                >
+                  <Typography>{msg.content}</Typography>
+                </Box>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{
+                    ml: msg.author === "You" ? 0 : 1,
+                    mr: msg.author === "You" ? 1 : 0,
+                  }}
+                >
+                  {msg.time}
+                </Typography>
+              </Box>
+              {msg.author === "You" && <Avatar />}
             </Box>
-          </Box>
-
-          {/* Example Message (You) */}
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "flex-start",
-              flexDirection: "row-reverse", // right align
-            }}
-          >
-            <Avatar sx={{ ml: 1 }} />
-            <Box sx={{ textAlign: "right" }}>
-              <Typography sx={{ fontWeight: 700 }}>You</Typography>
-              <Typography>I need some advice on my application.</Typography>
-              <Typography variant="caption" color="text.secondary">
-                10:32 AM
-              </Typography>
-            </Box>
-          </Box>
+          ))}
         </Box>
 
+        {/* Input Area */}
+        <Divider />
         <Box
           sx={{
             height: 70,
-            p: 2,
-            alignItems: "center",
+            px: 2,
             display: "flex",
+            alignItems: "center",
+            backgroundColor: "white",
           }}
         >
           <TextField
-            variant="outlined"
             placeholder="Type a message..."
-            size="small"
             fullWidth
+            size="small"
+            variant="outlined"
             sx={{ mr: 1 }}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
           />
-          <Button variant="contained">Send</Button>
+          <Button variant="contained" sx={{ px: 3 }} onClick={sendMessage}>
+            Send
+          </Button>
         </Box>
       </Box>
     </Paper>

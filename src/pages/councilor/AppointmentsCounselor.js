@@ -28,6 +28,7 @@ import { LocalizationProvider, DateTimePicker } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import { parse } from "date-fns";
+import Appointments from "./../student/Appointments";
 
 const AppointmentsCounselor = () => {
   const [selected, setSelected] = useState(null);
@@ -191,8 +192,6 @@ const AppointmentsCounselor = () => {
 
       if (!response.ok) throw new Error("Failed to reject appointment");
 
-      const data = await response.json();
-
       showSnackbar("Appointment rejected successfully!", "success");
 
       // Update appointments list
@@ -213,6 +212,46 @@ const AppointmentsCounselor = () => {
     } catch (error) {
       console.error("Error rejecting appointment:", error);
       showSnackbar("Failed to reject appointment.", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCompleted = async (appointment) => {
+    setLoading(true);
+
+    try {
+      const response = await fetch(
+        `/appointmentRequest/appointments/completed/${appointment.appointment_id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...appointment, status: "Completed" }),
+        }
+      );
+
+      if (!response.ok) throw new Error("Failed to make completed appointment");
+
+      showSnackbar("Appointment confirmed successfully!", "success");
+
+      // Update appointments list
+      setAppointments((prev) =>
+        prev.map((a) =>
+          a.appointment_id === appointment.appointment_id
+            ? { ...a, status: "Completed" }
+            : a
+        )
+      );
+
+      // Update selected appointment only
+      setSelected((prev) =>
+        prev && prev.appointment_id === appointment.appointment_id
+          ? { ...prev, status: "Completed" }
+          : prev
+      );
+    } catch (error) {
+      console.error("Error confirming appointment:", error);
+      showSnackbar("Failed to confirm appointment.", "error");
     } finally {
       setLoading(false);
     }
@@ -244,7 +283,7 @@ const AppointmentsCounselor = () => {
                 variant="h6"
                 sx={{ fontWeight: 700, color: "primary.main", mb: 2 }}
               >
-                Appointment Requests
+                All Appointments
               </Typography>
               <Divider sx={{ mb: 2 }} />
 
@@ -296,17 +335,20 @@ const AppointmentsCounselor = () => {
                       sx={{
                         backgroundColor:
                           appt.status === "Pending"
-                            ? theme.palette.primary.tertiary
+                            ? theme.palette.warning.light // soft orange/yellow
                             : appt.status === "Confirmed"
-                            ? theme.palette.primary.red
+                            ? theme.palette.info.main // blue tone for confirmed
+                            : appt.status === "Confirmed Reschedule"
+                            ? theme.palette.success.light // lighter green tone
                             : appt.status === "Completed"
-                            ? theme.palette.primary.secondary
+                            ? "green" // clean solid green for completed
                             : appt.status === "Rejected"
-                            ? theme.palette.error.main
+                            ? theme.palette.error.main // red for rejection
                             : appt.status === "Pending Reschedule"
-                            ? theme.palette.warning.main // or any custom color like theme.palette.primary.orange
+                            ? theme.palette.primary.main // main brand color for pending reschedules
                             : theme.palette.grey[500],
                         color: "#fff",
+                        fontWeight: 600,
                       }}
                     />
                   </ListItem>
@@ -378,7 +420,8 @@ const AppointmentsCounselor = () => {
                         </Button>
                       </>
                     )}
-                    {selected.status === "Confirmed" && (
+
+                    {selected.status?.toLowerCase().includes("confirmed") && (
                       <>
                         <Button
                           variant="outlined"
@@ -388,15 +431,24 @@ const AppointmentsCounselor = () => {
                           Reschedule
                         </Button>
 
+                        <Button
+                          variant="contained"
+                          color="success"
+                          onClick={() => handleCompleted(selected)}
+                        >
+                          Mark as Completed
+                        </Button>
+
+                        {/* Reschedule dialog */}
                         <Dialog
                           open={open}
                           onClose={handleClose}
                           sx={{
                             "& .MuiDialog-paper": {
                               position: "absolute",
-                              top: "10%", // distance from top of the viewport
+                              top: "10%", // distance from top
                               margin: 0,
-                              transform: "none", // remove default centering transform
+                              transform: "none",
                             },
                           }}
                         >

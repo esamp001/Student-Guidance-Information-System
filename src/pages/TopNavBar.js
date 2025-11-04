@@ -133,7 +133,7 @@ const TopNavBar = () => {
           sx={{ width: 45, height: 45, ml: 1 }}
         />
         <Typography variant="h6" sx={{ ml: 2, fontWeight: "bold" }}>
-          Students Information System
+          Students Guidance Information System
         </Typography>
       </Box>
 

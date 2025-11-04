@@ -4,7 +4,7 @@ const knex = require("../db/db");
 
 // PUT: Reschedule Confirm - Student Side
 // PUT Reschedule Status
-router.put("/appointmentsReschedule/accept/:id", async (req, res) => {
+router.put("/appointment/accept/:id", async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
 
@@ -33,7 +33,7 @@ router.put("/appointmentsReschedule/accept/:id", async (req, res) => {
 });
 
 // PUT Reschedule Status
-router.put("/appointmentsReschedule/reject/:id", async (req, res) => {
+router.put("/appointment/reject/:id", async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
 
