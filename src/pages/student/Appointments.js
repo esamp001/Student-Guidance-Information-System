@@ -187,7 +187,7 @@ const Appointments = () => {
 
     try {
       const response = await fetch(
-        `/appointmentRequest/appointments/${appointment}/reschedule/accept`,
+        `/studentAppointmentReschedule/appointmentsReschedule/accept${appointment}`,
         {
           method: "PUT", // or PATCH depending on your API
           headers: { "Content-Type": "application/json" },
@@ -229,7 +229,7 @@ const Appointments = () => {
 
     try {
       const response = await fetch(
-        `/appointmentRequest/appointments/${appointment}/reschedule/reject`,
+        `/studentAppointmentReschedule/appointmentsReschedule/reject${appointment}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
