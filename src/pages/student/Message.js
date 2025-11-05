@@ -19,8 +19,10 @@ const Message = () => {
   const { user } = useRole();
   const [messages, setMessages] = useState([]);
   const [conversationList, setConversationList] = useState([]);
+  const [selectedConversation, setSelectedConversation] = useState(null);
+  const [latestMessage, setLatestMessage] = useState([]);
+  console.log(selectedConversation, "selectedConversation");
   console.log(conversationList, "conversationList");
-  console.log(messages, "messages");
   const [text, setText] = useState("");
   console.log(text, "text");
 
@@ -39,37 +41,82 @@ const Message = () => {
   }, [user.id]);
 
   useEffect(() => {
-    if (!user.id) return; // don't fetch if no userId
+    if (!selectedConversation?.appointment_id) return;
 
-    const fetchStudents = async () => {
+    const fetchMessages = async () => {
       try {
         const response = await fetch(
-          `/studentMessages/conversationList/completed?userId=${user.id}`
+          `/messages/lookup?appointmentId=${selectedConversation.appointment_id}`
         );
         if (!response.ok) throw new Error("Network response was not ok");
+
         const data = await response.json();
-        setConversationList(data); // save the students in state
+        setMessages(data.messages); // for rendering full chat
+        setLatestMessage(data.latestMessage); // optional, if you want to track the last message
       } catch (error) {
-        console.error("Error fetching students:", error);
+        console.error("Error fetching messages:", error);
       }
     };
 
-    fetchStudents();
-  }, [user.id]); // re-run if userId changes
+    fetchMessages();
+  }, [selectedConversation]);
+
+  useEffect(() => {
+    if (!user.id) return;
+
+    const fetchConversations = async () => {
+      try {
+        const res = await fetch(
+          `/studentMessages/conversationList/completed?userId=${user.id}`
+        );
+        if (!res.ok) throw new Error("Failed to fetch conversation list");
+        const data = await res.json();
+        setConversationList(data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchConversations();
+  }, [user.id]);
 
   const sendMessage = () => {
-    if (!text.trim()) return;
+    if (!text.trim() || !selectedConversation) return;
+
     const messageData = {
-      author: "You",
+      receiverId: selectedConversation.counselor_id,
       content: text,
+      author: user.id, // use actual user id
+      appointmentId: selectedConversation.appointment_id,
       time: new Date().toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",
       }),
     };
+
     socket.emit("send_message", messageData);
+    // append locally so it looks like your own message immediately
+    setMessages((prev) => [...prev, messageData]);
     setText("");
   };
+
+  useEffect(() => {
+    if (!selectedConversation || !user.id) return;
+
+    const fetchMessages = async () => {
+      try {
+        const response = await fetch(
+          `/studentMessages/messages/lookup?appointmentId=${selectedConversation.appointment_id}&userId=${user.id}`
+        );
+        const data = await response.json();
+        setMessages(data.messages);
+      } catch (error) {
+        console.error("Failed to fetch messages:", error);
+      }
+    };
+
+    fetchMessages();
+  }, [selectedConversation, user.id]);
 
   return (
     <Paper
@@ -111,9 +158,10 @@ const Message = () => {
         />
 
         {/* Contact List */}
-        {["John Doe", "Alexander Sprite", "Juan Dela Cruz"].map((name, i) => (
+        {conversationList?.map((conv, i) => (
           <Box
             key={i}
+            onClick={() => setSelectedConversation(conv)} // <-- set selected conversation
             sx={{
               display: "flex",
               alignItems: "center",
@@ -122,13 +170,16 @@ const Message = () => {
               borderRadius: 2,
               cursor: "pointer",
               "&:hover": { backgroundColor: "#f0f0f0" },
-              ...(i === 0 && { backgroundColor: "#e8f0fe" }), // Active chat
+              backgroundColor:
+                selectedConversation?.appointment_id === conv.appointment_id
+                  ? "#e8f0fe"
+                  : "transparent",
             }}
           >
             <Avatar />
             <Box sx={{ flexGrow: 1 }}>
               <Typography sx={{ fontWeight: 700, fontSize: 14 }}>
-                {name}
+                {`${conv.counselor_first_name} ${conv.counselor_last_name}`}
               </Typography>
               <Typography
                 sx={{
@@ -139,11 +190,11 @@ const Message = () => {
                   textOverflow: "ellipsis",
                 }}
               >
-                Sure, let's connect next week...
+                {conv.latestMessage || "No messages yet"}
               </Typography>
             </Box>
             <Typography variant="caption" sx={{ color: "text.secondary" }}>
-              10:30 AM
+              {conv.time || "—"}
             </Typography>
           </Box>
         ))}
@@ -203,28 +254,36 @@ const Message = () => {
               sx={{
                 display: "flex",
                 justifyContent:
-                  msg.author === "You" ? "flex-end" : "flex-start",
+                  String(msg.author) === String(user.id)
+                    ? "flex-end"
+                    : "flex-start",
                 alignItems: "flex-end",
                 gap: 1,
               }}
             >
-              {msg.author !== "You" && <Avatar />}
+              {String(msg.author) !== String(user.id) && <Avatar />}
               <Box
                 sx={{
-                  textAlign: msg.author === "You" ? "right" : "left",
+                  textAlign:
+                    String(msg.author) === String(user.id) ? "right" : "left",
                 }}
               >
                 <Box
                   sx={{
                     backgroundColor:
-                      msg.author === "You" ? "#1976d2" : "#ffffff",
-                    color: msg.author === "You" ? "white" : "black",
+                      String(msg.author) === String(user.id)
+                        ? "#1976d2"
+                        : "#ffffff",
+                    color:
+                      String(msg.author) === String(user.id)
+                        ? "white"
+                        : "black",
                     px: 2,
                     py: 1,
                     borderRadius: 3,
                     boxShadow: 1,
                     maxWidth: "70%",
-                    ml: msg.author === "You" ? "auto" : 0,
+                    ml: String(msg.author) === String(user.id) ? "auto" : 0,
                   }}
                 >
                   <Typography>{msg.content}</Typography>
@@ -233,14 +292,14 @@ const Message = () => {
                   variant="caption"
                   color="text.secondary"
                   sx={{
-                    ml: msg.author === "You" ? 0 : 1,
-                    mr: msg.author === "You" ? 1 : 0,
+                    ml: String(msg.author) === String(user.id) ? 0 : 1,
+                    mr: String(msg.author) === String(user.id) ? 1 : 0,
                   }}
                 >
                   {msg.time}
                 </Typography>
               </Box>
-              {msg.author === "You" && <Avatar />}
+              {String(msg.author) === String(user.id) && <Avatar />}
             </Box>
           ))}
         </Box>
