@@ -27,8 +27,7 @@ import { useRole } from "../../context/RoleContext";
 import { LocalizationProvider, DateTimePicker } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
-import { parse } from "date-fns";
-import Appointments from "./../student/Appointments";
+import { sendNotification } from "../../utils/notification";
 
 const AppointmentsCounselor = () => {
   const [selected, setSelected] = useState(null);
@@ -95,6 +94,18 @@ const AppointmentsCounselor = () => {
 
       setOpen(false);
       showSnackbar("Reschedule request sent!", "success");
+
+      // Notify student about reschedule request
+      await sendNotification({
+        userId: selected.student_id,
+        type: "reminder",
+        context: {
+          date: new Date(selectedDateTime).toLocaleString("en-PH", {
+            dateStyle: "medium",
+            timeStyle: "short",
+          }),
+        },
+      });
     } catch (error) {
       console.error("Error updating appointment:", error);
       showSnackbar("Failed to update appointment.", "error");
@@ -153,6 +164,20 @@ const AppointmentsCounselor = () => {
       const data = await response.json();
 
       showSnackbar("Appointment confirmed successfully!", "success");
+      // Send notification (appointment confirmed reminder)
+      await sendNotification({
+        userId: appointment.student_id,
+        type: "appointment_confirmed",
+        context: {
+          date: appointment.datetime
+            ? new Date(appointment.datetime).toLocaleString("en-PH", {
+                dateStyle: "medium",
+                timeStyle: "short",
+              })
+            : appointment.datetime_readable || "the scheduled date",
+        },
+      });
+
 
       // Update appointments list
       setAppointments((prev) =>
@@ -194,6 +219,13 @@ const AppointmentsCounselor = () => {
 
       showSnackbar("Appointment rejected successfully!", "success");
 
+      // Notify student about rejection
+      await sendNotification({
+        userId: appointment.student_id,
+        type: "message",
+        context: { sender: "Counselor" },
+      });
+
       // Update appointments list
       setAppointments((prev) =>
         prev.map((a) =>
@@ -233,6 +265,13 @@ const AppointmentsCounselor = () => {
       if (!response.ok) throw new Error("Failed to make completed appointment");
 
       showSnackbar("Appointment confirmed successfully!", "success");
+
+      // Notify student about completion
+      await sendNotification({
+        userId: appointment.student_id,
+        type: "message",
+        context: { sender: "Counselor" },
+      });
 
       // Update appointments list
       setAppointments((prev) =>

@@ -7,13 +7,15 @@ const knex = require("../db/db");
  * Shows all students the counselor has completed appointments with
  */
 router.get("/conversationList/completed", async (req, res) => {
-  const { userId } = req.query; // counselor user id
+  const { userId } = req.query;
 
-  console.log(userId, "userID");
+  if (!userId) {
+    return res.status(400).json({ message: "Missing userId parameter" });
+  }
 
   try {
     const result = await knex("students as st")
-      .distinctOn("st.id") // PostgreSQL feature
+      .distinctOn("st.id")
       .select(
         "u.id as user_id",
         "aps.id as appointment_id",
@@ -21,20 +23,44 @@ router.get("/conversationList/completed", async (req, res) => {
         "c.id as counselor_id",
         "st.id as student_id",
         "st.first_name",
-        "st.last_name"
+        "st.last_name",
+        "us.id as student_user_id",
+        knex("messages as m")
+          .select("content")
+          .whereRaw("m.appointment_id = aps.id")
+          .orderBy("created_at", "desc")
+          .limit(1)
+          .as("latestMessage"),
+        knex("messages as m2")
+          .select("created_at")
+          .whereRaw("m2.appointment_id = aps.id")
+          .orderBy("created_at", "desc")
+          .limit(1)
+          .as("time")
       )
       .innerJoin("appointments as aps", "aps.student_id", "st.id")
       .innerJoin("counselors as c", "c.id", "aps.counselor_id")
       .innerJoin("users as u", "u.id", "c.user_id")
-      .where("aps.status", "Completed")
+      .innerJoin("users as us", "us.id", "st.user_id")
+      .whereIn("aps.status", ["Confirmed", "Confirmed Reschedule"])
       .andWhere("u.id", userId)
       .orderBy([
         { column: "st.id", order: "asc" },
-        { column: "aps.id", order: "asc" }, // required for DISTINCT ON
+        { column: "aps.id", order: "desc" }, // get most recent completed appointment
       ]);
 
-    console.log(result, "result");
-    res.json(result);
+    const formattedResult = result.map((item) => {
+      return {
+        ...item,
+        time: new Date(item.time).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        }),
+      };
+    });
+
+    res.json(formattedResult);
   } catch (err) {
     console.error("Failed to fetch conversation list:", err);
     res.status(500).json({ message: "Error fetching conversation list" });
@@ -45,31 +71,63 @@ router.get("/conversationList/completed", async (req, res) => {
  * 💬 Fetch Messages for a Conversation (lookup)
  */
 router.get("/messages/lookup", async (req, res) => {
-  const { appointmentId, userId } = req.query;
+  const { appointmentId } = req.query;
+
+  if (!appointmentId) {
+    return res.status(400).json({ error: "appointmentId is required" });
+  }
 
   try {
+    // Fetch all messages
     const messages = await knex("messages")
       .select(
         "id",
         "appointment_id",
         "sender_id as author",
-        "receiver_id",
         "content",
         "created_at as time"
       )
       .where("appointment_id", appointmentId)
       .orderBy("created_at", "asc");
 
-    // Map author correctly for UI
-    const formatted = messages.map((msg) => ({
-      ...msg,
-      author: String(msg.author) === String(userId) ? userId : msg.receiver_id,
-    }));
+    const formattedMessages = messages.map((message) => {
+      return {
+        ...message,
+        time: new Date(message.time).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        }),
+      };
+    });
 
-    res.json(formatted);
+    // Fetch the latest message
+    const latestMessage = await knex("messages")
+      .select(
+        "id",
+        "appointment_id",
+        "sender_id as author",
+        "content",
+        "created_at as time"
+      )
+      .where("appointment_id", appointmentId)
+      .orderBy("created_at", "desc")
+      .first();
+
+    const formattedLatestMessage = latestMessage ? {
+      ...latestMessage,
+      time: new Date(latestMessage.time).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        }),
+      } : null;
+
+
+    res.json({ messages: formattedMessages, latestMessage: formattedLatestMessage || null });
   } catch (err) {
     console.error("Failed to fetch messages:", err);
-    res.status(500).json({ message: "Error fetching messages" });
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 

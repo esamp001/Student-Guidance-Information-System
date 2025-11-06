@@ -7,11 +7,9 @@ const knex = require("./db/db"); // existing knex instance (adjust path if diffe
 // Server Start
 const http = require("http");
 const { Server } = require("socket.io");
-
 const app = express();
 // Create HTTP server using Express app
 const server = http.createServer(app);
-
 // Middleware
 app.use(
   cors({
@@ -20,7 +18,6 @@ app.use(
   })
 );
 app.use(express.json());
-
 // Setup session store with Knex
 const store = new KnexSessionStore({
   knex,
@@ -29,7 +26,6 @@ const store = new KnexSessionStore({
   sidfieldname: "sid",
   clearInterval: 1000 * 60 * 60, // clear expired sessions hourly
 });
-
 // Session configuration
 app.use(
   session({
@@ -44,7 +40,6 @@ app.use(
     },
   })
 );
-
 // Routes
 const registerRoutes = require("./routes/registerRoutes");
 const loginRoutes = require("./routes/loginRoutes");
@@ -60,6 +55,7 @@ const counselorAppointmentRequest = require("./routes/appointmentRequest");
 const studentAppointmentReschedule = require("./routes/studentAppointmentReschedule");
 const studentMessages = require("./routes/studentMessages");
 const counselorMessages = require("./routes/counselorMessages");
+const createNotification = require("./routes/notificationRoutes")
 
 app.use("/registerRoutes", registerRoutes);
 app.use("/loginRoutes", loginRoutes);
@@ -75,7 +71,7 @@ app.use("/appointmentRequest", counselorAppointmentRequest);
 app.use("/studentAppointmentReschedule", studentAppointmentReschedule);
 app.use("/studentMessages", studentMessages);
 app.use("/counselorMessages", counselorMessages);
-
+app.use("/createNotification", createNotification);
 // Create a new Socket.IO server instance
 const io = new Server(server, {
   cors: {
@@ -83,47 +79,39 @@ const io = new Server(server, {
     credentials: true,
   },
 });
-
-// Map to track connected users
-const users = {}; // userId → socketId
-
 io.on("connection", (socket) => {
-  console.log("✅ User connected:", socket.id);
-
+  console.log("User connected:", socket.id);
   socket.on("register_user", (userId) => {
-    users[userId] = socket.id;
-    console.log(`📘 User registered: ${userId} -> ${socket.id}`);
+    const room = `user_${String(userId)}`;
+    console.log(`User ${userId} (type: ${typeof userId}) joined room ${room}`);
+    socket.join(room);
   });
-
   socket.on("send_message", async (data) => {
     const { receiverId, content, author, time, appointmentId } = data;
-    console.log(appointmentId, "appointmentid");
-    const targetSocket = users[receiverId];
-
-    // Send to receiver
-    if (targetSocket) {
-      io.to(targetSocket).emit("receive_message", {
-        author,
+    console.log(
+      {
+        receiverId,
         content,
+        author,
         time,
         appointmentId,
-      });
-    }
-
-    // // Send back to sender
-    // io.to(socket.id).emit("receive_message", {
-    //   author: "You",
-    //   content,
-    //   time,
-    //   appointmentId,
-    // });
-
+        types: { receiverId: typeof receiverId, author: typeof author },
+      },
+      "message data"
+    );
+    // ONLY push to receiver (sender appends locally)
+    io.to(`user_${String(receiverId)}`).emit("receive_message", {
+      author, // real sender ID
+      content,
+      time,
+      appointmentId,
+    });
     // Save to DB
     try {
       await knex("messages").insert({
         appointment_id: appointmentId,
-        sender_id: author, // ✅ correct sender
-        receiver_id: receiverId, // ✅ correct receiver
+        sender_id: author,
+        receiver_id: receiverId,
         content,
         created_at: new Date(),
       });
@@ -131,21 +119,9 @@ io.on("connection", (socket) => {
       console.error("Failed to save message:", err);
     }
   });
-
-  socket.on("disconnect", () => {
-    console.log("User disconnected:", socket.id);
-    for (const [userId, id] of Object.entries(users)) {
-      if (id === socket.id) {
-        delete users[userId];
-        console.log(`Removed user ${userId} from active sockets`);
-        break;
-      }
-    }
-  });
 });
-
 // Start the server
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
-  console.log(` Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });

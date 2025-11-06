@@ -8,6 +8,7 @@ router.get("/student/counselor_lookup", async (req, res) => {
   try {
     const counselors = await knex("counselors as cl").select(
       "cl.id",
+      "cl.user_id as counselor_user_id",
       "cl.first_name",
       "cl.middle_name",
       "cl.last_name",
@@ -90,9 +91,11 @@ router.get("/student/appointment/lookup", async (req, res) => {
         "ar.datetime",
         "ar.status",
         "c.first_name as counselor_first_name",
-        "c.last_name as counselor_last_name"
+        "c.last_name as counselor_last_name",
+        "u_c.id as counselor_user_id"
       )
       .innerJoin("counselors as c", "c.id", "ar.counselor_id")
+      .innerJoin("users as u_c", "u_c.id", "c.user_id")
       .where("ar.student_id", student.id);
 
     const mappedAppointments = appointments.map((appt) => ({
@@ -100,6 +103,7 @@ router.get("/student/appointment/lookup", async (req, res) => {
       type: appt.type,
       datetime: appt.datetime,
       status: appt.status,
+      counselor_user_id: appt.counselor_user_id,
       counselorName: `${appt.counselor_first_name} ${appt.counselor_last_name}`,
     }));
 

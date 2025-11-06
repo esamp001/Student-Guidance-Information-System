@@ -22,6 +22,7 @@ import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import { format, toZonedTime } from "date-fns-tz";
 import useSnackbar from "../../hooks/useSnackbar";
 import { useRole } from "../../context/RoleContext";
+import { sendNotification } from "../../utils/notification";
 
 const Appointments = () => {
   // States
@@ -36,6 +37,7 @@ const Appointments = () => {
   const [formData, setFormData] = useState({
     type: "", // Appointment Type
     counselor_id: "", // Selected Counselor
+    counselor_user_id: "", // Counselor user id for notifications
     mode: "", // Mode of Appointment
     date: null, // Selected Date
     reason: "", // Optional reason
@@ -142,6 +144,7 @@ const Appointments = () => {
       setFormData({
         type: "", // Appointment Type
         counselor_id: "", // Selected Counselor
+        counselor_user_id: "", // Counselor user id for notifications
         mode: "", // Mode of Appointment
         date: null, // Selected Date
         reason: "", // Optional reason
@@ -151,6 +154,32 @@ const Appointments = () => {
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to request appointment");
+      }
+
+      // Fire notifications
+      // 1) Notify counselor about new request (if counselor_user_id present)
+      if (formData.counselor_user_id) {
+        await sendNotification({
+          userId: formData.counselor_user_id,
+          type: "announcement",
+          context: {
+            title: `New ${formData.type} appointment request`,
+          },
+        });
+      }
+
+      // 2) Notify student confirming creation with date/time
+      if (user?.id) {
+        await sendNotification({
+          userId: user.id,
+          type: "reminder",
+          context: {
+            date: new Date(isoDatetime).toLocaleString("en-PH", {
+              dateStyle: "medium",
+              timeStyle: "short",
+            }),
+          },
+        });
       }
 
       loadAppointments();
@@ -185,6 +214,18 @@ const Appointments = () => {
       const updatedData = await response.json();
 
       showSnackbar("Reschedule accepted successfully!", "success");
+
+      // Notify counselor about accepted reschedule
+      const apptForNotify =
+        upcomingAppointments.find((a) => a.id === appointment || a.appointment_id === appointment) ||
+        selectedAppointment;
+      if (apptForNotify?.counselor_user_id) {
+        await sendNotification({
+          userId: apptForNotify.counselor_user_id,
+          type: "announcement",
+          context: { title: "Student accepted reschedule request" },
+        });
+      }
 
       // Update the UI immediately
       //  Update in-memory appointment list
@@ -387,7 +428,12 @@ const Appointments = () => {
                     select
                     value={formData.counselor_id}
                     onChange={(e) =>
-                      setFormData({ ...formData, counselor_id: e.target.value })
+                      setFormData({
+                        ...formData,
+                        counselor_id: e.target.value,
+                        counselor_user_id:
+                          counselors.find((c) => String(c.id) === String(e.target.value))?.counselor_user_id || "",
+                      })
                     }
                     fullWidth
                     size="small"

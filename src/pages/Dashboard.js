@@ -10,10 +10,10 @@ import { Outlet } from "react-router-dom";
 
 const Dashboard = () => {
   return (
-    <Box sx={{ height: "100vh", overflow: "auto" }}>
+    <Box sx={{ height: "100vh", overflow: "hidden", display: "flex", flexDirection: "column" }}>
       {/* Top Header */}
       <TopNavBar sx={{ position: "relative" }} />
-      <Box sx={{ display: "flex", minHeight: "100vh" }}>
+      <Box sx={{ display: "flex", flex: 1, minHeight: 0 }}>
         {/* Side Nav Items */}
         <SideNavBar />
         {/* Main Content */}
@@ -21,6 +21,9 @@ const Dashboard = () => {
           sx={{
             p: 3,
             width: "100%",
+            flex: 1,
+            overflow: "auto",
+            overscrollBehavior: "contain",
             bgcolor: theme.palette.outletbg.main,
           }}
         >

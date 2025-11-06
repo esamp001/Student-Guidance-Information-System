@@ -28,6 +28,9 @@ const TopNavBar = () => {
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
   const [loading, setLoading] = useState(true);
+    const [notifications, setNotifications] = useState([]);
+    const [notificationsLoading, setNotificationsLoading] = useState(false);
+    const [notificationsError, setNotificationsError] = useState(null);
 
   // Handlers
   const handleopenAvatar = (event) => {
@@ -103,6 +106,37 @@ const TopNavBar = () => {
     if (user && user?.id) loadData(); // ensure user is loaded before fetching
   }, [user?.id]);
 
+  // Look up for notifications
+  useEffect(() => {
+    const loadNotifications = async () => {
+      if (!user?.id) return;
+      setNotificationsLoading(true);
+      setNotificationsError(null);
+
+      try {
+        const response = await fetch(
+          `/createNotification/notifications/lookup?userId=${user.id}&limit=10`, 
+          {
+            method: "GET",
+            credentials: "include",
+          }
+        );
+        const result = await response.json();
+        if (response.ok && result?.success) {
+          setNotifications(result.data || []);
+        } else {
+          setNotificationsError("Failed to fetch notifications.");
+        }
+      } catch (err) {
+        setNotificationsError("Error loading notifications.");
+      } finally {
+        setNotificationsLoading(false);
+      }
+    };
+
+    loadNotifications();
+  }, [user?.id]);
+
   useEffect(() => {
     window.addEventListener("scroll", handleScroll);
     return () => {
@@ -141,7 +175,7 @@ const TopNavBar = () => {
       <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
         {/* Notification Icon with Badge */}
         <IconButton color="inherit" onClick={handleNotificationClick}>
-          <Badge badgeContent={3} color="error">
+          <Badge badgeContent={notifications.length} color="error">
             <NotificationsIcon />
           </Badge>
         </IconButton>
@@ -173,35 +207,44 @@ const TopNavBar = () => {
           <Divider />
 
           {/* Notification Items */}
-          {[
-            "Your profile has been updated",
-            "New grade report is available",
-            "Reminder: Counseling session tomorrow",
-            "You have a new message from your adviser",
-            "New announcement: Career Fair this Friday!",
-          ].map((text, index) => (
+          {(notificationsLoading && !notifications.length) && (
+            <MenuItem disabled>
+              <Typography variant="body2">Loading notifications…</Typography>
+            </MenuItem>
+          )}
+          {(!notificationsLoading && notificationsError) && (
+            <MenuItem disabled>
+              <Typography variant="body2" color="error">
+                {notificationsError}
+              </Typography>
+            </MenuItem>
+          )}
+          {(!notificationsLoading && !notificationsError && notifications.length === 0) && (
+            <MenuItem disabled>
+              <Typography variant="body2">No notifications.</Typography>
+            </MenuItem>
+          )}
+          {notifications.map((n) => (
             <MenuItem
-              key={index}
+              key={n.id}
               onClick={handleNotificationClose}
               sx={{
                 display: "block",
-                whiteSpace: "normal", // wrap long text
+                whiteSpace: "normal",
                 borderBottom: "1px solid",
                 borderColor: "grey.200",
                 py: 1.5,
                 px: 2,
-                "&:hover": {
-                  backgroundColor: "grey.100",
-                },
+                "&:hover": { backgroundColor: "grey.100" },
               }}
             >
-              <Typography variant="body2">{text}</Typography>
+              <Typography variant="body2">{n.message}</Typography>
               <Typography
                 variant="caption"
                 color="text.secondary"
                 sx={{ display: "block", mt: 0.5 }}
               >
-                {`5 mins ago`} {/* Example timestamp */}
+                {new Date(n.created_at).toLocaleString("en-PH", { dateStyle: "medium", timeStyle: "short" })}
               </Typography>
             </MenuItem>
           ))}

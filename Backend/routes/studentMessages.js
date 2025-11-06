@@ -18,9 +18,25 @@ router.get("/conversationList/completed", async (req, res) => {
           u.id AS user_id,
           apt.id AS appointment_id,
           apt.status,
+          apt.datetime AS appointment_datetime,
           c.id AS counselor_id,
           c.first_name AS counselor_first_name,
-          c.last_name AS counselor_last_name
+          c.last_name AS counselor_last_name,
+          uc.id AS counselor_user_id,
+          (
+            SELECT m.content
+            FROM public.messages AS m
+            WHERE m.appointment_id = apt.id
+            ORDER BY m.created_at DESC
+            LIMIT 1
+          ) AS "latestMessage",
+          (
+            SELECT m.created_at
+            FROM public.messages AS m
+            WHERE m.appointment_id = apt.id
+            ORDER BY m.created_at DESC
+            LIMIT 1
+          ) AS "time"
       FROM public.students AS st
       INNER JOIN public.users AS u
           ON st.user_id = u.id
@@ -28,15 +44,30 @@ router.get("/conversationList/completed", async (req, res) => {
           ON st.id = apt.student_id
       INNER JOIN public.counselors AS c
           ON apt.counselor_id = c.id
-      WHERE apt.status = 'Completed'
+      INNER JOIN public.users AS uc
+          ON c.user_id = uc.id
+      WHERE apt.status IN ('Confirmed', 'Confirmed Reschedule')
       AND u.id = ?
       ORDER BY c.id, apt.created_at DESC;
     `,
       [userId]
     ); // safely inject userId
 
-    console.log(results.rows, "ROWS");
-    res.json(results.rows); // knex.raw() returns { rows: [...] }
+    const formattedResult = results.rows.map((item) => {
+      return {
+        ...item,
+        appointment_datetime_readable: item.appointment_datetime
+          ? new Date(item.appointment_datetime).toLocaleString("en-PH", { dateStyle: "medium", timeStyle: "short" })
+          : null,
+        time: new Date(item.time).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        }),
+      };
+    });
+
+    res.json(formattedResult); // knex.raw() returns { rows: [...] }
   } catch (error) {
     console.error("Error fetching completed appointments:", error);
     res.status(500).json({ error: "Internal server error" });
@@ -58,10 +89,21 @@ router.get("/messages/lookup", async (req, res) => {
         "appointment_id",
         "sender_id as author",
         "content",
-        "created_at"
+        "created_at as time"
       )
       .where("appointment_id", appointmentId)
       .orderBy("created_at", "asc");
+
+    const formattedMessages = messages.map((message) => {
+      return {
+        ...message,
+        time: new Date(message.time).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        }),
+      };
+    });
 
     // Fetch the latest message (the last one in order)
     const latestMessage = await knex("messages")
@@ -70,17 +112,42 @@ router.get("/messages/lookup", async (req, res) => {
         "appointment_id",
         "sender_id as author",
         "content",
-        "created_at"
+        "created_at as time"
       )
       .where("appointment_id", appointmentId)
       .orderBy("created_at", "desc")
       .first();
 
-    // Return both
-    console.log(latestMessage, "latestMessage");
+    const formattedLatestMessage = latestMessage ? {
+        ...latestMessage,
+        time: new Date(latestMessage.time).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        }),   
+      } : null;
+
+    // Fetch appointment datetime
+    const appt = await knex("appointments")
+      .select("datetime")
+      .where("id", appointmentId)
+      .first();
+
+    const appointmentDatetime = appt?.datetime || null;
+
+    // Return both + appointment datetime
     res.json({
-      messages,
-      latestMessage: latestMessage || null,
+      messages: formattedMessages,
+      latestMessage: formattedLatestMessage || null,
+      appointment: appointmentDatetime
+        ? {
+            datetime: appointmentDatetime,
+            datetime_readable: new Date(appointmentDatetime).toLocaleString("en-PH", {
+              dateStyle: "medium",
+              timeStyle: "short",
+            }),
+          }
+        : null,
     });
   } catch (error) {
     console.error("Failed to fetch messages:", error);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
   Typography,
@@ -19,51 +19,38 @@ const Message = () => {
   const { user } = useRole();
   const [messages, setMessages] = useState([]);
   const [conversationList, setConversationList] = useState([]);
-  const [selectedConversation, setSelectedConversation] = useState(null);
-  const [latestMessage, setLatestMessage] = useState([]);
-  console.log(selectedConversation, "selectedConversation");
   console.log(conversationList, "conversationList");
+  const [selectedConversation, setSelectedConversation] = useState(null);
+  const [appointmentInfo, setAppointmentInfo] = useState(null);
   const [text, setText] = useState("");
-  console.log(text, "text");
+  const messagesEndRef = useRef(null); // For auto-scroll
+  const scrollContainerRef = useRef(null);
 
+  // Socket connect/debug
   useEffect(() => {
-    socket.on("receive_message", (data) => {
-      setMessages((prev) => [...prev, data]);
+    socket.on("connect", () => {
+      console.log("Socket connected:", socket.id);
     });
-
-    return () => socket.off("receive_message");
+    socket.on("disconnect", (reason) => {
+      console.log("Socket disconnected:", reason);
+    });
+    return () => {
+      socket.off("connect");
+      socket.off("disconnect");
+    };
   }, []);
 
+  // Register user
   useEffect(() => {
     if (user.id) {
-      socket.emit("register_user", user.id);
+      console.log("Registering user:", user.id, typeof user.id);
+      socket.emit("register_user", Number(user.id));
     }
   }, [user.id]);
 
-  useEffect(() => {
-    if (!selectedConversation?.appointment_id) return;
-
-    const fetchMessages = async () => {
-      try {
-        const response = await fetch(
-          `/messages/lookup?appointmentId=${selectedConversation.appointment_id}`
-        );
-        if (!response.ok) throw new Error("Network response was not ok");
-
-        const data = await response.json();
-        setMessages(data.messages); // for rendering full chat
-        setLatestMessage(data.latestMessage); // optional, if you want to track the last message
-      } catch (error) {
-        console.error("Error fetching messages:", error);
-      }
-    };
-
-    fetchMessages();
-  }, [selectedConversation]);
-
+  // Fetch conversation list
   useEffect(() => {
     if (!user.id) return;
-
     const fetchConversations = async () => {
       try {
         const res = await fetch(
@@ -76,54 +63,138 @@ const Message = () => {
         console.error(err);
       }
     };
-
     fetchConversations();
   }, [user.id]);
 
-  const sendMessage = () => {
-    if (!text.trim() || !selectedConversation) return;
-
-    const messageData = {
-      receiverId: selectedConversation.counselor_id,
-      content: text,
-      author: user.id, // use actual user id
-      appointmentId: selectedConversation.appointment_id,
-      time: new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-    };
-
-    socket.emit("send_message", messageData);
-    // append locally so it looks like your own message immediately
-    setMessages((prev) => [...prev, messageData]);
-    setText("");
-  };
-
+  // Fetch messages for selected conversation
   useEffect(() => {
-    if (!selectedConversation || !user.id) return;
-
+    if (!selectedConversation?.appointment_id || !user.id) return;
     const fetchMessages = async () => {
       try {
         const response = await fetch(
           `/studentMessages/messages/lookup?appointmentId=${selectedConversation.appointment_id}&userId=${user.id}`
         );
+        if (!response.ok) throw new Error("Network response was not ok");
         const data = await response.json();
-        setMessages(data.messages);
+        setMessages(data.messages || []);
+        setAppointmentInfo(data.appointment || null);
+        // Force jump to bottom on initial load of a conversation (ensure DOM painted)
+        setTimeout(() => {
+          const container = scrollContainerRef.current;
+          if (container) {
+            container.scrollTop = container.scrollHeight;
+          } else {
+            messagesEndRef.current?.scrollIntoView({
+              behavior: "auto",
+              block: "end",
+            });
+          }
+        }, 0);
       } catch (error) {
         console.error("Failed to fetch messages:", error);
       }
     };
-
     fetchMessages();
   }, [selectedConversation, user.id]);
+
+  // Real-time receive
+  useEffect(() => {
+    const handleReceive = (data) => {
+      console.log("Received Student:", data);
+      if (data.appointmentId === selectedConversation?.appointment_id) {
+        setMessages((prev) => {
+          const exists = prev.some(
+            (m) =>
+              String(m.appointmentId || m.appointment_id) ===
+                String(data.appointmentId) &&
+              String(m.author) === String(data.author) &&
+              String(m.content) === String(data.content) &&
+              String(m.time) === String(data.time)
+          );
+          return exists ? prev : [...prev, data];
+        });
+      }
+      setConversationList((prev) =>
+        prev.map((conv) =>
+          conv.appointment_id === data.appointmentId
+            ? { ...conv, latestMessage: data.content, time: data.time }
+            : conv
+        )
+      );
+    };
+    socket.on("receive_message", handleReceive);
+    return () => socket.off("receive_message", handleReceive);
+  }, [selectedConversation]);
+
+  // Auto-scroll
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // Auto-scroll only when user is near bottom
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    const threshold = 40; // px
+    const distanceFromBottom =
+      container.scrollHeight - container.scrollTop - container.clientHeight;
+    const isNearBottom = distanceFromBottom <= threshold;
+    if (isNearBottom) {
+      container.scrollTop = container.scrollHeight;
+    }
+  }, [messages]);
+
+  // Send message
+  const sendMessage = () => {
+    // Prevent sending if chat is not yet available
+    const now = new Date();
+    const apptDate = appointmentInfo?.datetime
+      ? new Date(appointmentInfo.datetime)
+      : null;
+    const canChat = apptDate ? now >= apptDate : true; // allow if no appt info
+    if (!text.trim() || !selectedConversation || !canChat) return;
+    const messageData = {
+      receiverId: Number(
+        selectedConversation.counselor_user_id ||
+          selectedConversation.counselor_id
+      ),
+      content: text,
+      author: Number(user.id),
+      appointmentId: Number(selectedConversation.appointment_id),
+      time: new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    };
+    console.log("Sending:", messageData);
+    socket.emit("send_message", messageData);
+    setMessages((prev) => [...prev, messageData]);
+    setConversationList((prev) =>
+      prev.map((conv) =>
+        conv.appointment_id === selectedConversation.appointment_id
+          ? { ...conv, latestMessage: text, time: messageData.time }
+          : conv
+      )
+    );
+    setText("");
+
+    // Force scroll to bottom after sending
+    requestAnimationFrame(() => {
+      const container = scrollContainerRef.current;
+      if (container) {
+        container.scrollTop = container.scrollHeight;
+      } else {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }
+    });
+  };
 
   return (
     <Paper
       elevation={2}
       sx={{
         display: "flex",
-        height: 650,
+        height: 620,
         borderRadius: 3,
         overflow: "hidden",
         backgroundColor: "#f9fafb",
@@ -141,7 +212,6 @@ const Message = () => {
         }}
       >
         <Typography sx={{ fontWeight: 700, mb: 2 }}>Conversations</Typography>
-
         <TextField
           size="small"
           placeholder="Search..."
@@ -156,12 +226,11 @@ const Message = () => {
           }}
           sx={{ mb: 2 }}
         />
-
         {/* Contact List */}
         {conversationList?.map((conv, i) => (
           <Box
             key={i}
-            onClick={() => setSelectedConversation(conv)} // <-- set selected conversation
+            onClick={() => setSelectedConversation(conv)}
             sx={{
               display: "flex",
               alignItems: "center",
@@ -199,7 +268,6 @@ const Message = () => {
           </Box>
         ))}
       </Box>
-
       {/* Right Chat Section */}
       <Box
         sx={{
@@ -224,7 +292,11 @@ const Message = () => {
           <Box sx={{ display: "flex", alignItems: "center" }}>
             <Avatar />
             <Box sx={{ ml: 1 }}>
-              <Typography sx={{ fontWeight: 700 }}>John Doe</Typography>
+              <Typography sx={{ fontWeight: 700 }}>
+                {selectedConversation
+                  ? `${selectedConversation.counselor_first_name} ${selectedConversation.counselor_last_name}`
+                  : "Select a conversation"}
+              </Typography>
               <Typography variant="subtitle2" color="text.secondary">
                 Counselor
               </Typography>
@@ -234,9 +306,9 @@ const Message = () => {
             <InfoOutlinedIcon />
           </IconButton>
         </Box>
-
         {/* Message History */}
         <Box
+          ref={scrollContainerRef}
           sx={{
             flexGrow: 1,
             overflowY: "auto",
@@ -248,6 +320,46 @@ const Message = () => {
             backgroundColor: "#f9fafb",
           }}
         >
+          {(() => {
+            const now = new Date();
+            const apptDate = appointmentInfo?.datetime
+              ? new Date(appointmentInfo.datetime)
+              : null;
+            const notYet = apptDate ? now < apptDate : false;
+            if (notYet) {
+              const msDiff = apptDate - now;
+              const days = Math.ceil(msDiff / (1000 * 60 * 60 * 24));
+              return (
+                <Box
+                  sx={{
+                    border: "1px dashed #bbb",
+                    backgroundColor: "#fff",
+                    borderRadius: 2,
+                    p: 2,
+                    textAlign: "center",
+                    color: "text.secondary",
+                  }}
+                >
+                  <Typography variant="body2">
+                    {`Messages to this counselor aren't available yet. ${
+                      days > 0 ? days : 1
+                    } day${
+                      days === 1 ? "" : "s"
+                    } before you can ask for advice. Stay tuned.`}
+                  </Typography>
+                  {appointmentInfo?.datetime_readable && (
+                    <Typography
+                      variant="caption"
+                      sx={{ display: "block", mt: 0.5 }}
+                    >
+                      {`Appointment: ${appointmentInfo.datetime_readable}`}
+                    </Typography>
+                  )}
+                </Box>
+              );
+            }
+            return null;
+          })()}
           {messages.map((msg, index) => (
             <Box
               key={index}
@@ -282,7 +394,7 @@ const Message = () => {
                     py: 1,
                     borderRadius: 3,
                     boxShadow: 1,
-                    maxWidth: "70%",
+                    maxWidth: "100%",
                     ml: String(msg.author) === String(user.id) ? "auto" : 0,
                   }}
                 >
@@ -302,36 +414,53 @@ const Message = () => {
               {String(msg.author) === String(user.id) && <Avatar />}
             </Box>
           ))}
+          <div ref={messagesEndRef} />
         </Box>
-
         {/* Input Area */}
         <Divider />
         <Box
           sx={{
-            height: 70,
+            height: 100,
             px: 2,
             display: "flex",
             alignItems: "center",
             backgroundColor: "white",
           }}
         >
-          <TextField
-            placeholder="Type a message..."
-            fullWidth
-            size="small"
-            variant="outlined"
-            sx={{ mr: 1 }}
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-          />
-          <Button variant="contained" sx={{ px: 3 }} onClick={sendMessage}>
-            Send
-          </Button>
+          {(() => {
+            const now = new Date();
+            const apptDate = appointmentInfo?.datetime
+              ? new Date(appointmentInfo.datetime)
+              : null;
+            const notYet = apptDate ? now < apptDate : false;
+            const disabled = notYet;
+            return (
+              <>
+                <TextField
+                  placeholder="Type a message..."
+                  fullWidth
+                  size="small"
+                  variant="outlined"
+                  sx={{ mr: 1 }}
+                  value={text}
+                  disabled={disabled}
+                  onChange={(e) => setText(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+                />
+                <Button
+                  variant="contained"
+                  sx={{ px: 3 }}
+                  onClick={sendMessage}
+                  disabled={disabled}
+                >
+                  Send
+                </Button>
+              </>
+            );
+          })()}
         </Box>
       </Box>
     </Paper>
   );
 };
-
 export default Message;
