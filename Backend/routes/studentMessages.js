@@ -47,6 +47,7 @@ router.get("/conversationList/completed", async (req, res) => {
       INNER JOIN public.users AS uc
           ON c.user_id = uc.id
       WHERE apt.status IN ('Confirmed', 'Confirmed Reschedule')
+        AND apt.mode = 'Online'
       AND u.id = ?
       ORDER BY c.id, apt.created_at DESC;
     `,
@@ -66,6 +67,8 @@ router.get("/conversationList/completed", async (req, res) => {
         }),
       };
     });
+
+    console.log("Formatted Result:", formattedResult);
 
     res.json(formattedResult); // knex.raw() returns { rows: [...] }
   } catch (error) {
@@ -155,24 +158,48 @@ router.get("/messages/lookup", async (req, res) => {
   }
 });
 
-// Get messages between student and counselor
-// router.get("/messages", async (req, res) => {
-//   const { userId, counselorId } = req.query;
-//   try {
-//     const messages = await knex("messages")
-//       .where(function () {
-//         this.where({ sender_id: userId, receiver_id: counselorId }).orWhere({
-//           sender_id: counselorId,
-//           receiver_id: userId,
-//         });
-//       })
-//       .orderBy("created_at", "asc");
+// Unread Messages Count for Both Student and Counselor
+router.get("/unreadCount", async (req, res) => {
+  const { userId } = req.query;
 
-//     res.json(messages);
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ error: err.message });
+  if (!userId) {
+    return res.status(400).json({ error: "userId is required" });
+  }
+
+  try {
+    const result = await knex("messages")
+      .count("id as unreadCount")
+      .where("receiver_id", userId)
+      .andWhere("is_read", false)
+      .first();
+
+    res.json({ unreadCount: Number(result.unreadCount) || 0 });
+  } catch (error) {
+    console.error("Error fetching unread message count:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+
+// Mark messages as read when the user opens a conversation
+// router.put("/mark-read", async (req, res) => {
+//   const { userId, appointmentId } = req.body;
+
+//   if (!userId || !appointmentId) {
+//     return res.status(400).json({ error: "userId and appointmentId are required" });
 //   }
-// });
+
+//   try {
+//     await knex("messages")
+//       .where({ receiver_id: userId, appointment_id: appointmentId })
+//       .update({ is_read: true });
+
+//     res.json({ success: true, message: "Messages marked as read" });
+//   } catch (error) {
+//     console.error("Error marking messages as read:", error);
+//     res.status(500).json({ error: "Internal server error" });
+//   }
+// })
+
 
 module.exports = router;

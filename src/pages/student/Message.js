@@ -19,7 +19,6 @@ const Message = () => {
   const { user } = useRole();
   const [messages, setMessages] = useState([]);
   const [conversationList, setConversationList] = useState([]);
-  console.log(conversationList, "conversationList");
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [appointmentInfo, setAppointmentInfo] = useState(null);
   const [text, setText] = useState("");
@@ -76,6 +75,7 @@ const Message = () => {
         );
         if (!response.ok) throw new Error("Network response was not ok");
         const data = await response.json();
+        console.log("Fetched messages:", data);
         setMessages(data.messages || []);
         setAppointmentInfo(data.appointment || null);
         // Force jump to bottom on initial load of a conversation (ensure DOM painted)
@@ -307,118 +307,145 @@ const Message = () => {
           </IconButton>
         </Box>
         {/* Message History */}
-        <Box
-          ref={scrollContainerRef}
-          sx={{
-            flexGrow: 1,
-            overflowY: "auto",
-            px: 3,
-            py: 2,
-            display: "flex",
-            flexDirection: "column",
-            gap: 2,
-            backgroundColor: "#f9fafb",
-          }}
-        >
-          {(() => {
-            const now = new Date();
-            const apptDate = appointmentInfo?.datetime
-              ? new Date(appointmentInfo.datetime)
-              : null;
-            const notYet = apptDate ? now < apptDate : false;
-            if (notYet) {
-              const msDiff = apptDate - now;
-              const days = Math.ceil(msDiff / (1000 * 60 * 60 * 24));
-              return (
-                <Box
-                  sx={{
-                    border: "1px dashed #bbb",
-                    backgroundColor: "#fff",
-                    borderRadius: 2,
-                    p: 2,
-                    textAlign: "center",
-                    color: "text.secondary",
-                  }}
-                >
-                  <Typography variant="body2">
-                    {`Messages to this counselor aren't available yet. ${
-                      days > 0 ? days : 1
-                    } day${
-                      days === 1 ? "" : "s"
-                    } before you can ask for advice. Stay tuned.`}
-                  </Typography>
-                  {appointmentInfo?.datetime_readable && (
-                    <Typography
-                      variant="caption"
-                      sx={{ display: "block", mt: 0.5 }}
-                    >
-                      {`Appointment: ${appointmentInfo.datetime_readable}`}
+        {!appointmentInfo ? (
+          // Fallback when no conversation selected
+          <Box
+            sx={{
+              flexGrow: 1,
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              alignItems: "center",
+              textAlign: "center",
+              color: "text.secondary",
+              px: 2,
+              backgroundColor: "#f9fafb",
+              borderRadius: 1
+            }}
+          >
+            <Typography variant="body1" sx={{ mb: 1 }}>
+              No conversation selected.
+            </Typography>
+            <Typography variant="body2">
+              Select a counselor from the list to start chatting.
+            </Typography>
+          </Box>
+        ) : (
+          // Original chat UI
+          <Box
+            ref={scrollContainerRef}
+            sx={{
+              flexGrow: 1,
+              overflowY: "auto",
+              px: 3,
+              py: 2,
+              display: "flex",
+              flexDirection: "column",
+              gap: 2,
+              backgroundColor: "#f9fafb",
+            }}
+          >
+            {(() => {
+              const now = new Date();
+              const apptDate = appointmentInfo?.datetime
+                ? new Date(appointmentInfo.datetime)
+                : null;
+              const notYet = apptDate ? now < apptDate : false;
+
+              if (notYet) {
+                const msDiff = apptDate - now;
+                const days = Math.ceil(msDiff / (1000 * 60 * 60 * 24));
+                return (
+                  <Box
+                    sx={{
+                      border: "1px dashed #bbb",
+                      backgroundColor: "#fff",
+                      borderRadius: 2,
+                      p: 2,
+                      textAlign: "center",
+                      color: "text.secondary",
+                    }}
+                  >
+                    <Typography variant="body2">
+                      {`Messages to this counselor aren't available yet. ${days > 0 ? days : 1
+                        } day${days === 1 ? "" : "s"} before you can ask for advice.`}
                     </Typography>
-                  )}
-                </Box>
-              );
-            }
-            return null;
-          })()}
-          {messages.map((msg, index) => (
-            <Box
-              key={index}
-              sx={{
-                display: "flex",
-                justifyContent:
-                  String(msg.author) === String(user.id)
-                    ? "flex-end"
-                    : "flex-start",
-                alignItems: "flex-end",
-                gap: 1,
-              }}
-            >
-              {String(msg.author) !== String(user.id) && <Avatar />}
+
+                    {appointmentInfo?.datetime_readable && (
+                      <Typography variant="caption" sx={{ display: "block", mt: 0.5 }}>
+                        {`Appointment: ${appointmentInfo.datetime_readable}`}
+                      </Typography>
+                    )}
+                  </Box>
+                );
+              }
+
+              return null;
+            })()}
+
+            {messages.map((msg, index) => (
               <Box
+                key={index}
                 sx={{
-                  textAlign:
-                    String(msg.author) === String(user.id) ? "right" : "left",
+                  display: "flex",
+                  justifyContent:
+                    String(msg.author) === String(user.id) ? "flex-end" : "flex-start",
+                  alignItems: "flex-end",
+                  gap: 1,
                 }}
               >
+                {String(msg.author) !== String(user.id) && <Avatar />}
+
                 <Box
                   sx={{
-                    backgroundColor:
-                      String(msg.author) === String(user.id)
-                        ? "#1976d2"
-                        : "#ffffff",
-                    color:
-                      String(msg.author) === String(user.id)
-                        ? "white"
-                        : "black",
-                    px: 2,
-                    py: 1,
-                    borderRadius: 3,
-                    boxShadow: 1,
-                    maxWidth: "100%",
-                    ml: String(msg.author) === String(user.id) ? "auto" : 0,
+                    textAlign:
+                      String(msg.author) === String(user.id) ? "right" : "left",
                   }}
                 >
-                  <Typography>{msg.content}</Typography>
+                  <Box
+                    sx={{
+                      backgroundColor:
+                        String(msg.author) === String(user.id)
+                          ? "#1976d2"
+                          : "#ffffff",
+                      color:
+                        String(msg.author) === String(user.id)
+                          ? "white"
+                          : "black",
+                      px: 2,
+                      py: 1,
+                      borderRadius: 3,
+                      boxShadow: 1,
+                      maxWidth: "100%",
+                      ml: String(msg.author) === String(user.id) ? "auto" : 0,
+                    }}
+                  >
+                    <Typography>{msg.content}</Typography>
+                  </Box>
+
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{
+                      ml: String(msg.author) === String(user.id) ? 0 : 1,
+                      mr: String(msg.author) === String(user.id) ? 1 : 0,
+                    }}
+                  >
+                    {msg.time}
+                  </Typography>
                 </Box>
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  sx={{
-                    ml: String(msg.author) === String(user.id) ? 0 : 1,
-                    mr: String(msg.author) === String(user.id) ? 1 : 0,
-                  }}
-                >
-                  {msg.time}
-                </Typography>
+
+                {String(msg.author) === String(user.id) && <Avatar />}
               </Box>
-              {String(msg.author) === String(user.id) && <Avatar />}
-            </Box>
-          ))}
-          <div ref={messagesEndRef} />
-        </Box>
+            ))}
+
+            <div ref={messagesEndRef} />
+          </Box>
+        )}
+
         {/* Input Area */}
         <Divider />
-        <Box
+        {appointmentInfo && (<Box
           sx={{
             height: 100,
             px: 2,
@@ -458,7 +485,8 @@ const Message = () => {
               </>
             );
           })()}
-        </Box>
+        </Box>)}
+      
       </Box>
     </Paper>
   );

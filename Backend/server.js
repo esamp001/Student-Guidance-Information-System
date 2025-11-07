@@ -86,6 +86,8 @@ io.on("connection", (socket) => {
     console.log(`User ${userId} (type: ${typeof userId}) joined room ${room}`);
     socket.join(room);
   });
+
+  
   socket.on("send_message", async (data) => {
     const { receiverId, content, author, time, appointmentId } = data;
     console.log(
@@ -99,6 +101,8 @@ io.on("connection", (socket) => {
       },
       "message data"
     );
+
+
     // ONLY push to receiver (sender appends locally)
     io.to(`user_${String(receiverId)}`).emit("receive_message", {
       author, // real sender ID
@@ -106,6 +110,8 @@ io.on("connection", (socket) => {
       time,
       appointmentId,
     });
+
+
     // Save to DB
     try {
       await knex("messages").insert({
@@ -120,6 +126,8 @@ io.on("connection", (socket) => {
     }
   });
 });
+
+
 // Start the server
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {

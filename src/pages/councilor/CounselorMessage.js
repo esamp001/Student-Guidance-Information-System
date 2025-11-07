@@ -14,16 +14,54 @@ import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import SearchIcon from "@mui/icons-material/Search";
 import socket from "../../hooks/socket";
 import { useRole } from "../../context/RoleContext";
+import useSnackbar from "../../hooks/useSnackbar";
+import { sendNotification } from "../../utils/notification";
 
 const CounselorMessage = () => {
   const { user } = useRole();
   const [messages, setMessages] = useState([]);
   const [conversationList, setConversationList] = useState([]);
   const [selectedConversation, setSelectedConversation] = useState(null);
+  console.log("Selected Conversation:", selectedConversation);
+  const [loading, setLoading] = useState(false);
   const [appointmentInfo, setAppointmentInfo] = useState(null);
+  console.log("Appointment Info:", appointmentInfo);
   const [text, setText] = useState("");
   const messagesEndRef = useRef(null);
   const scrollContainerRef = useRef(null);
+   const { showSnackbar, SnackbarComponent } = useSnackbar();
+
+  const handleAppointmentCompletion = async () => {
+    setLoading(true);
+
+    try {
+      const response = await fetch(
+        `/appointmentRequest/appointments/completed/${selectedConversation.appointment_id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...selectedConversation, status: "Completed" }),
+        }
+      );
+
+      if (!response.ok) throw new Error("Failed to make completed appointment");
+
+      showSnackbar("Appointment confirmed successfully!", "success");
+
+      // Notify student about completion
+      await sendNotification({
+        userId: selectedConversation.student_id,
+        type: "message",
+        context: { sender: "Counselor" },
+      });
+
+    } catch (error) {
+      console.error("Error confirming appointment:", error);
+      showSnackbar("Failed to confirm appointment.", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Register user
   useEffect(() => {
@@ -43,7 +81,6 @@ const CounselorMessage = () => {
         );
         if (!res.ok) throw new Error("Failed to fetch conversation list");
         const data = await res.json();
-        console.log("Conversation list:", data);
         setConversationList(data);
       } catch (err) {
         console.error(err);
@@ -62,7 +99,14 @@ const CounselorMessage = () => {
         );
         const data = await res.json();
         setMessages(data.messages || data || []);
-        setAppointmentInfo(data.appointment || null);
+       
+        if (selectedConversation) {
+          setAppointmentInfo({
+              datetime: selectedConversation.appointment_datetime || null,
+              datetime_readable: selectedConversation.appointment_datetime_readable || null,
+          });
+        }
+
         // Force jump to bottom on initial load of a conversation (ensure DOM painted)
         setTimeout(() => {
           const container = scrollContainerRef.current;
@@ -85,7 +129,6 @@ const CounselorMessage = () => {
   // Real-time receive
   useEffect(() => {
     const handleReceive = (data) => {
-      console.log("Received Counselor:", data);
       if (data.appointmentId === selectedConversation?.appointment_id) {
         setMessages((prev) => {
           const exists = prev.some(
@@ -136,7 +179,6 @@ const CounselorMessage = () => {
         minute: "2-digit",
       }),
     };
-    console.log("Sending:", messageData);
     socket.emit("send_message", messageData);
     setMessages((prev) => [...prev, messageData]);
     setConversationList((prev) =>
@@ -272,132 +314,135 @@ const CounselorMessage = () => {
           </IconButton>
         </Box>
         {/* Message History */}
-        <Box
-          ref={scrollContainerRef}
-          sx={{
-            flexGrow: 1,
-            overflowY: "auto",
-            maxHeight: 460,
-            px: 3,
-            py: 2,
-            display: "flex",
-            flexDirection: "column",
-            gap: 2,
-            backgroundColor: "#f9fafb",
-          }}
-        >
-          {(() => {
-            const now = new Date();
-            const apptDate = appointmentInfo?.datetime
-              ? new Date(appointmentInfo.datetime)
-              : null;
-            const notYet = apptDate ? now < apptDate : false;
-            if (notYet) {
-              const msDiff = apptDate - now;
-              const days = Math.ceil(msDiff / (1000 * 60 * 60 * 24));
-              return (
-                <Box
-                  sx={{
-                    border: "1px dashed #bbb",
-                    backgroundColor: "#fff",
-                    borderRadius: 2,
-                    p: 2,
-                    textAlign: "center",
-                    color: "text.secondary",
-                  }}
-                >
-                  <Typography variant="body2">
-                    {`Messages to this student aren't available yet. ${
-                      days > 0 ? days : 1
-                    } day${
-                      days === 1 ? "" : "s"
-                    } before the appointment you can start chatting. Stay tuned.`}
-                  </Typography>
-                  {appointmentInfo?.datetime_readable && (
-                    <Typography
-                      variant="caption"
-                      sx={{ display: "block", mt: 0.5 }}
-                    >
-                      {`Appointment: ${appointmentInfo.datetime_readable}`}
-                    </Typography>
-                  )}
-                </Box>
-              );
-            }
-            return null;
-          })()}
-          {messages.map(
-            (msg, index) => (
-              console.log(msg),
-              (
-                <Box
-                  key={index}
-                  sx={{
-                    display: "flex",
-                    justifyContent:
-                      String(msg.author) === String(user.id)
-                        ? "flex-end"
-                        : "flex-start",
-                    alignItems: "flex-end",
-                    gap: 1,
-                  }}
-                >
-                  {String(msg.author) !== String(user.id) && <Avatar />}
+        {!appointmentInfo ? (
+          <Box
+            sx={{
+              flexGrow: 1,
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              alignItems: "center",
+              textAlign: "center",
+              color: "text.secondary",
+              px: 2,
+            }}
+          >
+            <Typography variant="body1" sx={{ mb: 1 }}>
+              No conversation selected.
+            </Typography>
+            <Typography variant="body2">
+              Select a conversation from the list to start chatting.
+            </Typography>
+          </Box>
+        ) : (
+          //  Your existing message UI goes here
+          <Box
+            ref={scrollContainerRef}
+            sx={{
+              flexGrow: 1,
+              overflowY: "auto",
+              maxHeight: 460,
+              px: 3,
+              py: 2,
+              display: "flex",
+              flexDirection: "column",
+              gap: 2,
+              backgroundColor: "#f9fafb",
+            }}
+          >
+            {(() => {
+              const now = new Date();
+              const apptDate = appointmentInfo?.datetime
+                ? new Date(appointmentInfo.datetime)
+                : null;
+              const notYet = apptDate ? now < apptDate : false;
+
+              if (notYet) {
+                const msDiff = apptDate - now;
+                const days = Math.ceil(msDiff / (1000 * 60 * 60 * 24));
+                return (
                   <Box
                     sx={{
-                      textAlign:
-                        String(msg.author) === String(user.id)
-                          ? "right"
-                          : "left",
+                      border: "1px dashed #bbb",
+                      backgroundColor: "#fff",
+                      borderRadius: 2,
+                      p: 2,
+                      textAlign: "center",
+                      color: "text.secondary",
                     }}
                   >
-                    <Box
-                      sx={{
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        backgroundColor:
-                          String(msg.author) === String(user.id)
-                            ? "#1976d2"
-                            : "#ffffff",
-                        color:
-                          String(msg.author) === String(user.id)
-                            ? "white"
-                            : "black",
-                        px: 2,
-                        py: 1,
-                        borderRadius: 3,
-                        boxShadow: 1,
-                        maxWidth: "100%",
-                        ml: String(msg.author) === String(user.id) ? "auto" : 0,
-                      }}
-                    >
-                      <Typography>{msg.content}</Typography>
-                    </Box>
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      sx={{
-                        ml: String(msg.author) === String(user.id) ? 0 : 1,
-                        mr: String(msg.author) === String(user.id) ? 1 : 0,
-                      }}
-                    >
-                      {msg.time}
+                    <Typography variant="body2">
+                      {`Messages to this student aren't available yet. ${days > 0 ? days : 1
+                        } day${days === 1 ? "" : "s"} before the appointment you can start chatting.`}
                     </Typography>
+                    {appointmentInfo?.datetime_readable && (
+                      <Typography variant="caption" sx={{ display: "block", mt: 0.5 }}>
+                        {`Appointment: ${appointmentInfo.datetime_readable}`}
+                      </Typography>
+                    )}
                   </Box>
-                  {String(msg.author) === String(user.id) && <Avatar />}
+                );
+              }
+              return null;
+            })()}
+
+            {messages.map((msg, index) => (
+              <Box
+                key={index}
+                sx={{
+                  display: "flex",
+                  justifyContent:
+                    String(msg.author) === String(user.id) ? "flex-end" : "flex-start",
+                  alignItems: "flex-end",
+                  gap: 1,
+                }}
+              >
+                {String(msg.author) !== String(user.id) && <Avatar />}
+
+                <Box sx={{ textAlign: String(msg.author) === String(user.id) ? "right" : "left" }}>
+                  <Box
+                    sx={{
+                      backgroundColor:
+                        String(msg.author) === String(user.id) ? "#1976d2" : "#ffffff",
+                      color: String(msg.author) === String(user.id) ? "white" : "black",
+                      px: 2,
+                      py: 1,
+                      borderRadius: 3,
+                      boxShadow: 1,
+                      maxWidth: "100%",
+                      ml: String(msg.author) === String(user.id) ? "auto" : 0,
+                    }}
+                  >
+                    <Typography>{msg.content}</Typography>
+                  </Box>
+
+                  <Typography variant="caption" color="text.secondary">
+                    {msg.time}
+                  </Typography>
                 </Box>
-              )
-            )
-          )}
-          <div ref={messagesEndRef} />
-        </Box>
+
+                {String(msg.author) === String(user.id) && <Avatar />}
+              </Box>
+            ))}
+
+            <div ref={messagesEndRef} />
+          </Box>
+        )}
+
         {/* Input Area */}
         <Divider />
-        <Box sx={{ display: "flex", justifyContent: "center" }}>
-          <Button>Mark this appointment as finish</Button>
-        </Box>
-        <Box
+        {(
+          selectedConversation?.appointment_status === "Confirmed" ||
+          selectedConversation?.appointment_status === "Confirmed Reschedule"
+        ) && (
+            <Box sx={{ display: "flex", justifyContent: "center" }}>
+            <Button onClick={() => handleAppointmentCompletion(selectedConversation.appointment_id)}>
+              Mark this appointment as completed
+            </Button>
+            </Box>
+          )}
+       
+        {appointmentInfo && (<Box
           sx={{
             height: "80px",
             px: 2,
@@ -437,8 +482,9 @@ const CounselorMessage = () => {
               </>
             );
           })()}
-        </Box>
+        </Box>)}
       </Box>
+      {SnackbarComponent}
     </Paper>
   );
 };

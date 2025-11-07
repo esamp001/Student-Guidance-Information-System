@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useRole } from "../../context/RoleContext";
 import {
   Box,
   Typography,
@@ -10,10 +11,20 @@ import {
   TableCell,
   TableRow,
   TextField,
-  Grid,
   MenuItem,
+  List,
+  ListItem,
+  ListItemText,
 } from "@mui/material";
 
+// Sample data for students
+const students = [
+  { id: 1, name: "John Doe" },
+  { id: 2, name: "Jane Smith" },
+  { id: 3, name: "Alice Johnson" },
+];
+
+// Case types
 const caseTypes = [
   {
     group: "Academic Counseling",
@@ -44,12 +55,21 @@ const caseTypes = [
     ],
   },
 ];
+
+// Session types
+const sessionTypes = ["Online", "Meet-up"];
+
 const CaseRecords = () => {
-  const [offenses, setOffenses] = useState([]);
+  const { user } = useRole();
+  const [records, setRecords] = useState([]);
+  const [quickNotes, setQuickNotes] = useState([]);
+  const [currentNote, setCurrentNote] = useState("");
+  const [students, setStudents] = useState([]);
   const [formData, setFormData] = useState({
-    studentName: "",
+    studentId: "",
     caseType: "",
     offense: "",
+    sessionType: "",
     date: "",
     remarks: "",
   });
@@ -58,130 +78,218 @@ const CaseRecords = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleCaseType = (event) => {
-    setFormData({ ...formData, caseType: event.target.value });
+  const handleCaseType = (e) => {
+    setFormData({ ...formData, caseType: e.target.value });
   };
 
-  const handleAddOffense = () => {
-    if (!formData.studentName || !formData.offense) return;
-    setOffenses([
-      ...offenses,
+  const handleSessionType = (e) => {
+    setFormData({ ...formData, sessionType: e.target.value });
+  };
+
+  const handleAddQuickNote = () => {
+    if (currentNote.trim() === "") return;
+    setQuickNotes([...quickNotes, currentNote]);
+    setCurrentNote("");
+  };
+
+  const handleSaveRecord = () => {
+    if (!formData.studentId || !formData.caseType) return;
+
+    const studentName = students.find(
+      (s) => s.id === Number(formData.studentId)
+    )?.name;
+
+    setRecords([
+      ...records,
       {
-        id: offenses.length + 1,
-        ...formData,
+        id: records.length + 1,
+        studentName,
+        caseType: formData.caseType,
+        offense: formData.offense,
+        sessionType: formData.sessionType,
+        date: formData.date,
+        remarks: formData.remarks,
+        quickNotes,
       },
     ]);
+
+    // Reset form and quick notes
     setFormData({
-      studentName: "",
-      offense: "",
+      studentId: "",
       caseType: "",
+      offense: "",
+      sessionType: "",
       date: "",
       remarks: "",
     });
+    setQuickNotes([]);
   };
+
+  useEffect(() => {
+    const fetchStudents = async () => {
+      try {
+        const response = await fetch("/students/list");
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch students");
+        }
+
+        const data = await response.json();
+        setStudents(data); // save students to state
+      } catch (error) {
+        console.error("Error fetching students:", error);
+      }
+    };
+
+    fetchStudents();
+  }, []);
 
   return (
     <Box sx={{ p: 4 }}>
-      {/* Header */}
       <Typography variant="h5" gutterBottom>
-        Student Offense Records
+        Student Case Records
       </Typography>
 
-      {/* Manual Add Offense */}
       <Paper sx={{ p: 3, mb: 4 }}>
         <Typography variant="h6" gutterBottom>
-          Add New Offense
+          Add New Case Record
         </Typography>
-        <Grid container spacing={2}>
-          <Grid item xs={12} md={3}>
+
+        <Box
+          component="form"
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 2,
+            width: "100%",
+          }}
+        >
+          <TextField
+            fullWidth
+            select
+            label="Select Student"
+            name="studentId"
+            value={formData.studentId}
+            onChange={handleChange}
+          >
+            {students.map((s) => (
+              <MenuItem key={s.id} value={s.id}>
+                {s.name}
+              </MenuItem>
+            ))}
+          </TextField>
+
+          <TextField
+            fullWidth
+            select
+            label="Case Type"
+            name="caseType"
+            value={formData.caseType}
+            onChange={handleCaseType}
+          >
+            {caseTypes.map((group) => [
+              <MenuItem key={`label-${group.group}`} disabled sx={{ fontWeight: "bold" }}>
+                {group.group}
+              </MenuItem>,
+              group.items.map((item) => (
+                <MenuItem key={item} value={item}>
+                  {item}
+                </MenuItem>
+              )),
+            ])}
+          </TextField>
+
+
+
+          <TextField
+            fullWidth
+            label="Concern / Offense"
+            name="offense"
+            value={formData.offense}
+            onChange={handleChange}
+          />
+
+          <TextField
+            fullWidth
+            select
+            label="Session Type"
+            name="sessionType"
+            value={formData.sessionType}
+            onChange={handleSessionType}
+          >
+            {sessionTypes.map((type) => (
+              <MenuItem key={type} value={type}>
+                {type}
+              </MenuItem>
+            ))}
+          </TextField>
+
+          <TextField
+            fullWidth
+            label="Date"
+            name="date"
+            type="date"
+            value={formData.date}
+            onChange={handleChange}
+            InputLabelProps={{ shrink: true }}
+          />
+
+          <TextField
+            fullWidth
+            multiline
+            rows={3}
+            label="Remarks"
+            name="remarks"
+            value={formData.remarks}
+            onChange={handleChange}
+          />
+
+          {/* Quick Notes Section */}
+          <Box>
             <TextField
               fullWidth
-              label="Student Name"
-              name="studentName"
-              value={formData.studentName}
-              onChange={handleChange}
+              label="Quick Note (during appointment)"
+              value={currentNote}
+              onChange={(e) => setCurrentNote(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  handleAddQuickNote();
+                }
+              }}
             />
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <TextField
-              fullWidth
-              label="Offense"
-              name="offense"
-              value={formData.offense}
-              onChange={handleChange}
-            />
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <TextField
-              sx={{ width: 150 }}
-              select
-              fullWidth
-              label="Case Type"
-              name="case-type"
-              value={formData.caseType}
-              onChange={handleCaseType}
+            <Button
+              sx={{ mt: 1 }}
+              variant="outlined"
+              onClick={handleAddQuickNote}
             >
-              <MenuItem value="Academic Counseling">
-                Academic Counseling
-              </MenuItem>
-              <MenuItem value="Behavioral Support">Behavioral Support</MenuItem>
-              <MenuItem value="Career Guidance">Career Guidance</MenuItem>
-              <MenuItem value="Academic Counseling">
-                Academic Counseling
-              </MenuItem>
-              <MenuItem value="Low Academic Performance">
-                Low Academic Performance
-              </MenuItem>
-              <MenuItem value="Study Habits / Time Management">
-                Study Habits / Time Management
-              </MenuItem>
-              <MenuItem value="Absenteeism">Absenteeism</MenuItem>
-              <MenuItem value="Learning Difficulties">
-                Learning Difficulties
-              </MenuItem>
-              <MenuItem value="Personal / Emotional Support">
-                Personal / Emotional Support
-              </MenuItem>
-              <MenuItem value="Conflict Resolution">
-                Conflict Resolution
-              </MenuItem>
-              <MenuItem value="Health / Medical Concerns">
-                Health / Medical Concerns
-              </MenuItem>
-            </TextField>
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <TextField
-              fullWidth
-              label="Date"
-              name="date"
-              type="date"
-              value={formData.date}
-              onChange={handleChange}
-              InputLabelProps={{ shrink: true }}
-            />
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <TextField
-              fullWidth
-              label="Remarks"
-              name="remarks"
-              value={formData.remarks}
-              onChange={handleChange}
-            />
-          </Grid>
-          <Grid item xs={12}>
-            <Button variant="contained" onClick={handleAddOffense}>
-              Save Offense
+              Add Quick Note
             </Button>
-          </Grid>
-        </Grid>
+
+            {quickNotes.length > 0 && (
+              <Paper sx={{ mt: 2, p: 2, backgroundColor: "#f5f5f5" }}>
+                <Typography variant="subtitle2">Quick Notes:</Typography>
+                <List>
+                  {quickNotes.map((note, index) => (
+                    <ListItem key={index}>
+                      <ListItemText primary={`- ${note}`} />
+                    </ListItem>
+                  ))}
+                </List>
+              </Paper>
+            )}
+          </Box>
+
+          <Button sx={{ mt: 2 }} variant="contained" onClick={handleSaveRecord}>
+            Save Case Record
+          </Button>
+        </Box>
       </Paper>
 
       {/* Display Table */}
       <Paper sx={{ p: 3 }}>
         <Typography variant="h6" gutterBottom>
-          Offense Records List
+          Case Records List
         </Typography>
         <Table>
           <TableHead>
@@ -189,20 +297,32 @@ const CaseRecords = () => {
               <TableCell>ID</TableCell>
               <TableCell>Student Name</TableCell>
               <TableCell>Case Type</TableCell>
-              <TableCell>Offense</TableCell>
+              <TableCell>Concern / Offense</TableCell>
+              <TableCell>Session Type</TableCell>
               <TableCell>Date</TableCell>
               <TableCell>Remarks</TableCell>
+              <TableCell>Quick Notes</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {offenses.map((o, index) => (
-              <TableRow key={index}>
-                <TableCell>{o.id}</TableCell>
-                <TableCell>{o.studentName}</TableCell>
-                <TableCell>{o.caseType}</TableCell>
-                <TableCell>{o.offense}</TableCell>
-                <TableCell>{o.date}</TableCell>
-                <TableCell>{o.remarks}</TableCell>
+            {records.map((r) => (
+              <TableRow key={r.id}>
+                <TableCell>{r.id}</TableCell>
+                <TableCell>{r.studentName}</TableCell>
+                <TableCell>{r.caseType}</TableCell>
+                <TableCell>{r.offense}</TableCell>
+                <TableCell>{r.sessionType}</TableCell>
+                <TableCell>{r.date}</TableCell>
+                <TableCell>{r.remarks}</TableCell>
+                <TableCell>
+                  <List dense>
+                    {r.quickNotes.map((note, i) => (
+                      <ListItem key={i} sx={{ py: 0 }}>
+                        <ListItemText primary={`- ${note}`} />
+                      </ListItem>
+                    ))}
+                  </List>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>

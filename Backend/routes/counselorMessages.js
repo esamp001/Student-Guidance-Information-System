@@ -20,6 +20,7 @@ router.get("/conversationList/completed", async (req, res) => {
         "u.id as user_id",
         "aps.id as appointment_id",
         "aps.status as appointment_status",
+        "aps.datetime as appointment_datetime",
         "c.id as counselor_id",
         "st.id as student_id",
         "st.first_name",
@@ -43,6 +44,7 @@ router.get("/conversationList/completed", async (req, res) => {
       .innerJoin("users as u", "u.id", "c.user_id")
       .innerJoin("users as us", "us.id", "st.user_id")
       .whereIn("aps.status", ["Confirmed", "Confirmed Reschedule"])
+      .andWhere("aps.mode", "Online")
       .andWhere("u.id", userId)
       .orderBy([
         { column: "st.id", order: "asc" },
@@ -52,6 +54,9 @@ router.get("/conversationList/completed", async (req, res) => {
     const formattedResult = result.map((item) => {
       return {
         ...item,
+        appointment_datetime_readable: item.appointment_datetime
+          ? new Date(item.appointment_datetime).toLocaleString("en-PH", { dateStyle: "medium", timeStyle: "short" })
+          : null,
         time: new Date(item.time).toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
@@ -59,6 +64,8 @@ router.get("/conversationList/completed", async (req, res) => {
         }),
       };
     });
+
+    console.log("Fetched conversation list:", formattedResult);
 
     res.json(formattedResult);
   } catch (err) {

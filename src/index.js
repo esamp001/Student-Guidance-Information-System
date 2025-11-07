@@ -13,7 +13,7 @@ root.render(
   <ThemeProvider theme={theme}>
     <CssBaseline /> {/* applies global resets & background */}
     <RoleProvider>
-      <App />
+        <App />
     </RoleProvider>
   </ThemeProvider>
 );

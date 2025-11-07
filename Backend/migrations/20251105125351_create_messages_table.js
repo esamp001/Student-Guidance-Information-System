@@ -14,6 +14,7 @@ exports.up = function (knex) {
       .inTable("appointments")
       .onDelete("CASCADE"); // Deletes messages if appointment is deleted
     table.text("content").notNullable(); // Message content
+    table.boolean("is_read").notNullable().defaultTo(false); // unread by default
     table.timestamp("created_at").defaultTo(knex.fn.now()); // Timestamp
   });
 };

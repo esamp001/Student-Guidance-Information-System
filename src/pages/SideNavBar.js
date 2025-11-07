@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState , useEffect} from "react";
 import { Box, Typography } from "@mui/material";
 import { NavLink } from "react-router-dom";
 import { navConfig } from "./navConfig";
@@ -6,7 +6,7 @@ import theme from "./../theme";
 import { useRole } from "../context/RoleContext";
 
 const SideNavBar = () => {
-  const { role } = useRole();
+  const { user, role } = useRole();
   const navItems = navConfig[role] || [];
 
   return (
@@ -48,6 +48,7 @@ const SideNavBar = () => {
               }}
             >
               {item.icon}
+
               <Typography
                 sx={{
                   fontWeight: isActive ? 600 : 400,
@@ -56,6 +57,21 @@ const SideNavBar = () => {
               >
                 {item.label}
               </Typography>
+
+              {/* STATIC BADGE ON THE RIGHT */}
+              {item.label === "Messages" && (<Box
+                sx={{
+                  ml: 1,        // PUSH BADGE TO RIGHT
+                  bgcolor: "#ff7676",
+                  borderRadius: "12px",
+                  color: "white",
+                  fontSize: "12px",
+                  px: 1,
+                  py: "2px",
+                }}
+              >
+                0
+              </Box>)}
             </Box>
           )}
         </NavLink>
