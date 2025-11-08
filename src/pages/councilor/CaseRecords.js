@@ -16,15 +16,8 @@ import {
   ListItem,
   ListItemText,
 } from "@mui/material";
+import useSnackbar from "../../hooks/useSnackbar";
 
-// Sample data for students
-const students = [
-  { id: 1, name: "John Doe" },
-  { id: 2, name: "Jane Smith" },
-  { id: 3, name: "Alice Johnson" },
-];
-
-// Case types
 const caseTypes = [
   {
     group: "Academic Counseling",
@@ -56,15 +49,17 @@ const caseTypes = [
   },
 ];
 
-// Session types
 const sessionTypes = ["Online", "Meet-up"];
 
 const CaseRecords = () => {
   const { user } = useRole();
   const [records, setRecords] = useState([]);
+  const [students, setStudents] = useState([]);
   const [quickNotes, setQuickNotes] = useState([]);
   const [currentNote, setCurrentNote] = useState("");
-  const [students, setStudents] = useState([]);
+  const [quickNotesData, setQuickNotesData] = useState([]); // ← THIS IS THE KEY
+  const { showSnackbar, SnackbarComponent } = useSnackbar();
+
   const [formData, setFormData] = useState({
     studentId: "",
     caseType: "",
@@ -74,75 +69,84 @@ const CaseRecords = () => {
     remarks: "",
   });
 
+  // FETCH BOTH RECORDS + QUICK NOTES
+  const fetchAllData = async () => {
+    try {
+      const res = await fetch("/caseRecordsCounselor/AllCaseRecords");
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+
+      setRecords(data.caseRecords || []);
+      setQuickNotesData(data.quickNotes || []); // ← LOAD QUICK NOTES HERE
+    } catch (err) {
+      setRecords([]);
+      setQuickNotesData([]);
+    }
+  };
+
+  const fetchStudents = async () => {
+    try {
+      const res = await fetch("/caseRecordsCounselor/student_lookup");
+      if (res.ok) setStudents(await res.json());
+    } catch (err) {
+      console.error("Students failed", err);
+    }
+  };
+
+  // Load on mount
+  useEffect(() => {
+    fetchStudents();
+    fetchAllData();
+  }, []);
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleCaseType = (e) => {
-    setFormData({ ...formData, caseType: e.target.value });
-  };
-
-  const handleSessionType = (e) => {
-    setFormData({ ...formData, sessionType: e.target.value });
-  };
-
   const handleAddQuickNote = () => {
-    if (currentNote.trim() === "") return;
-    setQuickNotes([...quickNotes, currentNote]);
+    if (!currentNote.trim()) return;
+    setQuickNotes([...quickNotes, currentNote.trim()]);
     setCurrentNote("");
   };
 
-  const handleSaveRecord = () => {
-    if (!formData.studentId || !formData.caseType) return;
+  const handleSaveRecord = async () => {
+    if (!user?.id) return showSnackbar("Login required", "error");
 
-    const studentName = students.find(
-      (s) => s.id === Number(formData.studentId)
-    )?.name;
+    try {
+      const res = await fetch("/caseRecordsCounselor/case-records/add", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...formData,
+          counselorId: user.id,
+          quickNotes,
+        }),
+      });
 
-    setRecords([
-      ...records,
-      {
-        id: records.length + 1,
-        studentName,
-        caseType: formData.caseType,
-        offense: formData.offense,
-        sessionType: formData.sessionType,
-        date: formData.date,
-        remarks: formData.remarks,
-        quickNotes,
-      },
-    ]);
+      if (res.ok) {
+        // REFRESH EVERYTHING — THIS IS THE MAGIC
+        await fetchAllData();
 
-    // Reset form and quick notes
-    setFormData({
-      studentId: "",
-      caseType: "",
-      offense: "",
-      sessionType: "",
-      date: "",
-      remarks: "",
-    });
-    setQuickNotes([]);
-  };
+        showSnackbar("Saved! Notes updated.", "success");
 
-  useEffect(() => {
-    const fetchStudents = async () => {
-      try {
-        const response = await fetch("/students/list");
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch students");
-        }
-
-        const data = await response.json();
-        setStudents(data); // save students to state
-      } catch (error) {
-        console.error("Error fetching students:", error);
+        // Reset form
+        setFormData({
+          studentId: "",
+          caseType: "",
+          offense: "",
+          sessionType: "",
+          date: "",
+          remarks: "",
+        });
+        setQuickNotes([]);
+        setCurrentNote("");
+      } else {
+        throw new Error();
       }
-    };
-
-    fetchStudents();
-  }, []);
+    } catch (err) {
+      showSnackbar("Save failed", "error");
+    }
+  };
 
   return (
     <Box sx={{ p: 4 }}>
@@ -150,48 +154,40 @@ const CaseRecords = () => {
         Student Case Records
       </Typography>
 
+      {/* FORM */}
       <Paper sx={{ p: 3, mb: 4 }}>
         <Typography variant="h6" gutterBottom>
-          Add New Case Record
+          Add New Record
         </Typography>
-
-        <Box
-          component="form"
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 2,
-            width: "100%",
-          }}
-        >
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
           <TextField
-            fullWidth
             select
-            label="Select Student"
+            label="Student"
             name="studentId"
             value={formData.studentId}
             onChange={handleChange}
+            fullWidth
           >
             {students.map((s) => (
               <MenuItem key={s.id} value={s.id}>
-                {s.name}
+                {s.first_name} {s.last_name}
               </MenuItem>
             ))}
           </TextField>
 
           <TextField
-            fullWidth
             select
             label="Case Type"
             name="caseType"
             value={formData.caseType}
-            onChange={handleCaseType}
+            onChange={handleChange}
+            fullWidth
           >
-            {caseTypes.map((group) => [
-              <MenuItem key={`label-${group.group}`} disabled sx={{ fontWeight: "bold" }}>
+            {caseTypes.flatMap((group) => [
+              <MenuItem key={group.group} disabled sx={{ fontWeight: "bold" }}>
                 {group.group}
               </MenuItem>,
-              group.items.map((item) => (
+              ...group.items.map((item) => (
                 <MenuItem key={item} value={item}>
                   {item}
                 </MenuItem>
@@ -199,80 +195,72 @@ const CaseRecords = () => {
             ])}
           </TextField>
 
-
-
           <TextField
-            fullWidth
             label="Concern / Offense"
             name="offense"
             value={formData.offense}
             onChange={handleChange}
-          />
-
-          <TextField
             fullWidth
+          />
+          <TextField
             select
             label="Session Type"
             name="sessionType"
             value={formData.sessionType}
-            onChange={handleSessionType}
+            onChange={handleChange}
+            fullWidth
           >
-            {sessionTypes.map((type) => (
-              <MenuItem key={type} value={type}>
-                {type}
+            {sessionTypes.map((t) => (
+              <MenuItem key={t} value={t}>
+                {t}
               </MenuItem>
             ))}
           </TextField>
 
           <TextField
-            fullWidth
             label="Date"
             name="date"
             type="date"
             value={formData.date}
             onChange={handleChange}
             InputLabelProps={{ shrink: true }}
-          />
-
-          <TextField
             fullWidth
-            multiline
-            rows={3}
+          />
+          <TextField
             label="Remarks"
             name="remarks"
             value={formData.remarks}
             onChange={handleChange}
+            multiline
+            rows={3}
+            fullWidth
           />
 
-          {/* Quick Notes Section */}
+          {/* QUICK NOTES INPUT */}
           <Box>
             <TextField
               fullWidth
-              label="Quick Note (during appointment)"
+              label="Quick Note"
               value={currentNote}
               onChange={(e) => setCurrentNote(e.target.value)}
-              onKeyPress={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  handleAddQuickNote();
-                }
-              }}
+              onKeyPress={(e) =>
+                e.key === "Enter" && (e.preventDefault(), handleAddQuickNote())
+              }
             />
             <Button
               sx={{ mt: 1 }}
               variant="outlined"
               onClick={handleAddQuickNote}
             >
-              Add Quick Note
+              Add Note
             </Button>
-
             {quickNotes.length > 0 && (
-              <Paper sx={{ mt: 2, p: 2, backgroundColor: "#f5f5f5" }}>
-                <Typography variant="subtitle2">Quick Notes:</Typography>
-                <List>
-                  {quickNotes.map((note, index) => (
-                    <ListItem key={index}>
-                      <ListItemText primary={`- ${note}`} />
+              <Paper sx={{ mt: 2, p: 2, bgcolor: "#f0f0f0" }}>
+                <Typography variant="subtitle2">Notes to save:</Typography>
+                <List dense>
+                  {quickNotes.map((note, i) => (
+                    <ListItem key={i}>
+                      <ListItemText primary={`• ${note}`} />
                     </ListItem>
                   ))}
                 </List>
@@ -280,54 +268,102 @@ const CaseRecords = () => {
             )}
           </Box>
 
-          <Button sx={{ mt: 2 }} variant="contained" onClick={handleSaveRecord}>
-            Save Case Record
+          <Button variant="contained" onClick={handleSaveRecord} sx={{ mt: 2 }}>
+            Save Record
           </Button>
         </Box>
       </Paper>
 
-      {/* Display Table */}
+      {/* TABLE */}
       <Paper sx={{ p: 3 }}>
         <Typography variant="h6" gutterBottom>
           Case Records List
         </Typography>
-        <Table>
+        <Table sx={{ border: "1px solid #ddd" }}>
           <TableHead>
             <TableRow>
-              <TableCell>ID</TableCell>
-              <TableCell>Student Name</TableCell>
-              <TableCell>Case Type</TableCell>
-              <TableCell>Concern / Offense</TableCell>
-              <TableCell>Session Type</TableCell>
-              <TableCell>Date</TableCell>
-              <TableCell>Remarks</TableCell>
-              <TableCell>Quick Notes</TableCell>
+              <TableCell>
+                <strong>ID</strong>
+              </TableCell>
+              <TableCell>
+                <strong>Student</strong>
+              </TableCell>
+              <TableCell>
+                <strong>Type</strong>
+              </TableCell>
+              <TableCell>
+                <strong>Concern</strong>
+              </TableCell>
+              <TableCell>
+                <strong>Session</strong>
+              </TableCell>
+              <TableCell>
+                <strong>Date</strong>
+              </TableCell>
+              <TableCell>
+                <strong>Remarks</strong>
+              </TableCell>
+              <TableCell>
+                <strong>Quick Notes</strong>
+              </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {records.map((r) => (
-              <TableRow key={r.id}>
-                <TableCell>{r.id}</TableCell>
-                <TableCell>{r.studentName}</TableCell>
-                <TableCell>{r.caseType}</TableCell>
-                <TableCell>{r.offense}</TableCell>
-                <TableCell>{r.sessionType}</TableCell>
-                <TableCell>{r.date}</TableCell>
-                <TableCell>{r.remarks}</TableCell>
-                <TableCell>
-                  <List dense>
-                    {r.quickNotes.map((note, i) => (
-                      <ListItem key={i} sx={{ py: 0 }}>
-                        <ListItemText primary={`- ${note}`} />
-                      </ListItem>
-                    ))}
-                  </List>
+            {records.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={8} align="center">
+                  <em>No records yet.</em>
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              records.map((r) => {
+                // FILTER NOTES FOR THIS RECORD
+                const notes = quickNotesData
+                  .filter((n) => n.case_record_id === r.id)
+                  .map((n) => n.name);
+
+                return (
+                  <TableRow key={r.id}>
+                    <TableCell>{r.id}</TableCell>
+                    <TableCell>
+                      {r.first_name} {r.middle_name || ""} {r.last_name}
+                    </TableCell>
+                    <TableCell>{r.case_type}</TableCell>
+                    <TableCell>{r.offense}</TableCell>
+                    <TableCell>{r.session_type}</TableCell>
+                    <TableCell>{r.date}</TableCell>
+                    <TableCell>{r.remarks || "-"}</TableCell>
+                    <TableCell sx={{ maxWidth: 300 }}>
+                      {notes.length > 0 ? (
+                        <List dense sx={{ py: 0 }}>
+                          {notes.slice(0, 3).map((note, i) => (
+                            <ListItem key={i} sx={{ py: 0 }}>
+                              <ListItemText primary={`• ${note}`} />
+                            </ListItem>
+                          ))}
+                          {notes.length > 3 && (
+                            <ListItem sx={{ py: 0 }}>
+                              <ListItemText
+                                primary={`... +${notes.length - 3} more`}
+                              />
+                            </ListItem>
+                          )}
+                        </List>
+                      ) : (
+                        <em style={{ color: "#999", fontSize: "0.85rem" }}>
+                          No notes
+                        </em>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            )}
           </TableBody>
         </Table>
       </Paper>
+
+      {SnackbarComponent}
     </Box>
   );
 };

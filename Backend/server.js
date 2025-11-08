@@ -55,7 +55,8 @@ const counselorAppointmentRequest = require("./routes/appointmentRequest");
 const studentAppointmentReschedule = require("./routes/studentAppointmentReschedule");
 const studentMessages = require("./routes/studentMessages");
 const counselorMessages = require("./routes/counselorMessages");
-const createNotification = require("./routes/notificationRoutes")
+const createNotification = require("./routes/notificationRoutes");
+const caseRecordsCounselor = require("./routes/caseRecordsCounselor");
 
 app.use("/registerRoutes", registerRoutes);
 app.use("/loginRoutes", loginRoutes);
@@ -72,6 +73,8 @@ app.use("/studentAppointmentReschedule", studentAppointmentReschedule);
 app.use("/studentMessages", studentMessages);
 app.use("/counselorMessages", counselorMessages);
 app.use("/createNotification", createNotification);
+app.use("/caseRecordsCounselor", caseRecordsCounselor);
+
 // Create a new Socket.IO server instance
 const io = new Server(server, {
   cors: {
@@ -87,7 +90,6 @@ io.on("connection", (socket) => {
     socket.join(room);
   });
 
-  
   socket.on("send_message", async (data) => {
     const { receiverId, content, author, time, appointmentId } = data;
     console.log(
@@ -102,7 +104,6 @@ io.on("connection", (socket) => {
       "message data"
     );
 
-
     // ONLY push to receiver (sender appends locally)
     io.to(`user_${String(receiverId)}`).emit("receive_message", {
       author, // real sender ID
@@ -110,7 +111,6 @@ io.on("connection", (socket) => {
       time,
       appointmentId,
     });
-
 
     // Save to DB
     try {
@@ -126,7 +126,6 @@ io.on("connection", (socket) => {
     }
   });
 });
-
 
 // Start the server
 const PORT = process.env.PORT || 5000;
