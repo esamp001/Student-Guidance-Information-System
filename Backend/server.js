@@ -57,6 +57,7 @@ const studentMessages = require("./routes/studentMessages");
 const counselorMessages = require("./routes/counselorMessages");
 const createNotification = require("./routes/notificationRoutes");
 const caseRecordsCounselor = require("./routes/caseRecordsCounselor");
+const counselorDashboard = require("./routes/counselorDashboard");
 
 app.use("/registerRoutes", registerRoutes);
 app.use("/loginRoutes", loginRoutes);
@@ -74,6 +75,7 @@ app.use("/studentMessages", studentMessages);
 app.use("/counselorMessages", counselorMessages);
 app.use("/createNotification", createNotification);
 app.use("/caseRecordsCounselor", caseRecordsCounselor);
+app.use("/counselorDashboard", counselorDashboard);
 
 // Create a new Socket.IO server instance
 const io = new Server(server, {

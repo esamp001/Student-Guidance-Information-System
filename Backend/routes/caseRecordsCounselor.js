@@ -7,6 +7,7 @@ router.post("/case-records/add", async (req, res) => {
   try {
     const {
       studentId,
+      user_id,
       caseType,
       offense,
       sessionType,
@@ -14,6 +15,8 @@ router.post("/case-records/add", async (req, res) => {
       remarks,
       quickNotes, // array of note texts
     } = req.body;
+
+    console.log(user_id, "userId");  
 
     // Insert Case Records First
     const newRecord = await knex("case_records")
@@ -24,6 +27,7 @@ router.post("/case-records/add", async (req, res) => {
         session_type: sessionType,
         date: date,
         remarks: remarks,
+        user_id: user_id,
       })
       .returning("id");
 

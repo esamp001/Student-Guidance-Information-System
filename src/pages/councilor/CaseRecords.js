@@ -113,15 +113,16 @@ const CaseRecords = () => {
     if (!user?.id) return showSnackbar("Login required", "error");
 
     try {
-      const res = await fetch("/caseRecordsCounselor/case-records/add", {
+      const res = await fetch(`/caseRecordsCounselor/case-records/add`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...formData,
-          counselorId: user.id,
           quickNotes,
+          user_id: user.id, // <- add this
         }),
       });
+
 
       if (res.ok) {
         // REFRESH EVERYTHING — THIS IS THE MAGIC

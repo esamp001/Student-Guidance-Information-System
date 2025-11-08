@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useNavigate, Navigate } from "react-router-dom";
 import theme from "../../theme";
 import {
   Box,
@@ -13,7 +13,10 @@ import {
   Modal,
   Stack,
   ButtonGroup,
+  Paper,
+  Skeleton,
 } from "@mui/material";
+import { useRole } from "../../context/RoleContext";
 
 // Icons
 import AssessmentIcon from "@mui/icons-material/Assessment";
@@ -39,9 +42,11 @@ const modalStyle = {
 const AppointmentsModal = ({ open, handleClose, appointments }) => {
   const [filter, setFilter] = useState("all");
 
-  const today = "2024-07-25"; // A placeholder for the current date
-  const oneWeekLater = "2024-08-01"; // A placeholder for one week later
-  const oneMonthLater = "2024-08-25"; // A placeholder for one month later
+
+  // Dynamic Date
+  const today = new Date().toISOString().split("T")[0]; // A placeholder for the current date
+  const oneWeekLater = new Date(new Date().setDate(new Date().getDate() + 7)).toISOString().split("T")[0]; // A placeholder for one week later
+  const oneMonthLater = new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split("T")[0]; // A placeholder for one month later
 
   const getFilteredAppointments = () => {
     switch (filter) {
@@ -125,9 +130,9 @@ const AppointmentsModal = ({ open, handleClose, appointments }) => {
                 }}
               >
                 <Typography variant="subtitle1" fontWeight="bold">
-                  {appt.name}
+                  {appt.counselor_first_name} {appt.counselor_middle_name} {appt.counselor_last_name}
                 </Typography>
-                <Chip label={appt.type} size="small" sx={{ mt: 0.5 }} />
+                <Chip label={appt.mode} size="small" sx={{ mt: 0.5 }} />
                 <Box display="flex" alignItems="center" gap={1} mt={1}>
                   <EventIcon fontSize="small" color="action" />
                   <Typography variant="body2">{appt.date}</Typography>
@@ -152,11 +157,18 @@ const AppointmentsModal = ({ open, handleClose, appointments }) => {
 };
 
 const CounselorDashboard = () => {
+  const { user } = useRole();
   // State
   const [openModal, setOpenModal] = useState(false);
   const [openViewCase, setOpenViewCase] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [ViewcaseModal, setViewcaseModal] = useState(false);
+  const [students, setStudents] = useState([]);
+  const [quickNotes, setQuickNotes] = useState([]);
+  const [appointments, setAppointments] = useState([]);
+  const [caseUpdates, setCaseUpdates] = useState([]);
+  const [loading, setLoading] = useState(false);
+  
 
   const navigate = useNavigate();
 
@@ -166,6 +178,7 @@ const CounselorDashboard = () => {
   const openviewCaseModal = () => setViewcaseModal(true);
   const closeviewCaseModal = () => setViewcaseModal(false);
   const handleOpenViewCase = (student) => {
+    console.log(student, "students")
     setSelectedStudent(student);
     setOpenViewCase(true);
   };
@@ -175,57 +188,110 @@ const CounselorDashboard = () => {
     setOpenViewCase(false);
   };
 
-  const students = [
-    { name: "Alice Johnson", status: "Active" },
-    { name: "Bob Williams", status: "On-hold" },
-    { name: "Charlie Davis", status: "Active" },
-    { name: "Diana Miller", status: "Active" },
-    { name: "Ethan White", status: "Inactive" },
-  ];
+  // All Students lookup
+  useEffect(() => {
+    const fetchStudents = async () => {
 
-  const appointments = [
-    {
-      name: "Alice Johnson",
-      type: "Academic Counseling",
-      date: "2024-07-25",
-      time: "10:00 AM",
-    },
-    {
-      name: "Charlie Davis",
-      type: "Behavioral Support",
-      date: "2024-07-26",
-      time: "02:30 PM",
-    },
-    {
-      name: "Diana Miller",
-      type: "Career Guidance",
-      date: "2024-07-27",
-      time: "11:00 AM",
-    },
-  ];
+      try {
+        setLoading(true);
+        const response = await fetch(`/counselorDashboard/student_lookup`);
 
-  const caseUpdates = [
-    {
-      name: "Alice Johnson",
-      update: "Follow-up on academic progress",
-      time: "2 hours ago",
-    },
-    {
-      name: "Bob Williams",
-      update: "Reviewed progress for math",
-      time: "Yesterday",
-    },
-    {
-      name: "Charlie Davis",
-      update: "New behavioral concern",
-      time: "2 days ago",
-    },
-    {
-      name: "Diana Miller",
-      update: "Career guidance session",
-      time: "3 days ago",
-    },
-  ];
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log(data, "data");
+        setStudents(data);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching students:", error);
+      }
+    };
+
+    fetchStudents();
+  }, []); // add userId as dependency
+
+  // Select student to show quick notes
+  const fetchQuickNotes = async (studentId) => {
+    try {
+      setLoading(true);
+      const response = await fetch(`/counselorDashboard/quick_notes?studentId=${studentId}`);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      // Acquired the quick notes that's grouped by case record id
+      setQuickNotes(data);
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching quick notes:", error);
+    }
+  };
+
+  // const appointments = [
+  //   {
+  //     name: "Alice Johnson",
+  //     type: "Academic Counseling",
+  //     date: "2024-07-25",
+  //     time: "10:00 AM",
+  //   },
+  //   {
+  //     name: "Charlie Davis",
+  //     type: "Behavioral Support",
+  //     date: "2024-07-26",
+  //     time: "02:30 PM",
+  //   },
+  //   {
+  //     name: "Diana Miller",
+  //     type: "Career Guidance",
+  //     date: "2024-07-27",
+  //     time: "11:00 AM",
+  //   },
+  // ];
+
+  useEffect(() => {
+    const fetchAppointments = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`/counselorDashboard/upcoming_appointments?userId=${user.id}`);
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        setAppointments(data);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching appointments:", error);
+      }
+    };
+    fetchAppointments();
+  }, []);
+
+  useEffect(() => {
+    const fetchCaseUpdates = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`/counselorDashboard/case_updates?userId=${user.id}`);
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log(data, "data case updates")
+        setCaseUpdates(data);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching case updates:", error);
+      }
+    };
+    fetchCaseUpdates();
+  }, []);
 
   return (
     <Box sx={{ p: 2 }}>
@@ -271,7 +337,7 @@ const CounselorDashboard = () => {
             >
               <Typography fontWeight="bold">Students Overview</Typography>
               <Button
-                onClick={() => navigate("/Dashboard/students")}
+                onClick={() => navigate("/dashboard/counselor/students")}
                 size="small"
                 variant="contained"
               >
@@ -308,14 +374,31 @@ const CounselorDashboard = () => {
                     }}
                   >
                     {/* Left side: Avatar + Name */}
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <Avatar>{student.name.charAt(0)}</Avatar>
-                      <Typography sx={{ fontSize: 12 }}>
-                        {student.name}
-                      </Typography>
-                    </Box>
+                    {loading ? (
+                      <Skeleton
+                        variant="rectangular"
+                        width={210}
+                        height={60}
+                        animation="wave"
+                      />
+                    ) : (
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <Avatar>{student.first_name.charAt(0)}</Avatar>
+                        <Typography sx={{ fontSize: 12 }}>
+                          {student.first_name}
+                        </Typography>
+                      </Box>
+                    )}
 
                     {/* Right side: Status Chip */}
+                    {loading ? (
+                      <Skeleton
+                        variant="rectangular"
+                        width={210}
+                        height={60}
+                        animation="wave"
+                      />
+                    ) : (
                     <Chip
                       label={student.status}
                       size="small"
@@ -333,12 +416,16 @@ const CounselorDashboard = () => {
                         color: "#fff",
                       }}
                     />
+                  )}
                   </Box>
 
                   <Button
                     size="small"
                     variant="outlined"
-                    onClick={() => handleOpenViewCase(student)}
+                    onClick={() => {
+                      handleOpenViewCase(student);
+                      fetchQuickNotes(student.id);
+                    }}
                   >
                     View Case
                   </Button>
@@ -370,11 +457,11 @@ const CounselorDashboard = () => {
                 {/* Header */}
                 <Box display="flex" alignItems="center" gap={2} mb={2}>
                   <Avatar sx={{ bgcolor: "primary.main" }}>
-                    {selectedStudent.name.charAt(0)}
+                    {selectedStudent.first_name.charAt(0)}
                   </Avatar>
                   <Box>
                     <Typography variant="h6" fontWeight="bold">
-                      {selectedStudent.name}
+                      {selectedStudent.first_name}
                     </Typography>
                     <Chip
                       label={selectedStudent.status}
@@ -387,36 +474,89 @@ const CounselorDashboard = () => {
                 <Divider sx={{ mb: 2 }} />
 
                 {/* Fake case details for now */}
-                <Typography variant="subtitle1" gutterBottom>
-                  Case History
-                </Typography>
                 <Box
                   sx={{
-                    maxHeight: 200,
+                    maxHeight: 300,          // slightly taller to fit more notes
                     overflowY: "auto",
-                    bgcolor: "grey.50",
-                    p: 2,
                     borderRadius: 2,
                   }}
                 >
-                  <Typography variant="body2" mb={1}>
-                    • Counseling session scheduled on Sept 20, 2025
-                  </Typography>
-                  <Typography variant="body2" mb={1}>
-                    • Academic performance reviewed last week
-                  </Typography>
-                  <Typography variant="body2" mb={1}>
-                    • Pending follow-up session
-                  </Typography>
+                  <Typography sx={{ fontWeight: 700, mb: 1 }}>Quick Notes</Typography>
+
+                  {quickNotes.length === 0 && (
+                    <Typography variant="body2" color="text.secondary">
+                      No quick notes available.
+                    </Typography>
+                  )}
+
+                  {Object.entries(quickNotes).map(([caseRecordId, notes]) => (
+                    <Box
+                      key={caseRecordId}
+                      sx={{
+                        mb: 3,
+                        p: 2,
+                        borderRadius: 2,
+                        bgcolor: "grey.100",
+                        boxShadow: 1,
+                      }}
+                    >
+                      {/* Case header */}
+                      <Typography
+                        variant="subtitle1"
+                        sx={{ fontWeight: 700, mb: 1, color: "primary.main" }}
+                      >
+                        Case Record ID: {caseRecordId}
+                      </Typography>
+
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        Date/Time:{" "}
+                        <Box component="span" sx={{ fontWeight: 400 }}>
+                          {new Date(notes[0].date).toLocaleDateString()}{" "}
+                          {new Date(notes[0].date).toLocaleTimeString()}
+                        </Box>
+                      </Typography>
+
+                      <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                        Case Type:{" "}
+                        <Box component="span" sx={{ fontWeight: 400 }}>
+                          {notes[0].case_type}
+                        </Box>
+                      </Typography>
+
+                      {/* Notes list */}
+                      {notes.map((note) => (
+                        <Paper
+                          key={note.id}
+                          variant="outlined"
+                          sx={{
+                            p: 1.5,
+                            mb: 1,
+                            borderRadius: 1,
+                            bgcolor: "white",
+                            display: "flex",
+                            flexDirection: "column",
+                            transition: "transform 0.2s",
+                            "&:hover": {
+                              transform: "scale(1.02)",
+                              boxShadow: 3,
+                            },
+                          }}
+                        >
+                          <Typography variant="body2" sx={{ pl: 1 }}>
+                            • {note.name}
+                          </Typography>
+                        </Paper>
+                      ))}
+                    </Box>
+                  ))}
+
                 </Box>
+
 
                 {/* Footer */}
                 <Box textAlign="right" mt={3}>
                   <Button onClick={handleCloseViewCase} sx={{ mr: 2 }}>
                     Close
-                  </Button>
-                  <Button variant="contained" color="success">
-                    Add Note
                   </Button>
                 </Box>
               </>
@@ -434,7 +574,7 @@ const CounselorDashboard = () => {
               mb={2}
             >
               <Typography fontWeight="bold">Upcoming Appointments</Typography>
-              <Button onClick={handleOpenModal} size="small" variant="outlined">
+              <Button navigate to="/students" onClick={handleOpenModal} size="small" variant="outlined">
                 View All
               </Button>
             </Box>
@@ -455,21 +595,34 @@ const CounselorDashboard = () => {
                     },
                   }}
                 >
-                  <Typography variant="subtitle1" fontWeight="bold">
-                    {appt.name}
-                  </Typography>
-                  <Chip label={appt.type} size="small" sx={{ mt: 0.5 }} />
-                  <Box display="flex" alignItems="center" gap={1} mt={1}>
-                    <EventIcon fontSize="small" color="action" />
-                    <Typography variant="body2">{appt.date}</Typography>
-                    <AccessTimeIcon fontSize="small" color="action" />
-                    <Typography variant="body2">{appt.time}</Typography>
-                  </Box>
+                  {loading ? (
+                    <>
+                      <Skeleton variant="text" width="60%" height={28} animation="wave" />
+                      <Skeleton variant="rectangular" width="30%" height={22} sx={{ mt: 1, borderRadius: 1 }} />
+                      <Skeleton variant="text" width="50%" height={20} sx={{ mt: 1 }} />
+                    </>
+                  ) : (
+                    <>
+                      <Typography variant="subtitle1" fontWeight="bold">
+                        {`${appt.counselor_first_name} ${appt.counselor_middle_name} ${appt.counselor_last_name}`}
+                      </Typography>
+
+                      <Chip label={appt.mode} size="small" sx={{ mt: 0.5 }} />
+
+                      <Box display="flex" alignItems="center" gap={1} mt={1}>
+                        <EventIcon fontSize="small" color="action" />
+                        <Typography variant="body2">{appt.date}</Typography>
+                        <AccessTimeIcon fontSize="small" color="action" />
+                        <Typography variant="body2">{appt.time}</Typography>
+                      </Box>
+                    </>
+                  )}
                 </Box>
 
                 {index < appointments.length - 1 && <Divider sx={{ my: 2 }} />}
               </React.Fragment>
             ))}
+
           </CardContent>
         </Card>
 
@@ -487,7 +640,7 @@ const CounselorDashboard = () => {
                 variant="h6"
                 gutterBottom
               >
-                All Upcoming Appointments
+                All Case Records
               </Typography>
               <Button
                 size="small"
@@ -498,34 +651,69 @@ const CounselorDashboard = () => {
               </Button>
             </Box>
 
-            {caseUpdates.map((update, index) => (
-              <React.Fragment key={index}>
-                <Box
-                  sx={{
-                    p: 2,
-                    borderRadius: 2,
-                    bgcolor: "grey.50",
-                    transition: "all 0.3s ease",
-                    cursor: "pointer",
-                    "&:hover": {
-                      bgcolor: "grey.100",
-                      boxShadow: 3,
-                      transform: "scale(1.02)",
-                    },
-                  }}
-                >
-                  <Typography fontWeight="bold">{update.name}</Typography>
-                  <Typography variant="body2" mb={0.5}>
-                    {update.update}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {update.time}
-                  </Typography>
-                </Box>
+            {caseUpdates.map((update, index) => {
+              // Convert ISO date to readable format
+              const dateObj = new Date(update.date);
+              const readableDate = dateObj.toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+                weekday: "short",
+              });
+              const readableTime = dateObj.toLocaleTimeString("en-US", {
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: true,
+              });
 
-                {index < caseUpdates.length - 1 && <Divider sx={{ my: 1 }} />}
-              </React.Fragment>
-            ))}
+              return (
+                <React.Fragment key={index}>
+                  <Paper
+                    elevation={1}
+                    sx={{
+                      p: 2,
+                      borderRadius: 2,
+                      bgcolor: "grey.50",
+                      transition: "all 0.3s ease",
+                      cursor: "pointer",
+                      "&:hover": {
+                        bgcolor: "grey.100",
+                        boxShadow: 3,
+                        transform: "scale(1.02)",
+                      },
+                    }}
+                  >
+                    {/* Student Name */}
+                    <Typography fontWeight="bold" variant="subtitle1" mb={0.5}>
+                      {`${update.first_name} ${update.middle_name} ${update.last_name}`}
+                    </Typography>
+
+                    {/* Case Details */}
+                    <Typography variant="body2" color="text.primary" mb={0.5}>
+                      <strong>Case Type:</strong> {update.case_type}
+                    </Typography>
+                    <Typography variant="body2" color="text.primary" mb={0.5}>
+                      <strong>Offense:</strong> {update.offense}
+                    </Typography>
+                    <Typography variant="body2" color="text.primary" mb={0.5}>
+                      <strong>Session Type:</strong> {update.session_type}
+                    </Typography>
+                    <Typography variant="body2" color="text.primary" mb={0.5}>
+                      <strong>Remarks:</strong> {update.remarks}
+                    </Typography>
+
+                    {/* Date and Time */}
+                    <Typography variant="caption" color="text.secondary">
+                      {readableDate} at {readableTime}
+                    </Typography>
+                  </Paper>
+
+                  {/* Divider between cards */}
+                  {index < caseUpdates.length - 1 && <Divider sx={{ my: 1 }} />}
+                </React.Fragment>
+              );
+            })}
+
           </CardContent>
         </Card>
       </Box>
@@ -566,12 +754,12 @@ const CounselorDashboard = () => {
                       bgcolor: "grey.50",
                     }}
                   >
-                    <Typography fontWeight="bold">{update.name}</Typography>
+                    <Typography fontWeight="bold">{update.first_name} {update.middle_name} {update.last_name}</Typography>
                     <Typography variant="body2" mb={0.5}>
-                      {update.update}
+                      {update.case_type}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      {update.time}
+                      {update.date} at {update.time}
                     </Typography>
                   </Box>
                 ))
@@ -614,7 +802,7 @@ const CounselorDashboard = () => {
               or case histories.
             </Typography>
             <Button
-              onClick={() => navigate("/Dashboard/reports")}
+              onClick={() => navigate("/dashboard/counselor/reports")}
               variant="contained"
               size="small"
             >
