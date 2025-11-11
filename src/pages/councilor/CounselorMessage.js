@@ -1,4 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import {
   Box,
   Typography,
@@ -9,6 +13,9 @@ import {
   IconButton,
   Divider,
   InputAdornment,
+  Modal,
+  Menu,
+  MenuItem,
 } from "@mui/material";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import SearchIcon from "@mui/icons-material/Search";
@@ -19,17 +26,38 @@ import { sendNotification } from "../../utils/notification";
 
 const CounselorMessage = () => {
   const { user } = useRole();
+  const [openModal, setOpenModal] = useState(false);
   const [messages, setMessages] = useState([]);
   const [conversationList, setConversationList] = useState([]);
   const [selectedConversation, setSelectedConversation] = useState(null);
-  console.log("Selected Conversation:", selectedConversation);
   const [loading, setLoading] = useState(false);
   const [appointmentInfo, setAppointmentInfo] = useState(null);
-  console.log("Appointment Info:", appointmentInfo);
   const [text, setText] = useState("");
   const messagesEndRef = useRef(null);
   const scrollContainerRef = useRef(null);
    const { showSnackbar, SnackbarComponent } = useSnackbar();
+   const [selectedDateTime, setSelectedDateTime] = useState(null);
+   const [formData, setFormData] = useState({
+    type: "",
+    mode: "",
+    status: "",
+   })
+
+   console.log(formData, "formData");
+
+   // Lookup appointments when request follow is being clicked
+   const fetchAppointments = async (appointmentId) => {
+      if (!appointmentId) return;
+      
+      try {
+        const res = await fetch(`/counselorMessages/appointments/lookup?appointmentId=${appointmentId}`);
+        if (!res.ok) throw new Error("Failed to fetch appointments");
+        const data = await res.json();
+        setFormData(data);
+      } catch (err) {
+        console.error("Failed to fetch appointments:", err);
+      }
+   }
 
   const handleAppointmentCompletion = async () => {
     setLoading(true);
@@ -40,7 +68,10 @@ const CounselorMessage = () => {
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...selectedConversation, status: "Completed" }),
+          body: JSON.stringify({
+            ...selectedConversation,
+            status: "Completed",
+          }),
         }
       );
 
@@ -62,6 +93,52 @@ const CounselorMessage = () => {
       setLoading(false);
     }
   };
+
+  const handleOpenModal = () => {
+    setOpenModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setOpenModal(false);
+  };
+
+  const handleAppointmentFollowUp = async () => {
+    // setLoading(true);
+    console.log("HIT HEREES")
+    try {
+      const response = await fetch(
+      `/counselorMessages/appointments/follow-up?appointmentId=${selectedConversation.appointment_id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            dateTime: selectedDateTime,
+            type: formData.type,
+            mode: formData.mode,
+            status: "Follow-up"
+          })
+        }
+      );
+
+      if (!response.ok) throw new Error("Failed to make follow-up appointment");
+
+      showSnackbar("Appointment confirmed successfully!", "success");
+
+      // Notify student about completion
+      // await sendNotification({
+      //   userId: selectedConversation.student_id,
+      //   type: "message",
+      //   context: { sender: "Counselor" },
+      // });
+
+    } catch (error) {
+      console.error("Error confirming appointment:", error);
+      showSnackbar("Failed to confirm appointment.", "error");
+    } finally {
+      setLoading(false);
+    }
+  }
+
 
   // Register user
   useEffect(() => {
@@ -435,11 +512,28 @@ const CounselorMessage = () => {
           selectedConversation?.appointment_status === "Confirmed" ||
           selectedConversation?.appointment_status === "Confirmed Reschedule"
         ) && (
-            <Box sx={{ display: "flex", justifyContent: "center" }}>
-            <Button onClick={() => handleAppointmentCompletion(selectedConversation.appointment_id)}>
-              Mark this appointment as completed
+          <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 2, p: 2, bgcolor: '#f3dfddff' }}>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => handleAppointmentCompletion(selectedConversation.appointment_id)}
+            >
+              Mark as Completed
             </Button>
-            </Box>
+
+            <Divider orientation="vertical" flexItem />
+
+            <Button
+              variant="outlined"
+              color="secondary"
+              onClick={() => {
+                handleOpenModal()
+                fetchAppointments(selectedConversation.appointment_id)
+              }}
+            >
+              Request Follow-Up
+            </Button>
+          </Box>
           )}
        
         {appointmentInfo && (<Box
@@ -485,6 +579,96 @@ const CounselorMessage = () => {
         </Box>)}
       </Box>
       {SnackbarComponent}
+      {/* FOLLOW-UP MODAL */}
+      <Modal
+        open={openModal}
+        onClose={handleCloseModal}
+        aria-labelledby="follow-up-modal-title"
+        aria-describedby="follow-up-modal-description"
+      >
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",           // Changed from 50% to 40% to move up
+            left: "50%",
+            transform: "translate(-50%, -70%)", // Adjusted Y offset to keep it visually balanced
+            width: 400,
+            bgcolor: "background.paper",
+            boxShadow: 24,
+            borderRadius: 2,
+            p: 4,
+            maxHeight: "90vh",
+            overflowY: "auto",
+          }}
+        >
+          <Typography id="follow-up-modal-title" variant="h6" component="h2" sx={{ mb: 2 }}>
+            Request Follow-Up
+          </Typography>
+          <Typography id="follow-up-modal-description" sx={{ mb: 2 }}>
+            Are you sure you want to schedule a follow-up appointment for this student?
+            If Yes, please select the date and time for the follow-up appointment.
+          </Typography>
+
+          <LocalizationProvider dateAdapter={AdapterDateFns}>
+            <DateTimePicker sx={{ width: '100%'}}
+              label="Select new date & time"
+              value={selectedDateTime}
+              onChange={(newValue) =>
+                setSelectedDateTime(newValue)
+              }
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  fullWidth
+                  sx={{ mt: 2 }}
+                  InputProps={{
+                    ...params.InputProps,
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton>
+                          <CalendarTodayIcon />
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              )}
+            />
+          </LocalizationProvider>
+
+
+          <TextField
+            select
+            label="Appointment Mode"
+            value={formData.mode} // current selected value
+            onChange={(e) => setFormData({ ...formData, mode: e.target.value })}
+            fullWidth
+            sx={{ mt: 2 }}
+          >
+            {/* Options */}
+            <MenuItem value="Online">Online</MenuItem>
+            <MenuItem value="Face-to-Face">Face-to-Face</MenuItem>
+          </TextField>
+
+
+          <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}>
+            <Button variant="outlined" onClick={handleCloseModal}>
+              Cancel
+            </Button>
+            <Button
+              variant="contained"
+              onClick={() => {
+                // Call your follow-up function here
+                handleAppointmentFollowUp();
+                handleCloseModal();
+              }}
+            >
+              Confirm
+            </Button>
+          </Box>
+        </Box>
+      </Modal>
+
     </Paper>
   );
 };

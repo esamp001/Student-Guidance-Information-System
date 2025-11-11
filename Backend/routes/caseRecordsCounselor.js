@@ -7,6 +7,7 @@ router.post("/case-records/add", async (req, res) => {
   try {
     const {
       studentId,
+      appointmentId,
       user_id,
       caseType,
       offense,
@@ -28,6 +29,7 @@ router.post("/case-records/add", async (req, res) => {
         date: date,
         remarks: remarks,
         user_id: user_id,
+        appointment_id: appointmentId,
       })
       .returning("id");
 
@@ -104,6 +106,18 @@ router.get("/AllCaseRecords", async (req, res) => {
   } catch (error) {
     console.error("Error fetching case records:", error);
     res.status(500).json({ message: "Error fetching case records" });
+  }
+});
+
+// Lookup Appointments
+router.get("/appointments", async (req, res) => {
+  try {
+    const appointments = await knex("appointments").select("id", "type", "mode");
+    console.log(appointments, "appointments");
+    res.json(appointments);
+  } catch (error) {
+    console.error("Error fetching appointments:", error);
+    res.status(500).json({ message: "Error fetching appointments" });
   }
 });
 

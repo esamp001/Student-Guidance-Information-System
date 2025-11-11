@@ -59,12 +59,14 @@ const CaseRecords = () => {
   const [currentNote, setCurrentNote] = useState("");
   const [quickNotesData, setQuickNotesData] = useState([]); // ← THIS IS THE KEY
   const { showSnackbar, SnackbarComponent } = useSnackbar();
+  const [appointments, setAppointments] = useState([]);
 
   const [formData, setFormData] = useState({
     studentId: "",
     caseType: "",
     offense: "",
     sessionType: "",
+    appointmentId: "",
     date: "",
     remarks: "",
   });
@@ -84,6 +86,24 @@ const CaseRecords = () => {
     }
   };
 
+  // FETCH APPOINTMENTS
+  useEffect(() => {
+    const fetchAppointments = async () => {
+      try {
+        const res = await fetch("/caseRecordsCounselor/appointments");
+        if (res.ok) {
+          const data = await res.json();
+          console.log(data, "data");
+          setAppointments(data);
+        }
+      } catch (err) {
+        console.error("Appointments failed", err);
+      }
+    };
+    fetchAppointments();
+  }, []);
+
+
   const fetchStudents = async () => {
     try {
       const res = await fetch("/caseRecordsCounselor/student_lookup");
@@ -100,8 +120,27 @@ const CaseRecords = () => {
   }, []);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+
+    // Check if appointment is being selected
+    if (name === "appointmentId") {
+      const selectedAppointment = appointments.find((a) => a.id === value);
+      console.log(selectedAppointment, "selectedAppointment");
+      if (selectedAppointment) {
+        setFormData({
+          ...formData,
+          appointmentId: value,
+          caseType: selectedAppointment.type || "", // populate caseType
+          sessionType: selectedAppointment.mode || "",   // populate sessionType
+        });
+        return; // exit early
+      }
+    }
+
+    // Default update for other fields
+    setFormData({ ...formData, [name]: value });
   };
+
 
   const handleAddQuickNote = () => {
     if (!currentNote.trim()) return;
@@ -176,47 +215,47 @@ const CaseRecords = () => {
             ))}
           </TextField>
 
+          {/* Select the appointment to populate other data */}
           <TextField
             select
-            label="Case Type"
-            name="caseType"
-            value={formData.caseType}
+            label="Appointment"
+            name="appointmentId"
+            value={formData.appointmentId}
             onChange={handleChange}
             fullWidth
           >
-            {caseTypes.flatMap((group) => [
-              <MenuItem key={group.group} disabled sx={{ fontWeight: "bold" }}>
-                {group.group}
-              </MenuItem>,
-              ...group.items.map((item) => (
-                <MenuItem key={item} value={item}>
-                  {item}
-                </MenuItem>
-              )),
-            ])}
+            {appointments.map((a, index) => (
+              <MenuItem key={index} value={a.id}>
+                {a.type} - {a.mode}
+              </MenuItem>
+            ))}
           </TextField>
 
           <TextField
+            label="Case Type"
+            name="caseType"
+            value={formData.caseType}
+            fullWidth
+            InputProps={{
+              readOnly: true, // extra safety, ensures no typing
+            }}
+          />
+
+             <TextField
             label="Concern / Offense"
             name="offense"
             value={formData.offense}
             onChange={handleChange}
             fullWidth
           />
+          
           <TextField
-            select
             label="Session Type"
             name="sessionType"
             value={formData.sessionType}
             onChange={handleChange}
             fullWidth
-          >
-            {sessionTypes.map((t) => (
-              <MenuItem key={t} value={t}>
-                {t}
-              </MenuItem>
-            ))}
-          </TextField>
+          />
 
           <TextField
             label="Date"

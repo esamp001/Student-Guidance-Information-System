@@ -58,6 +58,7 @@ const counselorMessages = require("./routes/counselorMessages");
 const createNotification = require("./routes/notificationRoutes");
 const caseRecordsCounselor = require("./routes/caseRecordsCounselor");
 const counselorDashboard = require("./routes/counselorDashboard");
+const adminGuidanceCaseRecords = require("./routes/adminGuidanceCaseRecords");
 
 app.use("/registerRoutes", registerRoutes);
 app.use("/loginRoutes", loginRoutes);
@@ -76,7 +77,7 @@ app.use("/counselorMessages", counselorMessages);
 app.use("/createNotification", createNotification);
 app.use("/caseRecordsCounselor", caseRecordsCounselor);
 app.use("/counselorDashboard", counselorDashboard);
-
+app.use("/adminGuidanceCaseRecords", adminGuidanceCaseRecords);
 // Create a new Socket.IO server instance
 const io = new Server(server, {
   cors: {

@@ -138,6 +138,31 @@ router.get("/messages/lookup", async (req, res) => {
   }
 });
 
+// Appointment look up on request followup
+router.get("/appointments/lookup", async (req, res) => {
+  const { appointmentId } = req.query;
+
+  if (!appointmentId) {
+    return res.status(400).json({ error: "appointmentId is required" });
+  }
+
+  try {
+    const appointment = await knex("appointments")
+      .select("id", "type", "mode", "status")
+      .where("id", appointmentId)
+      .first();
+
+    if (!appointment) {
+      return res.status(404).json({ error: "Appointment not found" });
+    }
+
+    res.json(appointment);
+  } catch (err) {
+    console.error("Failed to fetch appointment:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 /**
  * Send Message (for non-socket fallback)
  */
@@ -159,5 +184,45 @@ router.post("/send", async (req, res) => {
     res.status(500).json({ message: "Error sending message" });
   }
 });
+
+router.put("/appointments/follow-up", async (req, res) => {
+
+  console.log("HIT HEREES")
+  const { appointmentId } = req.query;
+  const { dateTime, type, mode, status } = req.body;
+
+  console.log({ appointmentId, dateTime, type, mode, status }, "appointmentId, dateTime, type, mode, status");
+
+  if (!appointmentId || !dateTime || !type || !mode || !status) {
+    return res.status(400).json({ message: "Missing required fields" });
+  }
+
+  try {
+    // Update the appointment
+    const updated = await knex("appointments")
+      .where({ id: appointmentId })
+      .update({
+        datetime: dateTime, // make sure your DB column names match
+        type: type,
+        mode: mode,
+        status: status
+      })
+      .returning("*"); // returns the updated row(s)
+
+    if (updated.length === 0) {
+      return res.status(404).json({ message: "Appointment not found" });
+    }
+
+    // Optionally, send a notification here if needed
+    // await sendNotification({ userId: updated[0].student_id, ... });
+
+    return res.json({ message: "Appointment updated successfully", appointment: updated[0] });
+  } catch (error) {
+    console.error("Error updating appointment:", error);
+    return res.status(500).json({ message: "Server error", error });
+  }
+});
+
+
 
 module.exports = router;

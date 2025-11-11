@@ -124,6 +124,8 @@ router.put("/appointments/completed/:id", async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
 
+  console.log({id, status}, "id, status");
+
   if (!status || status !== "Completed") {
     return res.status(400).json({ message: "Invalid or missing status" });
   }
@@ -170,4 +172,38 @@ router.put("/:id/reschedule", async (req, res) => {
   }
 });
 
+
+// router.put("/appointments/follow-up", async (req, res) => {
+//   const { appointmentId } = req.query;
+//   console.log(typeof(appointmentId), "appointmentId");
+//   const { status, type, mode, dateTime } = req.body;   // <-- keep dateTime if you want it later
+
+//   if (!appointmentId) {
+//     return res.status(400).json({ message: "appointmentId is required" });
+//   }
+
+//   try {
+//     const toUpdate = { status, type, mode, datetime: dateTime };
+//     // If you ever add a `scheduled_at` column, uncomment:
+//     // if (dateTime) toUpdate.scheduled_at = dateTime;
+
+//     const updated = await knex("appointments")
+//       .where({ id: appointmentId })
+//       .update(toUpdate)
+//       .returning("*");
+
+//     if (!updated.length) {
+//       return res.status(404).json({ message: "Appointment not found" });
+//     }
+
+//     res.json({ success: true, appointment: updated[0] });
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ success: false, error: err.message });
+//   }
+// });
+
+
+
 module.exports = router;
+

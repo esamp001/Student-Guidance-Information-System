@@ -24,6 +24,15 @@ exports.up = function (knex) {
       .inTable("users")
       .onDelete("CASCADE"); // Deletes case record if user is deleted
 
+    // Reference to appointment
+    table
+      .integer("appointment_id")
+      .unsigned()
+      .notNullable()
+      .references("id")
+      .inTable("appointments")
+      .onDelete("CASCADE"); // Deletes case record if appointment is deleted
+
     table.string("case_type").notNullable(); // Academic, Behavioral, Career
     table.string("offense").notNullable(); // Concern / Offense
     table.string("session_type").notNullable(); // Online or Meet-up

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -40,53 +40,53 @@ import {
 } from "@mui/icons-material";
 
 // Sample data
-const defaultCases = [
-  {
-    id: 1,
-    studentName: "Juan Dela Cruz",
-    studentId: "STU-001",
-    caseType: "Academic",
-    summary: "Falling behind in Math",
-    assignedTo: "Ms. Santos",
-    status: "Open",
-    createdAt: "2025-09-20",
-    history: [
-      {
-        date: "2025-09-20",
-        note: "Initial intake. Referred to subject teacher.",
-        actor: "Ms. Santos",
-      },
-    ],
-  },
-  {
-    id: 2,
-    studentName: "Maria Clara",
-    studentId: "STU-002",
-    caseType: "Behavioral",
-    summary: "Frequent classroom disruptions",
-    assignedTo: "Mr. Reyes",
-    status: "In Progress",
-    createdAt: "2025-09-18",
-    history: [
-      {
-        date: "2025-09-18",
-        note: "Meeting with student. Behaviour plan drafted.",
-        actor: "Mr. Reyes",
-      },
-      {
-        date: "2025-09-23",
-        note: "Follow-up. Some improvement observed.",
-        actor: "Mr. Reyes",
-      },
-    ],
-  },
-];
+// const defaultCases = [
+//   {
+//     id: 1,
+//     studentName: "Juan Dela Cruz",
+//     studentId: "STU-001",
+//     caseType: "Academic",
+//     summary: "Falling behind in Math",
+//     assignedTo: "Ms. Santos",
+//     status: "Open",
+//     createdAt: "2025-09-20",
+//     history: [
+//       {
+//         date: "2025-09-20",
+//         note: "Initial intake. Referred to subject teacher.",
+//         actor: "Ms. Santos",
+//       },
+//     ],
+//   },
+//   {
+//     id: 2,
+//     studentName: "Maria Clara",
+//     studentId: "STU-002",
+//     caseType: "Behavioral",
+//     summary: "Frequent classroom disruptions",
+//     assignedTo: "Mr. Reyes",
+//     status: "In Progress",
+//     createdAt: "2025-09-18",
+//     history: [
+//       {
+//         date: "2025-09-18",
+//         note: "Meeting with student. Behaviour plan drafted.",
+//         actor: "Mr. Reyes",
+//       },
+//       {
+//         date: "2025-09-23",
+//         note: "Follow-up. Some improvement observed.",
+//         actor: "Mr. Reyes",
+//       },
+//     ],
+//   },
+// ];
 
 const CASE_TYPES = ["Academic", "Personal", "Behavioral"];
 const STATUS_OPTIONS = ["Open", "In Progress", "Resolved", "Closed"];
 
 const GuidanceCaseRecords = () => {
-  const [cases, setCases] = useState(defaultCases);
+  const [cases, setCases] = useState([]);
   const [filterStatus, setFilterStatus] = useState("All");
   const [openForm, setOpenForm] = useState(false);
   const [editingCase, setEditingCase] = useState(null);
@@ -98,6 +98,113 @@ const GuidanceCaseRecords = () => {
     caseItem: null,
   });
 
+  const [lookup, setLookup] = useState({
+    students: [],
+    counselors: [],
+  });
+
+  const [formData, setFormData] = useState({
+    student_name: "",
+    student_id: "",
+    appointment_id: "",
+    case_type: "",
+    summary: "",
+    assigned_to: "",
+    counselor_id: "",
+    remarks: ""
+  });
+
+  console.log(formData, "formData")
+
+  // API - Look up for students who initiated first and have a follow up session status
+//  useEffect(() => {
+//    const fetchStudentsRecords = async () => {
+//     try {
+//       const response = await fetch("/adminGuidanceCaseRecords/admin/students/lookup");
+//       const data = await response.json();
+//       console.log(data);
+//       setCases(data);
+//     } catch (error) {
+//       console.error("Error fetching students records:", error);
+//     }
+//    }
+//    fetchStudentsRecords();
+//  }, [])
+
+// API - Auto create guidance case records
+  useEffect(() => {
+    const fetchAndCreateCases = async () => {
+      try {
+        // 1️ Fetch the lookup data
+        const response = await fetch("/adminGuidanceCaseRecords/admin/students/lookup");
+        const data = await response.json();
+        console.log("Lookup data:", data);
+        setCases(data);
+
+        // 2️ Automatically create guidance case records
+        for (const record of data) {
+          console.log(record, "record")
+          // Example payload — adjust fields to match your backend
+          const payload = {
+            appointment_id: record.appointment_id,
+            student_id: record.student_id,
+            counselor_id: record.counselor_id,
+            case_type: record.case_type || "student_initiated",
+            status: record.status,
+            summary: record.remarks || "",
+            remarks: record.case_status || ""
+          };
+
+          await fetch("/adminGuidanceCaseRecords/guidanceCaseRecords", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+        }
+
+      } catch (error) {
+        console.error("Error fetching or creating cases:", error);
+      }
+    };
+
+    fetchAndCreateCases();
+  }, []);
+
+
+// API - Look up for case to be auto filled on form
+  const fetchLookupForm = async () => {
+    try {
+      const response = await fetch("/adminGuidanceCaseRecords/students/counselor/lookup");
+      const data = await response.json();
+
+      // Save to state
+      setLookup({
+        students: data.students || [],
+        counselors: data.counselors || [],
+      });
+
+    } catch (err) {
+      console.error("Error fetching lookup data:", err);
+    }
+  };
+
+ // API - Lookup for counselor initiated case records
+//  useEffect(() => {
+//    const fetchCounselorRecords = async () => {
+//     try {
+//       const response = await fetch("/adminGuidanceCaseRecords/admin/counselor/lookup");
+//       const data = await response.json();
+//       console.log(data);
+//       setCases(data);
+//     } catch (error) {
+//       console.error("Error fetching counselor records:", error);
+//     }
+//    }
+//    fetchCounselorRecords();
+//  }, [])
+
+ // API - Handle Edit for both counselor and student initiated case records
+
   const filteredCases = useMemo(() => {
     if (filterStatus === "All") return cases;
     return cases.filter((c) => c.status === filterStatus);
@@ -105,6 +212,7 @@ const GuidanceCaseRecords = () => {
 
   // ---- Handlers ----
   function openAdd() {
+    fetchLookupForm()
     setEditingCase({
       studentName: "",
       studentId: "",
@@ -127,30 +235,51 @@ const GuidanceCaseRecords = () => {
   }
 
   function saveCase() {
-    if (!editingCase.studentName?.trim() || !editingCase.summary?.trim()) {
+    if (!formData.student_name?.trim() || !formData.summary?.trim()) {
       alert("Please fill student name and summary.");
       return;
     }
+    // API - Post it to guidance case records table - When counselor initated
+    const handleSaveCase = async () => {
 
-    if (editingCase.id) {
-      setCases((prev) =>
-        prev.map((c) => (c.id === editingCase.id ? { ...editingCase } : c))
-      );
-    } else {
-      const newCase = {
-        ...editingCase,
-        id: Math.max(0, ...cases.map((c) => c.id)) + 1,
-        createdAt: new Date().toISOString().slice(0, 10),
-        history: [
-          {
-            date: new Date().toISOString().slice(0, 10),
-            note: "Case created.",
-            actor: editingCase.assignedTo || "System",
-          },
-        ],
-      };
-      setCases((prev) => [newCase, ...prev]);
-    }
+      try {
+        const response = await fetch("/adminGuidanceCaseRecords/saveCase", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...formData,
+            appointment_id: selectedCaseForMenu.appointment_id
+          }),
+        });
+        const data = await response.json();
+        console.log(data);
+        // setCases((prev) => [data, ...prev]);
+      } catch (err) {
+        console.error("Error saving case:", err);
+        throw new Error("Failed to save case");
+      }
+    };
+    handleSaveCase();
+
+    // if (editingCase.id) {
+    //   setCases((prev) =>
+    //     prev.map((c) => (c.id === editingCase.id ? { ...editingCase } : c))
+    //   );
+    // } else {
+    //   const newCase = {
+    //     ...editingCase,
+    //     id: Math.max(0, ...cases.map((c) => c.id)) + 1,
+    //     createdAt: new Date().toISOString().slice(0, 10),
+    //     history: [
+    //       {
+    //         date: new Date().toISOString().slice(0, 10),
+    //         note: "Case created.",
+    //         actor: editingCase.assignedTo || "System",
+    //       },
+    //     ],
+    //   };
+    //   setCases((prev) => [newCase, ...prev]);
+    // }
     closeForm();
   }
 
@@ -169,7 +298,7 @@ const GuidanceCaseRecords = () => {
         c.id === caseId
           ? {
               ...c,
-              status: newStatus,
+              case_status: newStatus,
               history: [
                 ...(c.history || []),
                 {
@@ -271,18 +400,18 @@ const GuidanceCaseRecords = () => {
             {filteredCases.map((c) => (
               <TableRow key={c.id}>
                 <TableCell>
-                  <Typography variant="subtitle2">{c.studentName}</Typography>
+                  <Typography variant="subtitle2">{c.student_first_name} {c.student_middle_name} {c.student_last_name}</Typography>
                   <Typography variant="caption" color="text.secondary">
-                    {c.studentId}
+                    {c.student_no}
                   </Typography>
                 </TableCell>
-                <TableCell>{c.caseType}</TableCell>
+                <TableCell>{c.case_type}</TableCell>
                 <TableCell>
                   <Typography noWrap sx={{ maxWidth: 320 }}>
-                    {c.summary}
+                    {c.remarks}
                   </Typography>
                 </TableCell>
-                <TableCell>{c.assignedTo || "Unassigned"}</TableCell>
+                <TableCell>{`${c.first_name} ${c.middle_name} ${c.last_name}` || "Unassigned"}</TableCell>
                 <TableCell>
                   <Stack
                     direction="row"
@@ -290,10 +419,10 @@ const GuidanceCaseRecords = () => {
                     alignItems="center"
                     justifyContent={"space-between"}
                   >
-                    {statusChip(c.status)}
+                    {statusChip(c.case_status)}
                     <FormControl size="small">
                       <Select
-                        value={c.status}
+                        value={c.case_status}
                         onChange={(e) => changeStatus(c.id, e.target.value)}
                         sx={{ minWidth: 120 }}
                       >
@@ -377,32 +506,48 @@ const GuidanceCaseRecords = () => {
         <DialogContent>
           {editingCase && (
             <Stack spacing={2} mt={1}>
+              {/* Fill up appointment details first to initiate case record and assigned to specific counselor */}
               <TextField
-                label="Student Name"
-                value={editingCase.studentName}
-                onChange={(e) =>
-                  setEditingCase({
-                    ...editingCase,
-                    studentName: e.target.value,
-                  })
-                }
+                select
                 fullWidth
-              />
+                label="Student Name"
+                value={formData.student_id}
+                onChange={(e) => {
+                  const selected = lookup.students.find((s) => s.id === e.target.value);
+
+                  setFormData({
+                    ...formData,
+                    student_id: selected.id,
+                    student_name: `${selected.first_name} ${selected.middle_name} ${selected.last_name}`,
+                  });
+                }}
+              >
+                {lookup.students.map((s) => (
+                  <MenuItem key={s.id} value={s.id}>
+                    {s.first_name} {s.middle_name} {s.last_name}
+                  </MenuItem>
+                ))}
+              </TextField>
+
+
               <TextField
                 label="Student ID"
-                value={editingCase.studentId}
-                onChange={(e) =>
-                  setEditingCase({ ...editingCase, studentId: e.target.value })
+                disabled
+                value={
+                  lookup.students.find((s) => s.id === formData.student_id)?.student_no || ""
                 }
                 fullWidth
+                InputLabelProps={{ shrink: true }}
               />
+
+
               <FormControl fullWidth>
                 <InputLabel>Case Type</InputLabel>
                 <Select
-                  value={editingCase.caseType}
+                  value={formData.case_type}
                   label="Case Type"
                   onChange={(e) =>
-                    setEditingCase({ ...editingCase, caseType: e.target.value })
+                    setFormData({ ...formData, case_type: e.target.value })
                   }
                 >
                   {CASE_TYPES.map((t) => (
@@ -414,29 +559,50 @@ const GuidanceCaseRecords = () => {
               </FormControl>
               <TextField
                 label="Summary"
-                value={editingCase.summary}
+                value={formData.summary}
                 onChange={(e) =>
-                  setEditingCase({ ...editingCase, summary: e.target.value })
+                  setFormData({ ...formData, summary: e.target.value })
                 }
                 fullWidth
                 multiline
                 minRows={2}
               />
               <TextField
-                label="Assigned Counselor"
-                value={editingCase.assignedTo}
-                onChange={(e) =>
-                  setEditingCase({ ...editingCase, assignedTo: e.target.value })
-                }
+                select
                 fullWidth
-              />
+                label="Assigned Counselor"
+                value={formData.assigned_to}
+                onChange={(e) => {
+                  const selected = lookup.counselors.find(
+                    (c) =>
+                      `${c.counselor_first_name} ${c.counselor_middle_name} ${c.counselor_last_name}` ===
+                      e.target.value
+                  );
+
+                  setFormData({
+                    ...formData,
+                    assigned_to: e.target.value,
+                    counselor_id: selected.counselor_id, // <-- store ID here
+                  });
+                }}
+              >
+                {lookup.counselors.map((s) => (
+                  <MenuItem
+                    key={s.counselor_id}
+                    value={`${s.counselor_first_name} ${s.counselor_middle_name} ${s.counselor_last_name}`}
+                  >
+                    {s.counselor_first_name} {s.counselor_middle_name} {s.counselor_last_name}
+                  </MenuItem>
+                ))}
+              </TextField>
+
               <FormControl fullWidth>
                 <InputLabel>Remarks</InputLabel>
                 <Select
-                  value={editingCase.status}
+                  value={formData.remarks}
                   label="Remarks"
                   onChange={(e) =>
-                    setEditingCase({ ...editingCase, status: e.target.value })
+                    setFormData({ ...formData, remarks: e.target.value })
                   }
                 >
                   {STATUS_OPTIONS.map((s) => (
