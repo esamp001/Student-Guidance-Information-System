@@ -2,6 +2,24 @@ const express = require("express");
 const router = express.Router();
 const knex = require("../db/db");
 
+// Helper function to log appointment status changes
+async function logStatusChange(appointmentId, oldStatus, newStatus, changedBy, changedByRole, notes = null) {
+  try {
+    await knex("appointment_status_history").insert({
+      appointment_id: appointmentId,
+      old_status: oldStatus,
+      new_status: newStatus,
+      changed_by: changedBy,
+      changed_by_role: changedByRole,
+      notes: notes,
+      changed_at: new Date(),
+    });
+  } catch (error) {
+    console.error("Error logging status change:", error);
+    // Don't throw error, just log it - we don't want to break the main operation
+  }
+}
+
 router.get("/counselor/appointments_lookup", async (req, res) => {
   const { counselorUserId } = req.query;
 
@@ -60,25 +78,106 @@ router.get("/counselor/appointments_lookup", async (req, res) => {
   }
 });
 
+// Get pending confirmation appointments for a counselor
+router.get("/counselor/:counselorUserId/pending-confirmation", async (req, res) => {
+  const { counselorUserId } = req.params;
+
+  try {
+    const appointments = await knex("appointments AS aps")
+      .select(
+        "aps.id AS appointment_id",
+        "aps.type",
+        "aps.mode",
+        "aps.datetime",
+        "aps.status",
+        "aps.reason",
+        "s.id AS student_id",
+        "s.first_name AS student_first_name",
+        "s.middle_name AS student_middle_name",
+        "s.last_name AS student_last_name",
+        "s.student_no"
+      )
+      .innerJoin("students AS s", "s.id", "aps.student_id")
+      .innerJoin("counselors AS c", "c.id", "aps.counselor_id")
+      .innerJoin("users AS u", "u.id", "c.user_id")
+      .where("u.id", counselorUserId)
+      .andWhere("aps.status", "Pending Confirmation")
+      .orderBy("aps.datetime", "asc");
+
+    res.json(appointments);
+  } catch (error) {
+    console.error("Error fetching pending confirmation appointments:", error);
+    res.status(500).json({ error: "Failed to fetch appointments" });
+  }
+});
+
+// Get confirmed appointments for a counselor
+router.get("/counselor/:counselorUserId/confirmed-appointments", async (req, res) => {
+  const { counselorUserId } = req.params;
+
+  try {
+    const appointments = await knex("appointments AS aps")
+      .select(
+        "aps.id AS appointment_id",
+        "aps.type",
+        "aps.mode",
+        "aps.datetime",
+        "aps.status",
+        "aps.reason",
+        "s.id AS student_id",
+        "s.first_name AS student_first_name",
+        "s.middle_name AS student_middle_name",
+        "s.last_name AS student_last_name",
+        "s.student_no"
+      )
+      .innerJoin("students AS s", "s.id", "aps.student_id")
+      .innerJoin("counselors AS c", "c.id", "aps.counselor_id")
+      .innerJoin("users AS u", "u.id", "c.user_id")
+      .where("u.id", counselorUserId)
+      .whereIn("aps.status", ["Confirmed", "Confirmed Reschedule"])
+      .orderBy("aps.datetime", "asc");
+
+    res.json(appointments);
+  } catch (error) {
+    console.error("Error fetching confirmed appointments:", error);
+    res.status(500).json({ error: "Failed to fetch appointments" });
+  }
+});
+
 // PUT Confirmed
 router.put("/appointments/:id", async (req, res) => {
   const { id } = req.params;
-  const { status } = req.body;
+  const { status, counselor_id } = req.body;
 
   if (!status) {
     return res.status(400).json({ message: "Status is required" });
   }
 
   try {
+    // Get the current appointment to retrieve old status
+    const currentAppointment = await knex("appointments")
+      .where({ id: id })
+      .first();
+
+    if (!currentAppointment) {
+      return res.status(404).json({ message: "Appointment not found" });
+    }
+
     // Update the appointment status
     const updated = await knex("appointments")
       .where({ id: id })
       .update({ status })
       .returning("*"); // returns updated row(s), may vary based on DB
 
-    if (!updated || updated.length === 0) {
-      return res.status(404).json({ message: "Appointment not found" });
-    }
+    // Log the status change
+    await logStatusChange(
+      id,
+      currentAppointment.status,
+      status,
+      counselor_id || currentAppointment.counselor_id,
+      "counselor",
+      "Appointment confirmed by counselor"
+    );
 
     res.json({
       message: "Appointment updated successfully",
@@ -93,21 +192,36 @@ router.put("/appointments/:id", async (req, res) => {
 // PUT Rejected
 router.put("/appointments/reject/:id", async (req, res) => {
   const { id } = req.params;
-  const { status } = req.body;
+  const { status, counselor_id } = req.body;
 
   if (!status || status !== "Rejected") {
     return res.status(400).json({ message: "Invalid or missing status" });
   }
 
   try {
+    // Get the current appointment to retrieve old status
+    const currentAppointment = await knex("appointments")
+      .where({ id })
+      .first();
+
+    if (!currentAppointment) {
+      return res.status(404).json({ message: "Appointment not found" });
+    }
+
     const updated = await knex("appointments")
       .where({ id })
       .update({ status })
       .returning("*");
 
-    if (!updated || updated.length === 0) {
-      return res.status(404).json({ message: "Appointment not found" });
-    }
+    // Log the status change
+    await logStatusChange(
+      id,
+      currentAppointment.status,
+      status,
+      counselor_id || currentAppointment.counselor_id,
+      "counselor",
+      "Appointment rejected by counselor"
+    );
 
     res.json({
       message: "Appointment rejected successfully",
@@ -122,7 +236,7 @@ router.put("/appointments/reject/:id", async (req, res) => {
 // PUT Completed
 router.put("/appointments/completed/:id", async (req, res) => {
   const { id } = req.params;
-  const { status } = req.body;
+  const { status, counselor_id } = req.body;
 
   console.log({id, status}, "id, status");
 
@@ -131,21 +245,36 @@ router.put("/appointments/completed/:id", async (req, res) => {
   }
 
   try {
+    // Get the current appointment to retrieve old status
+    const currentAppointment = await knex("appointments")
+      .where({ id })
+      .first();
+
+    if (!currentAppointment) {
+      return res.status(404).json({ message: "Appointment not found" });
+    }
+
     const updated = await knex("appointments")
       .where({ id })
       .update({ status })
       .returning("*");
 
-    if (!updated || updated.length === 0) {
-      return res.status(404).json({ message: "Appointment not found" });
-    }
+    // Log the status change
+    await logStatusChange(
+      id,
+      currentAppointment.status,
+      status,
+      counselor_id || currentAppointment.counselor_id,
+      "counselor",
+      "Appointment marked as completed by counselor"
+    );
 
     res.json({
-      message: "Appointment Comppleted successfully",
+      message: "Appointment Completed successfully",
       appointment: updated[0],
     });
   } catch (error) {
-    console.error("Error rejecting appointment:", error);
+    console.error("Error completing appointment:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 });
@@ -154,16 +283,35 @@ router.put("/appointments/completed/:id", async (req, res) => {
 router.put("/:id/reschedule", async (req, res) => {
   const { id } = req.params;
   console.log(id, "id");
-  const { status, rescheduled_time } = req.body;
+  const { status, rescheduled_time, counselor_id } = req.body;
 
   console.log(rescheduled_time, "rescheduled_time");
 
   try {
+    // Get the current appointment to retrieve old status
+    const currentAppointment = await knex("appointments")
+      .where({ id })
+      .first();
+
+    if (!currentAppointment) {
+      return res.status(404).json({ message: "Appointment not found" });
+    }
+
     await knex("appointments").where({ id }).update({
       status,
       datetime: rescheduled_time,
       updated_at: new Date(),
     });
+
+    // Log the status change
+    await logStatusChange(
+      id,
+      currentAppointment.status,
+      status,
+      counselor_id || currentAppointment.counselor_id,
+      "counselor",
+      `Appointment rescheduled to ${new Date(rescheduled_time).toLocaleString()}`
+    );
 
     res.json({ message: "Appointment updated successfully" });
   } catch (error) {

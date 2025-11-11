@@ -29,6 +29,9 @@ import {
   ListItemText,
   Divider,
   Grid,
+  CircularProgress,
+  Card,
+  CardContent,
 } from "@mui/material";
 import {
   Add,
@@ -37,6 +40,10 @@ import {
   MoreVert,
   History as HistoryIcon,
   Autorenew,
+  CheckCircle,
+  Schedule,
+  Cancel,
+  Event,
 } from "@mui/icons-material";
 import useSnackbar from "../../hooks/useSnackbar";
 
@@ -100,6 +107,12 @@ const GuidanceCaseRecords = () => {
     caseItem: null,
   });
 
+  const [appointmentProgress, setAppointmentProgress] = useState({
+    loading: false,
+    appointments: [],
+    total: 0,
+  });
+
   const [lookup, setLookup] = useState({
     students: [],
     counselors: [],
@@ -113,19 +126,22 @@ const GuidanceCaseRecords = () => {
     summary: "",
     assigned_to: "",
     counselor_id: "",
-    remarks: ""
+    remarks: "",
   });
 
-// API - Auto create guidance case records
+  console.log(formData, "formData");
+
+  // API - Auto create guidance case records
   useEffect(() => {
     const fetchAndCreateCases = async () => {
       try {
-        // 1️ Fetch the lookup data
-        const response = await fetch("/adminGuidanceCaseRecords/admin/students/lookup");
+        // Fetch the lookup data
+        const response = await fetch(
+          "/adminGuidanceCaseRecords/admin/students/lookup"
+        );
         const data = await response.json();
-        // setSave(data);
 
-        // 2️ Automatically create guidance case records
+        // Automatically create guidance case records
         for (const record of data) {
           // Example payload — adjust fields to match your backend
           const payload = {
@@ -135,16 +151,15 @@ const GuidanceCaseRecords = () => {
             case_type: record.case_type || "student_initiated",
             status: record.status,
             summary: record.remarks || "",
-            remarks: record.case_status || ""
+            remarks: record.case_status || "",
           };
 
           await fetch("/adminGuidanceCaseRecords/guidanceCaseRecords", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
+            body: JSON.stringify(payload),
           });
         }
-
       } catch (error) {
         console.error("Error fetching or creating cases:", error);
       }
@@ -153,26 +168,31 @@ const GuidanceCaseRecords = () => {
     fetchAndCreateCases();
   }, []);
 
-// Api get display to table once the case is created by counselor
-useEffect(() => {
+  // Api get display to table once the case is created by counselor
+  useEffect(() => {
     const fetchDisplayToTable = async () => {
       try {
-        const response = await fetch("/adminGuidanceCaseRecords/guidanceCaseRecords/display_to_table");
+        const response = await fetch(
+          "/adminGuidanceCaseRecords/guidanceCaseRecords/display_to_table"
+        );
         const data = await response.json();
-        console.log(data, "data")
-        // setCases(data);
+        console.log(data, "data");
+        // Ensure data is an array before setting state
+        setCases(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error("Error fetching display to table:", error);
+        setCases([]);
       }
     };
     fetchDisplayToTable();
   }, []);
 
-
-// API - Look up for case to be auto filled on form
+  // API - Look up for case to be auto filled on form
   const fetchLookupForm = async () => {
     try {
-      const response = await fetch("/adminGuidanceCaseRecords/students/counselor/lookup");
+      const response = await fetch(
+        "/adminGuidanceCaseRecords/students/counselor/lookup"
+      );
       const data = await response.json();
 
       // Save to state
@@ -180,21 +200,52 @@ useEffect(() => {
         students: data.students || [],
         counselors: data.counselors || [],
       });
-
     } catch (err) {
       console.error("Error fetching lookup data:", err);
     }
   };
 
- // API - Handle Edit for both counselor and student initiated case records
+  // const changeStatus = async (id, newStatus) => {
+  //   try {
+  //     // optional: optimistic UI update
+  //     setCases((prev) =>
+  //       prev.map((c) => (c.id === id ? { ...c, remarks: newStatus } : c))
+  //     );
+
+  //     // send update to backend
+  //     await fetch(`/guidanceCaseRecords/update/${id}`, {
+  //       method: "PUT",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ remarks: newStatus }),
+  //     });
+
+  //     // or refetch after success (optional)
+  //     // fetchCases();
+  //   } catch (error) {
+  //     console.error("Failed to update status:", error);
+  //   }
+  // };
+
+  // API - Handle Edit for both counselor and student initiated case records
   const filteredCases = useMemo(() => {
+    if (!Array.isArray(cases) || cases.length === 0) return [];
     if (filterStatus === "All") return cases;
     return cases.filter((c) => c.status === filterStatus);
   }, [cases, filterStatus]);
 
   // ---- Handlers ----
   function openAdd() {
-    fetchLookupForm()
+    fetchLookupForm();
+    setFormData({
+      student_name: "",
+      student_id: "",
+      appointment_id: "",
+      case_type: "",
+      summary: "",
+      assigned_to: "",
+      counselor_id: "",
+      remarks: "",
+    });
     setEditingCase({
       studentName: "",
       studentId: "",
@@ -213,40 +264,58 @@ useEffect(() => {
 
   function closeForm() {
     setEditingCase(null);
+    setFormData({
+      student_name: "",
+      student_id: "",
+      appointment_id: "",
+      case_type: "",
+      summary: "",
+      assigned_to: "",
+      counselor_id: "",
+      remarks: "",
+    });
     setOpenForm(false);
   }
 
   function saveCase() {
-    if (!formData.student_name?.trim() || !formData.summary?.trim()) {
-      alert("Please fill student name and summary.");
+    if (!formData.student_id || !formData.summary?.trim()) {
+      alert("Please select a student and enter a summary.");
       return;
     }
-    // API - Post it to guidance case records table - When counselor initated
-    const handleSaveCase = async () => {
+    if (!formData.counselor_id) {
+      alert("Please select an assigned counselor.");
+      return;
+    }
 
+    const handleSaveCase = async () => {
       try {
         const response = await fetch("/adminGuidanceCaseRecords/saveCase", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             ...formData,
-            appointment_id: null, 
+            appointment_id: null,
           }),
         });
 
         if (response.ok) {
+          const newCase = await response.json(); // get saved record from backend
           showSnackbar("Case saved successfully", "success");
-        }
 
+          // 🧠 Update the local UI immediately
+          setCases((prev) => [newCase, ...(Array.isArray(prev) ? prev : [])]); // prepend new record
+
+          closeForm();
+        } else {
+          showSnackbar("Failed to save case", "error");
+        }
       } catch (err) {
         console.error("Error saving case:", err);
         showSnackbar("Error saving case", "error");
-        throw new Error("Failed to save case");
       }
     };
-    handleSaveCase();
 
-    closeForm();
+    handleSaveCase();
   }
 
   function askDelete(caseId) {
@@ -254,30 +323,40 @@ useEffect(() => {
   }
 
   function confirmDeleteCase() {
-    setCases((prev) => prev.filter((c) => c.id !== confirmDelete.id));
+    setCases((prev) =>
+      Array.isArray(prev) ? prev.filter((c) => c.id !== confirmDelete.id) : []
+    );
     setConfirmDelete({ open: false, id: null });
   }
 
-  function changeStatus(caseId, newStatus) {
-    setCases((prev) =>
-      prev.map((c) =>
-        c.id === caseId
-          ? {
-              ...c,
-              case_status: newStatus,
-              history: [
-                ...(c.history || []),
-                {
-                  date: new Date().toISOString().slice(0, 10),
-                  note: `Remarks changed to "${newStatus}".`,
-                  actor: "Counselor",
-                },
-              ],
-            }
-          : c
-      )
-    );
-  }
+  const changeStatus = async (id, newStatus) => {
+    try {
+      // optional: optimistic UI update
+      setCases((prev) =>
+        Array.isArray(prev)
+          ? prev.map((c) => (c.id === id ? { ...c, remarks: newStatus } : c))
+          : []
+      );
+
+      // send update to backend
+      await fetch(
+        `/adminGuidanceCaseRecords/guidanceCaseRecords/update/${id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ remarks: newStatus }),
+        }
+      );
+
+      showSnackbar("Status updated successfully", "success");
+
+      // or refetch after success (optional)
+      // fetchCases();
+    } catch (error) {
+      console.error("Failed to update status:", error);
+      showSnackbar("Failed to update status", "error");
+    }
+  };
 
   function openMenu(event, caseItem) {
     setAnchorEl(event.currentTarget);
@@ -289,12 +368,35 @@ useEffect(() => {
     setSelectedCaseForMenu(null);
   }
 
-  function openHistory(caseItem) {
+  const openHistory = async (caseItem) => {
     setHistoryModal({ open: true, caseItem });
-  }
+    setAppointmentProgress({ loading: true, appointments: [], total: 0 });
+
+    try {
+      const response = await fetch(
+        `/adminGuidanceCaseRecords/guidanceCaseRecords/${caseItem.id}/appointments-progress`
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setAppointmentProgress({
+          loading: false,
+          appointments: data.appointments || [],
+          total: data.total_appointments || 0,
+        });
+      } else {
+        console.error("Failed to fetch appointment progress");
+        setAppointmentProgress({ loading: false, appointments: [], total: 0 });
+      }
+    } catch (error) {
+      console.error("Error fetching appointment progress:", error);
+      setAppointmentProgress({ loading: false, appointments: [], total: 0 });
+    }
+  };
 
   function closeHistory() {
     setHistoryModal({ open: false, caseItem: null });
+    setAppointmentProgress({ loading: false, appointments: [], total: 0 });
   }
 
   // ---- UI helper ----
@@ -343,7 +445,8 @@ useEffect(() => {
           </Grid>
           <Grid item xs={12} md={6} textAlign={{ xs: "left", md: "right" }}>
             <Typography variant="caption" color="text.secondary">
-              Total cases: {cases.length} • Displaying: {filteredCases.length}
+              Total cases: {cases?.length || 0} • Displaying:{" "}
+              {filteredCases?.length || 0}
             </Typography>
           </Grid>
         </Grid>
@@ -354,8 +457,8 @@ useEffect(() => {
           <TableHead>
             <TableRow>
               <TableCell>Student</TableCell>
-              <TableCell>Case Type</TableCell>
-              <TableCell>Summary</TableCell>
+              <TableCell>Appointment Case Type</TableCell>
+              <TableCell>Appointment Status</TableCell>
               <TableCell>Assigned To</TableCell>
               <TableCell>Remarks</TableCell>
               <TableCell>Created</TableCell>
@@ -363,10 +466,12 @@ useEffect(() => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredCases.map((c) => (
+            {(filteredCases || []).map((c) => (
               <TableRow key={c.id}>
                 <TableCell>
-                  <Typography variant="subtitle2">{c.student_first_name} {c.student_middle_name} {c.student_last_name}</Typography>
+                  <Typography variant="subtitle2">
+                    {c.first_name} {c.middle_name} {c.last_name}
+                  </Typography>
                   <Typography variant="caption" color="text.secondary">
                     {c.student_no}
                   </Typography>
@@ -374,10 +479,13 @@ useEffect(() => {
                 <TableCell>{c.case_type}</TableCell>
                 <TableCell>
                   <Typography noWrap sx={{ maxWidth: 320 }}>
-                    {c.remarks}
+                    {c.appointment_status || "Unassigned"}
                   </Typography>
                 </TableCell>
-                <TableCell>{`${c.first_name} ${c.middle_name} ${c.last_name}` || "Unassigned"}</TableCell>
+                <TableCell>
+                  {`${c.counselor_first_name} ${c.counselor_middle_name} ${c.counselor_last_name}` ||
+                    "Unassigned"}
+                </TableCell>
                 <TableCell>
                   <Stack
                     direction="row"
@@ -385,10 +493,10 @@ useEffect(() => {
                     alignItems="center"
                     justifyContent={"space-between"}
                   >
-                    {statusChip(c.case_status)}
+                    {statusChip(c.remarks)}
                     <FormControl size="small">
                       <Select
-                        value={c.case_status}
+                        value={c.remarks}
                         onChange={(e) => changeStatus(c.id, e.target.value)}
                         sx={{ minWidth: 120 }}
                       >
@@ -401,7 +509,7 @@ useEffect(() => {
                     </FormControl>
                   </Stack>
                 </TableCell>
-                <TableCell>{c.createdAt}</TableCell>
+                <TableCell>{c.created_at}</TableCell>
                 <TableCell align="right">
                   <Tooltip title="More actions">
                     <IconButton onClick={(e) => openMenu(e, c)}>
@@ -412,7 +520,7 @@ useEffect(() => {
               </TableRow>
             ))}
 
-            {filteredCases.length === 0 && (
+            {(!filteredCases || filteredCases.length === 0) && (
               <TableRow>
                 <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
                   <Typography color="text.secondary">
@@ -478,7 +586,9 @@ useEffect(() => {
                 label="Student Name"
                 value={formData.student_id}
                 onChange={(e) => {
-                  const selected = lookup.students.find((s) => s.id === e.target.value);
+                  const selected = lookup.students.find(
+                    (s) => s.id === e.target.value
+                  );
 
                   setFormData({
                     ...formData,
@@ -494,17 +604,16 @@ useEffect(() => {
                 ))}
               </TextField>
 
-
               <TextField
                 label="Student ID"
                 disabled
                 value={
-                  lookup.students.find((s) => s.id === formData.student_id)?.student_no || ""
+                  lookup.students.find((s) => s.id === formData.student_id)
+                    ?.student_no || ""
                 }
                 fullWidth
                 InputLabelProps={{ shrink: true }}
               />
-
 
               <FormControl fullWidth>
                 <InputLabel>Case Type</InputLabel>
@@ -556,7 +665,8 @@ useEffect(() => {
                     key={s.counselor_id}
                     value={`${s.counselor_first_name} ${s.counselor_middle_name} ${s.counselor_last_name}`}
                   >
-                    {s.counselor_first_name} {s.counselor_middle_name} {s.counselor_last_name}
+                    {s.counselor_first_name} {s.counselor_middle_name}{" "}
+                    {s.counselor_last_name}
                   </MenuItem>
                 ))}
               </TextField>
@@ -610,64 +720,314 @@ useEffect(() => {
         </DialogActions>
       </Dialog>
 
-      {/* History modal */}
+      {/* History modal - Appointment Progress */}
       <Dialog
         open={historyModal.open}
         onClose={closeHistory}
-        maxWidth="sm"
+        maxWidth="md"
         fullWidth
       >
         <DialogTitle>
-          Case History
-          <Typography variant="subtitle2" color="text.secondary">
-            {historyModal.caseItem?.studentName} •{" "}
-            {historyModal.caseItem?.caseType}
-          </Typography>
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <HistoryIcon />
+            <Box>
+              <Typography variant="h6">Appointment Progress</Typography>
+              <Typography variant="caption" color="text.secondary">
+                {historyModal.caseItem?.first_name}{" "}
+                {historyModal.caseItem?.middle_name}{" "}
+                {historyModal.caseItem?.last_name} •{" "}
+                {historyModal.caseItem?.case_type}
+              </Typography>
+            </Box>
+          </Stack>
         </DialogTitle>
         <DialogContent dividers>
-          {historyModal.caseItem ? (
+          {appointmentProgress.loading ? (
+            <Box display="flex" justifyContent="center" py={4}>
+              <CircularProgress />
+            </Box>
+          ) : (
             <>
-              <Typography variant="body2" sx={{ mb: 1 }}>
-                <strong>Summary:</strong> {historyModal.caseItem.summary}
-              </Typography>
-              <List>
-                {(historyModal.caseItem.history || []).map((h, idx) => (
-                  <React.Fragment key={idx}>
-                    <ListItem alignItems="flex-start">
-                      <ListItemText
-                        primary={
-                          <Stack
-                            direction="row"
-                            justifyContent="space-between"
-                            alignItems="center"
+              {/* Case Summary */}
+              {historyModal.caseItem && (
+                <Card sx={{ mb: 3, bgcolor: "grey.50" }}>
+                  <CardContent>
+                    <Typography variant="subtitle2" gutterBottom>
+                      <strong>Case Summary</strong>
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {historyModal.caseItem.summary || "No summary provided"}
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      display="block"
+                      sx={{ mt: 1 }}
+                    >
+                      Total Appointments:{" "}
+                      <strong>{appointmentProgress.total}</strong>
+                    </Typography>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Appointment Timeline */}
+              {appointmentProgress.appointments.length > 0 ? (
+                <List sx={{ width: "100%" }}>
+                  {appointmentProgress.appointments.map((appt, idx) => {
+                    // Determine status icon and color
+                    const getStatusConfig = (status) => {
+                      switch (status) {
+                        case "Completed":
+                          return {
+                            icon: <CheckCircle />,
+                            color: "success.main",
+                            bgColor: "success.light",
+                          };
+                        case "Confirmed":
+                        case "Confirmed Reschedule":
+                          return {
+                            icon: <Event />,
+                            color: "info.main",
+                            bgColor: "info.light",
+                          };
+                        case "Rejected":
+                        case "Cancelled":
+                          return {
+                            icon: <Cancel />,
+                            color: "error.main",
+                            bgColor: "error.light",
+                          };
+                        default:
+                          return {
+                            icon: <Schedule />,
+                            color: "warning.main",
+                            bgColor: "warning.light",
+                          };
+                      }
+                    };
+
+                    const statusConfig = getStatusConfig(appt.status);
+
+                    return (
+                      <React.Fragment key={appt.appointment_id}>
+                        <ListItem
+                          alignItems="flex-start"
+                          sx={{
+                            border: 1,
+                            borderColor: "divider",
+                            borderRadius: 2,
+                            mb: 2,
+                            bgcolor: "background.paper",
+                          }}
+                        >
+                          {/* Timeline indicator */}
+                          <Box
+                            sx={{
+                              display: "flex",
+                              flexDirection: "column",
+                              alignItems: "center",
+                              mr: 2,
+                            }}
                           >
-                            <Typography variant="body2" fontWeight={600}>
-                              {h.actor}
-                            </Typography>
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
+                            <Box
+                              sx={{
+                                width: 40,
+                                height: 40,
+                                borderRadius: "50%",
+                                bgcolor: statusConfig.bgColor,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                color: statusConfig.color,
+                              }}
                             >
-                              {h.date}
-                            </Typography>
-                          </Stack>
-                        }
-                        secondary={
-                          <Typography variant="body2">{h.note}</Typography>
-                        }
-                      />
-                    </ListItem>
-                    <Divider />
-                  </React.Fragment>
-                ))}
-                {(historyModal.caseItem.history || []).length === 0 && (
-                  <ListItem>
-                    <ListItemText primary="No history recorded." />
-                  </ListItem>
-                )}
-              </List>
+                              {statusConfig.icon}
+                            </Box>
+                            {idx <
+                              appointmentProgress.appointments.length - 1 && (
+                              <Box
+                                sx={{
+                                  width: 2,
+                                  height: 40,
+                                  bgcolor: "divider",
+                                  mt: 1,
+                                }}
+                              />
+                            )}
+                          </Box>
+
+                          {/* Appointment Details */}
+                          <ListItemText
+                            primary={
+                              <Stack spacing={1}>
+                                <Stack
+                                  direction="row"
+                                  justifyContent="space-between"
+                                  alignItems="center"
+                                >
+                                  <Typography
+                                    variant="subtitle1"
+                                    fontWeight={600}
+                                  >
+                                    {appt.type} - {appt.mode}
+                                  </Typography>
+                                  <Chip
+                                    label={appt.status}
+                                    size="small"
+                                    sx={{
+                                      bgcolor: statusConfig.bgColor,
+                                      color: statusConfig.color,
+                                      fontWeight: 600,
+                                    }}
+                                  />
+                                </Stack>
+                                <Typography
+                                  variant="body2"
+                                  color="text.secondary"
+                                >
+                                  <strong>Date:</strong>{" "}
+                                  {appt.datetime_formatted}
+                                </Typography>
+                                <Typography
+                                  variant="body2"
+                                  color="text.secondary"
+                                >
+                                  <strong>Counselor:</strong>{" "}
+                                  {appt.counselor_name || "Unassigned"}
+                                </Typography>
+                              </Stack>
+                            }
+                            secondary={
+                              <Box sx={{ mt: 1 }}>
+                                <Typography variant="body2" sx={{ mb: 1 }}>
+                                  <strong>Reason:</strong> {appt.reason}
+                                </Typography>
+
+                                {/* Status Change History */}
+                                {appt.status_history &&
+                                  appt.status_history.length > 0 && (
+                                    <Card
+                                      sx={{
+                                        bgcolor: "info.lighter",
+                                        mt: 1,
+                                        mb: 1,
+                                      }}
+                                    >
+                                      <CardContent
+                                        sx={{
+                                          py: 1,
+                                          "&:last-child": { pb: 1 },
+                                        }}
+                                      >
+                                        <Typography
+                                          variant="caption"
+                                          fontWeight={600}
+                                          display="block"
+                                          sx={{ mb: 0.5 }}
+                                        >
+                                          Status Timeline:
+                                        </Typography>
+                                        {appt.status_history.map(
+                                          (history, hIdx) => (
+                                            <Box
+                                              key={hIdx}
+                                              sx={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: 0.5,
+                                                mb: 0.5,
+                                              }}
+                                            >
+                                              <Chip
+                                                label={
+                                                  history.old_status ||
+                                                  "Created"
+                                                }
+                                                size="small"
+                                                sx={{
+                                                  fontSize: "0.65rem",
+                                                  height: 18,
+                                                }}
+                                              />
+                                              <Typography variant="caption">
+                                                →
+                                              </Typography>
+                                              <Chip
+                                                label={history.new_status}
+                                                size="small"
+                                                color="primary"
+                                                sx={{
+                                                  fontSize: "0.65rem",
+                                                  height: 18,
+                                                }}
+                                              />
+                                              <Typography
+                                                variant="caption"
+                                                color="text.secondary"
+                                                sx={{ ml: 0.5 }}
+                                              >
+                                                ({history.changed_at})
+                                              </Typography>
+                                            </Box>
+                                          )
+                                        )}
+                                      </CardContent>
+                                    </Card>
+                                  )}
+
+                                {appt.session_notes && (
+                                  <Card sx={{ bgcolor: "grey.50", mt: 1 }}>
+                                    <CardContent
+                                      sx={{ py: 1, "&:last-child": { pb: 1 } }}
+                                    >
+                                      <Typography
+                                        variant="caption"
+                                        fontWeight={600}
+                                        display="block"
+                                      >
+                                        Session Notes:
+                                      </Typography>
+                                      <Typography
+                                        variant="caption"
+                                        display="block"
+                                      >
+                                        Type: {appt.session_notes.case_type}
+                                      </Typography>
+                                      <Typography
+                                        variant="caption"
+                                        display="block"
+                                      >
+                                        Session:{" "}
+                                        {appt.session_notes.session_type}
+                                      </Typography>
+                                      {appt.session_notes.remarks && (
+                                        <Typography
+                                          variant="caption"
+                                          display="block"
+                                        >
+                                          Remarks: {appt.session_notes.remarks}
+                                        </Typography>
+                                      )}
+                                    </CardContent>
+                                  </Card>
+                                )}
+                              </Box>
+                            }
+                          />
+                        </ListItem>
+                      </React.Fragment>
+                    );
+                  })}
+                </List>
+              ) : (
+                <Box textAlign="center" py={4}>
+                  <Typography variant="body1" color="text.secondary">
+                    No appointment history found for this student.
+                  </Typography>
+                </Box>
+              )}
             </>
-          ) : null}
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={closeHistory}>Close</Button>

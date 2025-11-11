@@ -291,6 +291,103 @@ const Appointments = () => {
     }
   };
 
+  // Handler for confirming counselor-initiated appointment
+  const handleConfirmCounselorAppointment = async (appointment) => {
+    setLoading(true);
+
+    try {
+      const response = await fetch(
+        `/studentAppointmentReschedule/appointment/confirm-counselor-initiated/${appointment}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ status: "Confirmed" }),
+        }
+      );
+
+      if (!response.ok) throw new Error("Failed to confirm appointment");
+
+      showSnackbar("Appointment confirmed successfully!", "success");
+
+      // Notify counselor about confirmation
+      const apptForNotify =
+        upcomingAppointments.find((a) => a.id === appointment) ||
+        selectedAppointment;
+      if (apptForNotify?.counselor_user_id) {
+        await sendNotification({
+          userId: apptForNotify.counselor_user_id,
+          type: "appointment_confirmed",
+          context: {
+            student: `${user.first_name} ${user.last_name}`,
+            date: new Date(apptForNotify.datetime).toLocaleString("en-PH", {
+              dateStyle: "medium",
+              timeStyle: "short",
+            }),
+          },
+        });
+      }
+
+      // Update UI
+      setUpcomingAppointments((prev) =>
+        prev.map((a) =>
+          a.id === appointment ? { ...a, status: "Confirmed" } : a
+        )
+      );
+
+      setSelectedAppointment((prev) =>
+        prev && prev.id === appointment
+          ? { ...prev, status: "Confirmed" }
+          : prev
+      );
+    } catch (error) {
+      console.error("Error confirming appointment:", error);
+      showSnackbar("Failed to confirm appointment.", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handler for declining counselor-initiated appointment
+  const handleDeclineCounselorAppointment = async (appointment) => {
+    setLoading(true);
+
+    try {
+      const response = await fetch(
+        `/studentAppointmentReschedule/appointment/decline-counselor-initiated/${appointment}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "Rejected" }),
+        }
+      );
+
+      if (!response.ok) throw new Error("Failed to decline appointment");
+
+      showSnackbar("Appointment declined.", "success");
+
+      // Update UI - remove from list or mark as rejected
+      setUpcomingAppointments((prev) =>
+        prev.map((a) =>
+          a.id === appointment ? { ...a, status: "Rejected" } : a
+        )
+      );
+
+      setSelectedAppointment((prev) =>
+        prev && prev.id === appointment
+          ? { ...prev, status: "Rejected" }
+          : prev
+      );
+      
+      handleClose();
+    } catch (error) {
+      console.error("Error declining appointment:", error);
+      showSnackbar("Failed to decline appointment.", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleOpen = (appt) => {
     setSelectedAppointment(appt);
     setOpen(true);
@@ -700,6 +797,76 @@ const Appointments = () => {
                                   color="error"
                                 >
                                   Reject
+                                </Button>
+                              </Box>
+                            </Box>
+                          )}
+
+                          {selectedAppointment.status ===
+                            "Pending Confirmation" && (
+                            <Box
+                              sx={{
+                                p: 2,
+                                mb: 2,
+                                mt: 2,
+                                border: "1px solid #2196f3",
+                                borderRadius: 2,
+                                backgroundColor: "#e3f2fd",
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: 2,
+                              }}
+                            >
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  width: "100%",
+                                  justifyContent: "center",
+                                  alignItems: "center",
+                                }}
+                              >
+                                <Typography variant="body1" fontWeight={600}>
+                                  Your counselor has requested this appointment.
+                                  Would you like to confirm?
+                                </Typography>
+                              </Box>
+                              {selectedAppointment.reason && (
+                                <Box sx={{ px: 1 }}>
+                                  <Typography variant="body2" color="text.secondary">
+                                    <strong>Reason:</strong> {selectedAppointment.reason}
+                                  </Typography>
+                                </Box>
+                              )}
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  gap: 1,
+                                  justifyContent: "center",
+                                  alignItems: "center",
+                                }}
+                              >
+                                <Button
+                                  onClick={() =>
+                                    handleConfirmCounselorAppointment(
+                                      selectedAppointment.id
+                                    )
+                                  }
+                                  variant="contained"
+                                  color="success"
+                                >
+                                  Confirm
+                                </Button>
+
+                                <Button
+                                  onClick={() =>
+                                    handleDeclineCounselorAppointment(
+                                      selectedAppointment.id
+                                    )
+                                  }
+                                  variant="outlined"
+                                  color="error"
+                                >
+                                  Decline
                                 </Button>
                               </Box>
                             </Box>
