@@ -6,8 +6,8 @@ exports.up = function (knex) {
     return knex.schema.createTable('guidance_case_records', (table) => {
         table.increments('id').primary();
 
-        table.integer('appointment_id').unsigned().notNullable()
-            .references('id').inTable('appointments').onDelete('CASCADE');
+        table.integer('appointment_id').unsigned()
+            .references('id').inTable('appointments').onDelete('SET NULL');
 
         table.integer('student_id').unsigned().notNullable()
             .references('id').inTable('students').onDelete('CASCADE');

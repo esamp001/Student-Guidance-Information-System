@@ -38,6 +38,7 @@ import {
   History as HistoryIcon,
   Autorenew,
 } from "@mui/icons-material";
+import useSnackbar from "../../hooks/useSnackbar";
 
 // Sample data
 // const defaultCases = [
@@ -87,6 +88,7 @@ const STATUS_OPTIONS = ["Open", "In Progress", "Resolved", "Closed"];
 
 const GuidanceCaseRecords = () => {
   const [cases, setCases] = useState([]);
+  const { showSnackbar } = useSnackbar();
   const [filterStatus, setFilterStatus] = useState("All");
   const [openForm, setOpenForm] = useState(false);
   const [editingCase, setEditingCase] = useState(null);
@@ -114,23 +116,6 @@ const GuidanceCaseRecords = () => {
     remarks: ""
   });
 
-  console.log(formData, "formData")
-
-  // API - Look up for students who initiated first and have a follow up session status
-//  useEffect(() => {
-//    const fetchStudentsRecords = async () => {
-//     try {
-//       const response = await fetch("/adminGuidanceCaseRecords/admin/students/lookup");
-//       const data = await response.json();
-//       console.log(data);
-//       setCases(data);
-//     } catch (error) {
-//       console.error("Error fetching students records:", error);
-//     }
-//    }
-//    fetchStudentsRecords();
-//  }, [])
-
 // API - Auto create guidance case records
   useEffect(() => {
     const fetchAndCreateCases = async () => {
@@ -138,12 +123,10 @@ const GuidanceCaseRecords = () => {
         // 1️ Fetch the lookup data
         const response = await fetch("/adminGuidanceCaseRecords/admin/students/lookup");
         const data = await response.json();
-        console.log("Lookup data:", data);
-        setCases(data);
+        // setSave(data);
 
         // 2️ Automatically create guidance case records
         for (const record of data) {
-          console.log(record, "record")
           // Example payload — adjust fields to match your backend
           const payload = {
             appointment_id: record.appointment_id,
@@ -170,6 +153,21 @@ const GuidanceCaseRecords = () => {
     fetchAndCreateCases();
   }, []);
 
+// Api get display to table once the case is created by counselor
+useEffect(() => {
+    const fetchDisplayToTable = async () => {
+      try {
+        const response = await fetch("/adminGuidanceCaseRecords/guidanceCaseRecords/display_to_table");
+        const data = await response.json();
+        console.log(data, "data")
+        // setCases(data);
+      } catch (error) {
+        console.error("Error fetching display to table:", error);
+      }
+    };
+    fetchDisplayToTable();
+  }, []);
+
 
 // API - Look up for case to be auto filled on form
   const fetchLookupForm = async () => {
@@ -188,23 +186,7 @@ const GuidanceCaseRecords = () => {
     }
   };
 
- // API - Lookup for counselor initiated case records
-//  useEffect(() => {
-//    const fetchCounselorRecords = async () => {
-//     try {
-//       const response = await fetch("/adminGuidanceCaseRecords/admin/counselor/lookup");
-//       const data = await response.json();
-//       console.log(data);
-//       setCases(data);
-//     } catch (error) {
-//       console.error("Error fetching counselor records:", error);
-//     }
-//    }
-//    fetchCounselorRecords();
-//  }, [])
-
  // API - Handle Edit for both counselor and student initiated case records
-
   const filteredCases = useMemo(() => {
     if (filterStatus === "All") return cases;
     return cases.filter((c) => c.status === filterStatus);
@@ -248,38 +230,22 @@ const GuidanceCaseRecords = () => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             ...formData,
-            appointment_id: selectedCaseForMenu.appointment_id
+            appointment_id: null, 
           }),
         });
-        const data = await response.json();
-        console.log(data);
-        // setCases((prev) => [data, ...prev]);
+
+        if (response.ok) {
+          showSnackbar("Case saved successfully", "success");
+        }
+
       } catch (err) {
         console.error("Error saving case:", err);
+        showSnackbar("Error saving case", "error");
         throw new Error("Failed to save case");
       }
     };
     handleSaveCase();
 
-    // if (editingCase.id) {
-    //   setCases((prev) =>
-    //     prev.map((c) => (c.id === editingCase.id ? { ...editingCase } : c))
-    //   );
-    // } else {
-    //   const newCase = {
-    //     ...editingCase,
-    //     id: Math.max(0, ...cases.map((c) => c.id)) + 1,
-    //     createdAt: new Date().toISOString().slice(0, 10),
-    //     history: [
-    //       {
-    //         date: new Date().toISOString().slice(0, 10),
-    //         note: "Case created.",
-    //         actor: editingCase.assignedTo || "System",
-    //       },
-    //     ],
-    //   };
-    //   setCases((prev) => [newCase, ...prev]);
-    // }
     closeForm();
   }
 
@@ -506,7 +472,6 @@ const GuidanceCaseRecords = () => {
         <DialogContent>
           {editingCase && (
             <Stack spacing={2} mt={1}>
-              {/* Fill up appointment details first to initiate case record and assigned to specific counselor */}
               <TextField
                 select
                 fullWidth

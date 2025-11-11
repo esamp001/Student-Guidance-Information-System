@@ -35,7 +35,6 @@ router.get("/admin/students/lookup", async (req, res) => {
             };
         });
 
-        console.log(caseRecords);
         res.json(caseRecords);
     } catch (error) {
         console.error("Error fetching follow-up students:", error);
@@ -52,7 +51,6 @@ router.get("/students/counselor/lookup", async (req,res) => {
 
         const counselors = await knex("counselors")
         .select("id AS counselor_id", "first_name AS counselor_first_name", "middle_name AS counselor_middle_name", "last_name AS counselor_last_name")
-        console.log(students, "students")
         res.json({students: students, counselors: counselors})
     } catch (err) {
         console.error(err)
@@ -126,8 +124,6 @@ router.post("/saveCase", async (req, res) => {
         remarks
     } = req.body;
 
-    console.log(appointment_id, "Appointment ID")
-
     try {
         const [newCase] = await knex("guidance_case_records")
             .insert({
@@ -148,6 +144,25 @@ router.post("/saveCase", async (req, res) => {
         });
     } catch (error) {
         console.error("Error creating guidance case record:", error);
+        return res.status(500).json({ message: "Server error", error });
+    }
+})
+
+// Get - When Counselor initated but check if the case is already been posted
+router.get("/guidanceCaseRecords/display_to_table", async (req, res) => {
+    try {
+        const caseRecord = await knex("guidance_case_records")
+            // querying the guidance_case_records table
+            // .select("*")
+ 
+        console.log(caseRecord, "caseRecord")
+        if (caseRecord) {
+            return res.status(200).json(caseRecord);
+        } else {
+            return res.status(404).json({ message: "Case record not found" });
+        }
+    } catch (error) {
+        console.error("Error fetching guidance case record:", error);
         return res.status(500).json({ message: "Server error", error });
     }
 })
