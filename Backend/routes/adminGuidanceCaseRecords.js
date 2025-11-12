@@ -25,7 +25,7 @@ router.get("/admin/students/lookup", async (req, res) => {
         "cr.remarks",
         "apts.status"
       )
-      .where("apts.status", "Follow-up");
+      .where("apts.status", "Follow-up" || "Completed");
 
     const caseRecords = results.map((result) => {
       return {
@@ -204,6 +204,8 @@ router.get("/guidanceCaseRecords/display_to_table", async (req, res) => {
       .innerJoin("students AS st", "st.id", "cr.student_id")
       .innerJoin("counselors AS c", "c.id", "cr.counselor_id")
       .leftJoin("appointments AS a", "a.id", "cr.appointment_id");
+
+    console.log(caseRecord, "caseRecord");
 
     // readable date
     caseRecord.forEach((record) => {

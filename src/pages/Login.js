@@ -11,8 +11,15 @@ import {
   Tabs,
   TextField,
   Button,
+  FormControl,
+  OutlinedInput,
+  InputLabel,
+  InputAdornment,
+  IconButton,
 } from "@mui/material";
 import { useRole } from "../context/RoleContext";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import Visibility from "@mui/icons-material/Visibility";
 
 function CustomTabPanel(props) {
   const { children, value, index, ...other } = props;
@@ -177,8 +184,10 @@ const Login = () => {
   const [userForm, setUserForm] = useState(initialUser);
   const [formData, setformData] = useState(initialForm);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Handlers
+
   const handleChangeUser = (event) => {
     setUserForm({
       ...userForm,
@@ -196,6 +205,8 @@ const Login = () => {
   const handleChange = (event, newValue) => {
     setValue(newValue);
   };
+
+  const handleClickShowPassword = () => setShowPassword((show) => !show);
 
   // Fetch
   const handleRegister = async () => {
@@ -325,7 +336,7 @@ const Login = () => {
             <Typography variant="subtitle2" sx={{ mb: 1, mt: 3 }}>
               Password
             </Typography>
-            <TextField
+            {/* <TextField
               sx={{ width: "100%" }}
               name="password"
               id="outlined-basic"
@@ -341,7 +352,45 @@ const Login = () => {
               InputLabelProps={{
                 style: { fontSize: 12 },
               }}
-            />
+            /> */}
+
+            <FormControl sx={{ width: "100%" }} variant="outlined">
+              <InputLabel
+                htmlFor="outlined-adornment-password"
+                sx={{ fontSize: 12 }}
+              >
+                Password
+              </InputLabel>
+              <OutlinedInput
+                id="outlined-adornment-password"
+                name="password"
+                value={formData.password}
+                onChange={handleChangeForm}
+                type={showPassword ? "text" : "password"}
+                label="Password" // this connects the outline to the label
+                endAdornment={
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label={
+                        showPassword ? "hide password" : "show password"
+                      }
+                      onClick={handleClickShowPassword}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                }
+                size="small"
+                sx={{
+                  "& .MuiInputBase-input": {
+                    fontSize: 12, // smaller text inside
+                    padding: "8px 12px", //  tighter padding for compact look
+                  },
+                }}
+              />
+            </FormControl>
+
             <Box
               sx={{
                 display: "flex",
@@ -461,6 +510,7 @@ const Login = () => {
               />
 
               <TextField
+                showPassword
                 name="password"
                 value={userForm.password}
                 onChange={handleChangeUser}
