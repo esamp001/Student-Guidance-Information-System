@@ -121,4 +121,57 @@ router.get("/appointments", async (req, res) => {
   }
 });
 
+// Get case records for a specific student
+router.get("/student-cases/:studentId", async (req, res) => {
+  try {
+    const { studentId } = req.params;
+    
+    console.log("Fetching case records for student ID:", studentId);
+
+    // Fetch case records for the student
+    const caseRecordsRaw = await knex("case_records as cr")
+      .select(
+        "cr.id",
+        "cr.case_type",
+        "cr.offense",
+        "cr.session_type",
+        "cr.date",
+        "cr.remarks",
+        "c.first_name as counselor_first_name",
+        "c.last_name as counselor_last_name"
+      )
+      .leftJoin("users as u", "u.id", "cr.user_id")
+      .leftJoin("counselors as c", "c.user_id", "u.id")
+      .where("cr.student_id", studentId)
+      .orderBy("cr.date", "desc");
+
+    console.log("Raw case records found:", caseRecordsRaw.length, caseRecordsRaw);
+
+    // Format dates
+    const caseRecords = caseRecordsRaw.map((record) => ({
+      ...record,
+      date: new Date(record.date).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }),
+    }));
+
+    // Fetch quick notes for all case records
+    const caseRecordIds = caseRecords.map((cr) => cr.id);
+    console.log("Case record IDs for quick notes:", caseRecordIds);
+    
+    const quickNotes = await knex("quick_notes")
+      .select("id", "name", "case_record_id")
+      .whereIn("case_record_id", caseRecordIds);
+
+    console.log("Quick notes found:", quickNotes.length, quickNotes);
+
+    res.json({ caseRecords, quickNotes });
+  } catch (error) {
+    console.error("Error fetching student case records:", error);
+    res.status(500).json({ message: "Error fetching student case records" });
+  }
+});
+
 module.exports = router;

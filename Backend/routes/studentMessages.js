@@ -180,26 +180,54 @@ router.get("/unreadCount", async (req, res) => {
   }
 });
 
+// Unread counts grouped by conversation (appointment)
+router.get("/unreadByConversation", async (req, res) => {
+  const { userId } = req.query;
+
+  if (!userId) {
+    return res.status(400).json({ error: "userId is required" });
+  }
+
+  try {
+    const rows = await knex("messages")
+      .select("appointment_id")
+      .count("id as count")
+      .where("receiver_id", userId)
+      .andWhere("is_read", false)
+      .groupBy("appointment_id");
+
+    const map = {};
+    rows.forEach((r) => {
+      map[String(r.appointment_id)] = Number(r.count) || 0;
+    });
+    res.json(map);
+  } catch (error) {
+    console.error("Error fetching unread by conversation:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 // Mark messages as read when the user opens a conversation
-// router.put("/mark-read", async (req, res) => {
-//   const { userId, appointmentId } = req.body;
+router.put("/mark-read", async (req, res) => {
+  const { userId, appointmentId } = req.body;
 
-//   if (!userId || !appointmentId) {
-//     return res.status(400).json({ error: "userId and appointmentId are required" });
-//   }
+  if (!userId || !appointmentId) {
+    return res
+      .status(400)
+      .json({ error: "userId and appointmentId are required" });
+  }
 
-//   try {
-//     await knex("messages")
-//       .where({ receiver_id: userId, appointment_id: appointmentId })
-//       .update({ is_read: true });
+  try {
+    await knex("messages")
+      .where({ receiver_id: userId, appointment_id: appointmentId })
+      .andWhere("is_read", false)
+      .update({ is_read: true });
 
-//     res.json({ success: true, message: "Messages marked as read" });
-//   } catch (error) {
-//     console.error("Error marking messages as read:", error);
-//     res.status(500).json({ error: "Internal server error" });
-//   }
-// })
-
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error marking messages as read:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 module.exports = router;

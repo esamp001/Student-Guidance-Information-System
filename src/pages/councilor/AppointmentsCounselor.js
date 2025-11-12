@@ -507,6 +507,8 @@ const AppointmentsCounselor = () => {
                               ? theme.palette.error.main // red for rejection
                               : appt.status === "Pending Reschedule"
                               ? theme.palette.primary.main // main brand color for pending reschedules
+                              : appt.status === "Follow-up"
+                              ? theme.palette.secondary.main // secondary color for follow-up
                               : theme.palette.grey[500],
                           color: "#fff",
                           fontWeight: 600,
@@ -580,6 +582,16 @@ const AppointmentsCounselor = () => {
                             Reject
                           </Button>
                         </>
+                      )}
+
+                      {selected.status === "Follow-up" && (
+                        <Button
+                          onClick={() => handleApprove(selected)}
+                          variant="contained"
+                          color="primary"
+                        >
+                          Confirm Follow-up
+                        </Button>
                       )}
 
                       {selected.status?.toLowerCase().includes("confirmed") && (

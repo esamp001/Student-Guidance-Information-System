@@ -16,9 +16,17 @@ import {
   Modal,
   Menu,
   MenuItem,
+  Badge,
+  Drawer,
+  useMediaQuery,
+  useTheme,
+  AppBar,
+  Toolbar,
 } from "@mui/material";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import SearchIcon from "@mui/icons-material/Search";
+import MenuIcon from "@mui/icons-material/Menu";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import socket from "../../hooks/socket";
 import { useRole } from "../../context/RoleContext";
 import useSnackbar from "../../hooks/useSnackbar";
@@ -26,6 +34,8 @@ import { sendNotification } from "../../utils/notification";
 
 const CounselorMessage = () => {
   const { user } = useRole();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [openModal, setOpenModal] = useState(false);
   const [messages, setMessages] = useState([]);
   const [conversationList, setConversationList] = useState([]);
@@ -33,31 +43,33 @@ const CounselorMessage = () => {
   const [loading, setLoading] = useState(false);
   const [appointmentInfo, setAppointmentInfo] = useState(null);
   const [text, setText] = useState("");
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const messagesEndRef = useRef(null);
   const scrollContainerRef = useRef(null);
-   const { showSnackbar, SnackbarComponent } = useSnackbar();
-   const [selectedDateTime, setSelectedDateTime] = useState(null);
-   const [formData, setFormData] = useState({
+  const { showSnackbar, SnackbarComponent } = useSnackbar();
+  const [selectedDateTime, setSelectedDateTime] = useState(null);
+  const [formData, setFormData] = useState({
     type: "",
     mode: "",
     status: "",
-   })
+  });
+  const [unreadByConv, setUnreadByConv] = useState({});
 
-   console.log(formData, "formData");
+  console.log(formData, "formData");
 
-   // Lookup appointments when request follow is being clicked
-   const fetchAppointments = async (appointmentId) => {
-      if (!appointmentId) return;
-      
-      try {
-        const res = await fetch(`/counselorMessages/appointments/lookup?appointmentId=${appointmentId}`);
-        if (!res.ok) throw new Error("Failed to fetch appointments");
-        const data = await res.json();
-        setFormData(data);
-      } catch (err) {
-        console.error("Failed to fetch appointments:", err);
-      }
-   }
+  // Lookup appointments when request follow is being clicked
+  const fetchAppointments = async (appointmentId) => {
+    if (!appointmentId) return;
+
+    try {
+      const res = await fetch(`/counselorMessages/appointments/lookup?appointmentId=${appointmentId}`);
+      if (!res.ok) throw new Error("Failed to fetch appointments");
+      const data = await res.json();
+      setFormData(data);
+    } catch (err) {
+      console.error("Failed to fetch appointments:", err);
+    }
+  };
 
   const handleAppointmentCompletion = async () => {
     setLoading(true);
@@ -79,13 +91,20 @@ const CounselorMessage = () => {
 
       showSnackbar("Appointment confirmed successfully!", "success");
 
+      // Remove conversation from list and clear selection
+      setConversationList(prev => 
+        prev.filter(conv => conv.appointment_id !== selectedConversation.appointment_id)
+      );
+      setSelectedConversation(null);
+      setMessages([]);
+      setAppointmentInfo(null);
+
       // Notify student about completion
       await sendNotification({
         userId: selectedConversation.student_id,
         type: "message",
         context: { sender: "Counselor" },
       });
-
     } catch (error) {
       console.error("Error confirming appointment:", error);
       showSnackbar("Failed to confirm appointment.", "error");
@@ -103,11 +122,11 @@ const CounselorMessage = () => {
   };
 
   const handleAppointmentFollowUp = async () => {
-    // setLoading(true);
-    console.log("HIT HEREES")
+    setLoading(true);
+    console.log("HIT HEREES");
     try {
       const response = await fetch(
-      `/counselorMessages/appointments/follow-up?appointmentId=${selectedConversation.appointment_id}`,
+        `/counselorMessages/appointments/follow-up?appointmentId=${selectedConversation.appointment_id}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -115,30 +134,40 @@ const CounselorMessage = () => {
             dateTime: selectedDateTime,
             type: formData.type,
             mode: formData.mode,
-            status: "Follow-up"
-          })
+            status: "Follow-up",
+          }),
         }
       );
 
       if (!response.ok) throw new Error("Failed to make follow-up appointment");
 
-      showSnackbar("Appointment confirmed successfully!", "success");
+      showSnackbar("Follow-up appointment scheduled successfully!", "success");
 
-      // Notify student about completion
-      // await sendNotification({
-      //   userId: selectedConversation.student_id,
-      //   type: "message",
-      //   context: { sender: "Counselor" },
-      // });
+      // Remove conversation from list and clear selection
+      setConversationList(prev => 
+        prev.filter(conv => conv.appointment_id !== selectedConversation.appointment_id)
+      );
+      setSelectedConversation(null);
+      setMessages([]);
+      setAppointmentInfo(null);
+      
+      // Reset form data
+      setSelectedDateTime(null);
+      setFormData({ type: "", mode: "", status: "" });
 
+      // Notify student about follow-up
+      await sendNotification({
+        userId: selectedConversation.student_id,
+        type: "message",
+        context: { sender: "Counselor" },
+      });
     } catch (error) {
       console.error("Error confirming appointment:", error);
       showSnackbar("Failed to confirm appointment.", "error");
     } finally {
       setLoading(false);
     }
-  }
-
+  };
 
   // Register user
   useEffect(() => {
@@ -166,6 +195,23 @@ const CounselorMessage = () => {
     fetchConversations();
   }, [user.id]);
 
+  // Fetch unread counts grouped by conversation
+  useEffect(() => {
+    if (!user.id) return;
+    const fetchUnread = async () => {
+      try {
+        const res = await fetch(`/counselorMessages/unreadByConversation?userId=${user.id}`);
+        if (res.ok) {
+          const map = await res.json();
+          setUnreadByConv(map || {});
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    fetchUnread();
+  }, [user.id]);
+
   // Fetch messages for selected conversation
   useEffect(() => {
     if (!selectedConversation?.appointment_id || !user.id) return;
@@ -176,13 +222,22 @@ const CounselorMessage = () => {
         );
         const data = await res.json();
         setMessages(data.messages || data || []);
-       
+
         if (selectedConversation) {
           setAppointmentInfo({
-              datetime: selectedConversation.appointment_datetime || null,
-              datetime_readable: selectedConversation.appointment_datetime_readable || null,
+            datetime: selectedConversation.appointment_datetime || null,
+            datetime_readable: selectedConversation.appointment_datetime_readable || null,
           });
         }
+
+        try {
+          await fetch(`/counselorMessages/mark-read`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId: user.id, appointmentId: selectedConversation.appointment_id }),
+          });
+        } catch (_) {}
+        setUnreadByConv((prev) => ({ ...prev, [String(selectedConversation.appointment_id)]: 0 }));
 
         // Force jump to bottom on initial load of a conversation (ensure DOM painted)
         setTimeout(() => {
@@ -226,9 +281,29 @@ const CounselorMessage = () => {
             : conv
         )
       );
+      if (data.appointmentId !== selectedConversation?.appointment_id) {
+        setUnreadByConv((prev) => {
+          const key = String(data.appointmentId);
+          return { ...prev, [key]: (prev[key] || 0) + 1 };
+        });
+      }
     };
     socket.on("receive_message", handleReceive);
     return () => socket.off("receive_message", handleReceive);
+  }, [selectedConversation]);
+
+  // Real-time unread updates (server recalculations)
+  useEffect(() => {
+    const handleUnread = (payload) => {
+      const { appointmentId, count } = payload || {};
+      if (!appointmentId) return;
+      setUnreadByConv((prev) => ({ ...prev, [String(appointmentId)]: Number(count) || 0 }));
+      if (appointmentId === selectedConversation?.appointment_id) {
+        setUnreadByConv((prev) => ({ ...prev, [String(appointmentId)]: 0 }));
+      }
+    };
+    socket.on("unread_update", handleUnread);
+    return () => socket.off("unread_update", handleUnread);
   }, [selectedConversation]);
 
   // Auto-scroll
@@ -273,89 +348,169 @@ const CounselorMessage = () => {
     });
   };
 
+  const drawerWidth = 320;
+
+  const sidebarContent = (
+    <Box
+      sx={{
+        width: isMobile ? drawerWidth : "100%",
+        p: 2,
+        backgroundColor: "white",
+        display: "flex",
+        flexDirection: "column",
+        height: "100%",
+      }}
+    >
+      <Typography sx={{ fontWeight: 700, mb: 2, fontSize: isMobile ? 18 : 16 }}>
+        Conversations
+      </Typography>
+      <TextField
+        size="small"
+        placeholder="Search..."
+        variant="outlined"
+        fullWidth
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <SearchIcon fontSize="small" />
+            </InputAdornment>
+          ),
+        }}
+        sx={{ mb: 2 }}
+      />
+      {/* Contact List */}
+      {conversationList?.map((conv, i) => (
+        <Box
+          key={i}
+          onClick={async () => {
+            setSelectedConversation(conv);
+            if (isMobile) {
+              setMobileDrawerOpen(false);
+            }
+            try {
+              await fetch(`/counselorMessages/mark-read`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ userId: user.id, appointmentId: conv.appointment_id }),
+              });
+            } catch (_) {}
+            setUnreadByConv((prev) => ({ ...prev, [String(conv.appointment_id)]: 0 }));
+          }}
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            p: isMobile ? 1.5 : 1,
+            borderRadius: 2,
+            cursor: "pointer",
+            "&:hover": { backgroundColor: "#f0f0f0" },
+            backgroundColor:
+              selectedConversation?.appointment_id === conv.appointment_id
+                ? "#e8f0fe"
+                : "transparent",
+          }}
+        >
+          <Avatar sx={{ width: isMobile ? 45 : 40, height: isMobile ? 45 : 40 }} />
+          <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+            <Box display="flex" alignItems="center" gap={1} justifyContent="space-between">
+              <Typography 
+                sx={{ 
+                  fontWeight: 700, 
+                  fontSize: isMobile ? 15 : 14,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  flex: 1
+                }}
+              >
+                {`${conv.first_name} ${conv.last_name}`}
+              </Typography>
+            </Box>
+            <Typography
+              sx={{
+                fontSize: isMobile ? 13 : 12,
+                color: "text.secondary",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                mt: 0.3,
+              }}
+            >
+              {conv.latestMessage || "No messages yet"}
+            </Typography>
+            <Typography 
+              variant="caption" 
+              sx={{ 
+                color: "text.secondary",
+                fontSize: isMobile ? 11 : 10
+              }}
+            >
+              {conv.time || "—"}
+            </Typography>
+          </Box>
+          {Number(unreadByConv[String(conv.appointment_id)]) > 0 && (
+            <Badge
+              color="error"
+              badgeContent={Number(unreadByConv[String(conv.appointment_id)])}
+              sx={{ flexShrink: 0, mr: 3, mb: 1 }}
+            />
+          )}
+        </Box>
+      ))}
+    </Box>
+  );
+
   return (
     <Paper
       elevation={2}
       sx={{
         display: "flex",
-        height: 650,
-        borderRadius: 3,
+        height: isMobile ? "calc(100vh - 120px)" : 620,
+        borderRadius: isMobile ? 1 : 3,
         overflow: "hidden",
         backgroundColor: "#f9fafb",
+        position: "relative",
       }}
     >
-      {/* LEFT: Conversation list */}
-      <Box
-        sx={{
-          width: "30%",
-          p: 2,
-          borderRight: "1px solid #e0e0e0",
-          backgroundColor: "white",
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
-        <Typography sx={{ fontWeight: 700, mb: 2 }}>Conversations</Typography>
-        <TextField
-          size="small"
-          placeholder="Search..."
-          variant="outlined"
-          fullWidth
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon fontSize="small" />
-              </InputAdornment>
-            ),
+      {/* Mobile Drawer */}
+      {isMobile && (
+        <Drawer
+          variant="temporary"
+          anchor="left"
+          open={mobileDrawerOpen}
+          onClose={() => setMobileDrawerOpen(false)}
+          ModalProps={{
+            keepMounted: true,
           }}
-          sx={{ mb: 2 }}
-        />
-        {/* Conversation list */}
-        {conversationList?.map((conv, i) => (
-          <Box
-            key={i}
-            onClick={() => setSelectedConversation(conv)}
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 1,
-              p: 1,
-              borderRadius: 2,
-              cursor: "pointer",
-              "&:hover": { backgroundColor: "#f0f0f0" },
-              backgroundColor:
-                selectedConversation?.appointment_id === conv.appointment_id
-                  ? "#e8f0fe"
-                  : "transparent",
-            }}
-          >
-            <Avatar />
-            <Box sx={{ flexGrow: 1 }}>
-              <Typography sx={{ fontWeight: 700, fontSize: 14 }}>
-                {`${conv.first_name} ${conv.last_name}`}
-              </Typography>
-              <Typography
-                sx={{
-                  fontSize: 12,
-                  color: "text.secondary",
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                }}
-              >
-                {conv.latestMessage || "No messages yet"}
-              </Typography>
-            </Box>
-            <Typography variant="caption" sx={{ color: "text.secondary" }}>
-              {conv.time || "—"}
-            </Typography>
-          </Box>
-        ))}
-      </Box>
-      {/* RIGHT: Chat window */}
+          sx={{
+            "& .MuiDrawer-paper": {
+              width: drawerWidth,
+              boxSizing: "border-box",
+            },
+          }}
+        >
+          {sidebarContent}
+        </Drawer>
+      )}
+
+      {/* Desktop Sidebar */}
+      {!isMobile && (
+        <Box
+          sx={{
+            width: "30%",
+            borderRight: "1px solid #e0e0e0",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          {sidebarContent}
+        </Box>
+      )}
+
+      {/* Right Chat Section */}
       <Box
         sx={{
-          width: "70%",
+          width: isMobile ? "100%" : "70%",
           display: "flex",
           flexDirection: "column",
           backgroundColor: "white",
@@ -365,30 +520,68 @@ const CounselorMessage = () => {
         <Box
           sx={{
             borderBottom: "1px solid #e0e0e0",
-            height: 70,
-            px: 3,
+            height: isMobile ? 60 : 70,
+            px: isMobile ? 2 : 3,
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
             backgroundColor: "#fefefe",
           }}
         >
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            <Avatar />
-            <Box sx={{ ml: 1 }}>
-              <Typography sx={{ fontWeight: 700 }}>
+          <Box sx={{ display: "flex", alignItems: "center", flex: 1, minWidth: 0 }}>
+            {isMobile && (
+              <IconButton
+                onClick={() => {
+                  if (selectedConversation) {
+                    setSelectedConversation(null);
+                  } else {
+                    setMobileDrawerOpen(true);
+                  }
+                }}
+                sx={{ mr: 1 }}
+              >
+                {selectedConversation ? <ArrowBackIcon /> : <MenuIcon />}
+              </IconButton>
+            )}
+            {!isMobile && !selectedConversation && (
+              <IconButton
+                onClick={() => setMobileDrawerOpen(true)}
+                sx={{ mr: 1 }}
+              >
+                <MenuIcon />
+              </IconButton>
+            )}
+            <Avatar sx={{ width: isMobile ? 35 : 40, height: isMobile ? 35 : 40 }} />
+            <Box sx={{ ml: 1, minWidth: 0, flex: 1 }}>
+              <Typography 
+                sx={{ 
+                  fontWeight: 700,
+                  fontSize: isMobile ? 14 : 16,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap"
+                }}
+              >
                 {selectedConversation
                   ? `${selectedConversation.first_name} ${selectedConversation.last_name}`
-                  : "Select a conversation"}
+                  : isMobile ? "Messages" : "Select a conversation"}
               </Typography>
-              <Typography variant="subtitle2" color="text.secondary">
-                Student
-              </Typography>
+              {selectedConversation && (
+                <Typography 
+                  variant="subtitle2" 
+                  color="text.secondary"
+                  sx={{ fontSize: isMobile ? 11 : 12 }}
+                >
+                  Student
+                </Typography>
+              )}
             </Box>
           </Box>
-          <IconButton>
-            <InfoOutlinedIcon />
-          </IconButton>
+          {selectedConversation && (
+            <IconButton size={isMobile ? "small" : "medium"}>
+              <InfoOutlinedIcon />
+            </IconButton>
+          )}
         </Box>
         {/* Message History */}
         {!appointmentInfo ? (
@@ -418,13 +611,13 @@ const CounselorMessage = () => {
             sx={{
               flexGrow: 1,
               overflowY: "auto",
-              maxHeight: 460,
-              px: 3,
+              px: { xs: 2, md: 3 },
               py: 2,
               display: "flex",
               flexDirection: "column",
               gap: 2,
               backgroundColor: "#f9fafb",
+              minHeight: 0,
             }}
           >
             {(() => {
@@ -471,34 +664,60 @@ const CounselorMessage = () => {
                   justifyContent:
                     String(msg.author) === String(user.id) ? "flex-end" : "flex-start",
                   alignItems: "flex-end",
-                  gap: 1,
+                  gap: isMobile ? 0.5 : 1,
+                  px: isMobile ? 1 : 0,
                 }}
               >
-                {String(msg.author) !== String(user.id) && <Avatar />}
+                {String(msg.author) !== String(user.id) && (
+                  <Avatar sx={{ width: isMobile ? 30 : 40, height: isMobile ? 30 : 40 }} />
+                )}
 
-                <Box sx={{ textAlign: String(msg.author) === String(user.id) ? "right" : "left" }}>
+                <Box
+                  sx={{
+                    textAlign:
+                      String(msg.author) === String(user.id) ? "right" : "left",
+                    maxWidth: isMobile ? "85%" : "70%",
+                  }}
+                >
                   <Box
                     sx={{
                       backgroundColor:
-                        String(msg.author) === String(user.id) ? "#1976d2" : "#ffffff",
-                      color: String(msg.author) === String(user.id) ? "white" : "black",
-                      px: 2,
-                      py: 1,
+                        String(msg.author) === String(user.id)
+                          ? "#1976d2"
+                          : "#ffffff",
+                      color:
+                        String(msg.author) === String(user.id)
+                          ? "white"
+                          : "black",
+                      px: isMobile ? 1.5 : 2,
+                      py: isMobile ? 0.8 : 1,
                       borderRadius: 3,
                       boxShadow: 1,
-                      maxWidth: "100%",
                       ml: String(msg.author) === String(user.id) ? "auto" : 0,
+                      wordBreak: "break-word",
                     }}
                   >
-                    <Typography>{msg.content}</Typography>
+                    <Typography sx={{ fontSize: isMobile ? 14 : 16 }}>
+                      {msg.content}
+                    </Typography>
                   </Box>
 
-                  <Typography variant="caption" color="text.secondary">
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{
+                      ml: String(msg.author) === String(user.id) ? 0 : 1,
+                      mr: String(msg.author) === String(user.id) ? 1 : 0,
+                      fontSize: isMobile ? 10 : 11,
+                    }}
+                  >
                     {msg.time}
                   </Typography>
                 </Box>
 
-                {String(msg.author) === String(user.id) && <Avatar />}
+                {String(msg.author) === String(user.id) && (
+                  <Avatar sx={{ width: isMobile ? 30 : 40, height: isMobile ? 30 : 40 }} />
+                )}
               </Box>
             ))}
 
@@ -512,8 +731,9 @@ const CounselorMessage = () => {
           selectedConversation?.appointment_status === "Confirmed" ||
           selectedConversation?.appointment_status === "Confirmed Reschedule"
         ) && (
-          <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 2, p: 2, bgcolor: '#f3dfddff' }}>
+          <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 2, p: 2 }}>
             <Button
+            sx={{ borderRadius: 5}}
               variant="contained"
               color="primary"
               onClick={() => handleAppointmentCompletion(selectedConversation.appointment_id)}
@@ -524,6 +744,7 @@ const CounselorMessage = () => {
             <Divider orientation="vertical" flexItem />
 
             <Button
+            sx={{ borderRadius: 5}}
               variant="outlined"
               color="secondary"
               onClick={() => {
@@ -538,11 +759,13 @@ const CounselorMessage = () => {
        
         {appointmentInfo && (<Box
           sx={{
-            height: "80px",
-            px: 2,
+            height: isMobile ? 80 : 100,
+            px: isMobile ? 1.5 : 2,
+            py: isMobile ? 1 : 0,
             display: "flex",
             alignItems: "center",
             backgroundColor: "white",
+            gap: isMobile ? 0.5 : 1,
           }}
         >
           {(() => {
@@ -559,7 +782,12 @@ const CounselorMessage = () => {
                   fullWidth
                   size="small"
                   variant="outlined"
-                  sx={{ mr: 1 }}
+                  sx={{ 
+                    mr: isMobile ? 0.5 : 1,
+                    "& .MuiInputBase-input": {
+                      fontSize: isMobile ? 14 : 16,
+                    }
+                  }}
                   value={text}
                   disabled={disabled}
                   onChange={(e) => setText(e.target.value)}
@@ -567,7 +795,11 @@ const CounselorMessage = () => {
                 />
                 <Button
                   variant="contained"
-                  sx={{ px: 3 }}
+                  sx={{ 
+                    px: isMobile ? 2 : 3,
+                    minWidth: isMobile ? "auto" : "64px",
+                    fontSize: isMobile ? 12 : 14
+                  }}
                   onClick={sendMessage}
                   disabled={disabled}
                 >
@@ -589,14 +821,15 @@ const CounselorMessage = () => {
         <Box
           sx={{
             position: "absolute",
-            top: "50%",           // Changed from 50% to 40% to move up
+            top: "50%",
             left: "50%",
-            transform: "translate(-50%, -70%)", // Adjusted Y offset to keep it visually balanced
-            width: 400,
+            transform: "translate(-50%, -50%)",
+            width: isMobile ? "90vw" : 400,
+            maxWidth: isMobile ? "90vw" : 400,
             bgcolor: "background.paper",
             boxShadow: 24,
             borderRadius: 2,
-            p: 4,
+            p: isMobile ? 2 : 4,
             maxHeight: "90vh",
             overflowY: "auto",
           }}

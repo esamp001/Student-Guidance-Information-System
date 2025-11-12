@@ -52,9 +52,9 @@ router.get("/upcoming_appointments", async (req, res) => {
         "apts.datetime",
         "apts.mode",
         "apts.status",
-        "c.first_name AS counselor_first_name",
-        "c.middle_name AS counselor_middle_name",
-        "c.last_name AS counselor_last_name"
+        "s.first_name AS student_first_name",
+        "s.middle_name AS student_middle_name",
+        "s.last_name AS student_last_name"
       )
       .leftJoin("students AS s", "s.id", "apts.student_id")
       .leftJoin("counselors AS c", "c.id", "apts.counselor_id")
@@ -79,6 +79,7 @@ router.get("/upcoming_appointments", async (req, res) => {
     res.status(500).json({ message: "Error fetching appointments" });
   }
 });
+
 // LOOK UP FOR CASE RECORDS
 router.get("/case_updates", async (req, res) => {
   const { userId } = req.query;
@@ -115,6 +116,20 @@ router.get("/case_updates", async (req, res) => {
   } catch (error) {
     console.error("Error fetching case records:", error);
     res.status(500).json({ message: "Error fetching case records" });
+  }
+});
+
+router.get("/counselor_full_name", async (req, res) => {
+  const { userId } = req.query;
+  try {
+    const counselorFullName = await knex("counselors AS c")
+      .select("c.first_name", "c.middle_name", "c.last_name")
+      .leftJoin("users AS u", "u.id", "c.user_id")
+      .where("u.id", userId);
+    res.json(counselorFullName);
+  } catch (error) {
+    console.error("Error fetching counselor full name:", error);
+    res.status(500).json({ message: "Error fetching counselor full name" });
   }
 });
 

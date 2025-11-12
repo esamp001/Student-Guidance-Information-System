@@ -1,3 +1,4 @@
+import React, { useState } from "react";
 import { Box } from "@mui/material";
 import theme from "./../theme";
 
@@ -9,17 +10,23 @@ import SideNavBar from "./SideNavBar";
 import { Outlet } from "react-router-dom";
 
 const Dashboard = () => {
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const handleDrawerToggle = () => {
+    setMobileOpen(!mobileOpen);
+  };
+
   return (
     <Box sx={{ height: "100vh", overflow: "hidden", display: "flex", flexDirection: "column" }}>
       {/* Top Header */}
-      <TopNavBar sx={{ position: "relative" }} />
+      <TopNavBar handleDrawerToggle={handleDrawerToggle} sx={{ position: "relative" }} />
       <Box sx={{ display: "flex", flex: 1, minHeight: 0 }}>
         {/* Side Nav Items */}
-        <SideNavBar />
+        <SideNavBar mobileOpen={mobileOpen} handleDrawerToggle={handleDrawerToggle} />
         {/* Main Content */}
         <Box
           sx={{
-            p: 3,
+            p: { xs: 2, sm: 3 },
             width: "100%",
             flex: 1,
             overflow: "auto",

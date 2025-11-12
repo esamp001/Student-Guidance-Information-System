@@ -60,6 +60,20 @@ const caseRecordsCounselor = require("./routes/caseRecordsCounselor");
 const counselorDashboard = require("./routes/counselorDashboard");
 const adminGuidanceCaseRecords = require("./routes/adminGuidanceCaseRecords");
 
+// Create a new Socket.IO server instance
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:3000", // your React frontend
+    credentials: true,
+  },
+});
+
+// Middleware to make socket available to routes
+app.use((req, res, next) => {
+  req.io = io;
+  next();
+});
+
 app.use("/registerRoutes", registerRoutes);
 app.use("/loginRoutes", loginRoutes);
 app.use("/topNavBarRoutes", topNavBarRoutes);
@@ -78,13 +92,6 @@ app.use("/createNotification", createNotification);
 app.use("/caseRecordsCounselor", caseRecordsCounselor);
 app.use("/counselorDashboard", counselorDashboard);
 app.use("/adminGuidanceCaseRecords", adminGuidanceCaseRecords);
-// Create a new Socket.IO server instance
-const io = new Server(server, {
-  cors: {
-    origin: "http://localhost:3000", // your React frontend
-    credentials: true,
-  },
-});
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
   socket.on("register_user", (userId) => {
@@ -123,6 +130,22 @@ io.on("connection", (socket) => {
         receiver_id: receiverId,
         content,
         created_at: new Date(),
+        is_read: false,
+      });
+
+      // Recompute unread counts for the receiver and emit
+      const total = await knex("messages")
+        .count("id as c").where({ receiver_id: receiverId, is_read: false }).first();
+
+      const conv = await knex("messages")
+        .count("id as c")
+        .where({ receiver_id: receiverId, appointment_id: appointmentId, is_read: false })
+        .first();
+
+      io.to(`user_${String(receiverId)}`).emit("unread_update", {
+        total: Number(total?.c) || 0,
+        appointmentId,
+        count: Number(conv?.c) || 0,
       });
     } catch (err) {
       console.error("Failed to save message:", err);

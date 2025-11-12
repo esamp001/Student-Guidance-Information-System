@@ -269,6 +269,14 @@ router.put("/appointments/completed/:id", async (req, res) => {
       "Appointment marked as completed by counselor"
     );
 
+    // Emit socket event to notify student about completion
+    if (req.io && currentAppointment.student_id) {
+      req.io.to(`user_${String(currentAppointment.student_id)}`).emit("appointment_completed", {
+        appointmentId: id,
+        status: "Completed"
+      });
+    }
+
     res.json({
       message: "Appointment Completed successfully",
       appointment: updated[0],

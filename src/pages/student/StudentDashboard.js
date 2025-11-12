@@ -15,7 +15,6 @@ import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useRole } from "../../context/RoleContext";
 import useSnackbar from "../../hooks/useSnackbar";
-
 // Icons
 import SchoolIcon from "@mui/icons-material/School";
 import EventAvailableIcon from "@mui/icons-material/EventAvailable";
@@ -25,7 +24,7 @@ import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
 import MessageIcon from "@mui/icons-material/Message"; // make sure to import the icon
 
-//  Example data (you can import instead if defined elsewhere)
+// Example data (you can import instead if defined elsewhere)
 const studentDashboardItems = [
   {
     title: "My Profile",
@@ -56,7 +55,7 @@ const studentDashboardItems = [
     description:
       "Receive updates, alerts, and messages regarding your online counseling appointments.",
     buttonText: "View Messages",
-    icon: <MessageIcon color="primary" fontSize="medium" />, // could also use a MessageIcon
+    icon: <MessageIcon color="primary" fontSize="medium" />,
     path: "/dashboard/student/messages",
   },
 ];
@@ -130,7 +129,6 @@ const StudentDashboard = () => {
   // LOOK UP - STUDENT DASHBOARD
   useEffect(() => {
     setLoading(true);
-
     const loadData = async () => {
       try {
         const response = await fetch(
@@ -140,7 +138,6 @@ const StudentDashboard = () => {
             credentials: "include",
           }
         );
-
         if (!response.ok) {
           throw new Error("Failed to fetch student dashboard data");
         } else {
@@ -153,7 +150,6 @@ const StudentDashboard = () => {
         setLoading(false);
       }
     };
-
     loadData();
   }, []);
 
@@ -161,9 +157,7 @@ const StudentDashboard = () => {
   useEffect(() => {
     const fetchHistory = async () => {
       if (!user?.id) return;
-
       setLoading(true);
-
       try {
         const res = await fetch(
           `/studentDashboardRoutes/counseling/history/lookup?student_id=${user.id}`,
@@ -172,12 +166,10 @@ const StudentDashboard = () => {
             credentials: "include",
           }
         );
-
         if (!res.ok) {
           showSnackbar("Failed to fetch counseling history.", "error");
           throw new Error("Failed to fetch history");
         }
-
         const data = await res.json();
         setHistory(data);
       } catch (err) {
@@ -186,17 +178,17 @@ const StudentDashboard = () => {
         setLoading(false);
       }
     };
-
     fetchHistory();
   }, []);
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: { xs: 1, sm: 2 } }}>
       {/* Welcome Section */}
       <Box
         sx={{
-          height: "20vh",
-          p: 3,
+          minHeight: { xs: "12vh", sm: "14vh" }, // much smaller baseline
+          maxHeight: { xs: "16vh", sm: "18vh" }, // prevent overflow
+          p: { xs: 2, sm: 3 },
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
@@ -206,7 +198,7 @@ const StudentDashboard = () => {
         <Typography variant="subtitle3">{studentLookUp.currentDate}</Typography>
         <Typography sx={{ fontWeight: 700 }} variant="h3">
           {loading ? (
-            <Skeleton width={300} height={80} />
+            <Skeleton width={{ xs: 200, sm: 300 }} height={{ xs: 60, sm: 80 }} />
           ) : studentLookUp?.first_name ? (
             `Welcome, ${studentLookUp.first_name}`
           ) : (
@@ -214,26 +206,43 @@ const StudentDashboard = () => {
           )}
         </Typography>
       </Box>
-      <Typography variant="subtitle5" sx={{ fontWeight: 700, mt: 4 }}>
+
+      <Typography variant="subtitle5" sx={{ fontWeight: 700 }}>
         Quick Actions
       </Typography>
-      <Box sx={{ display: "flex", gap: 2, mt: 2, justifyContent: "center" }}>
+
+      {/* Quick Actions Grid */}
+      <Box
+        sx={{
+          display: "grid",
+          mt: 2,
+          gap: { xs: 1.5, sm: 2 }, // tighter and consistent spacing between cards
+          gridTemplateColumns: {
+            xs: "1fr",
+            sm: "repeat(2, 1fr)",
+            md: "repeat(4, 1fr)",
+          },
+          alignItems: "stretch",
+        }}
+      >
         {studentDashboardItems.map((item, index) => (
           <Paper
             key={index}
             sx={{
-              p: 2,
-              width: "30%",
+              p: { xs: 1.5, sm: 2 },
               display: "flex",
               flexDirection: "column",
-              transition: "all 0.3s ease",
+              justifyContent: "space-between",
+              height: "100%",
+              transition: "all 0.25s ease",
               cursor: "pointer",
               "&:hover": {
                 bgcolor: "grey.100",
                 boxShadow: 3,
-                transform: "scale(1.02)",
+                transform: "translateY(-3px)",
               },
             }}
+            variant="outlined"
           >
             {/* Title */}
             <Typography
@@ -244,6 +253,8 @@ const StudentDashboard = () => {
                 alignItems: "center",
                 gap: 1,
                 color: theme.palette.primary.main,
+                fontWeight: 600,
+                fontSize: { xs: "0.9rem", sm: "1rem" },
               }}
             >
               {item.icon}
@@ -251,15 +262,25 @@ const StudentDashboard = () => {
             </Typography>
 
             {/* Description */}
-            <Typography sx={{ mt: 2 }} variant="subtitle2">
+            <Typography
+              sx={{ mt: 0.5, flexGrow: 1 }}
+              variant="body2"
+              fontSize={{ xs: "0.8rem", sm: "0.875rem" }}
+              color="text.secondary"
+            >
               {item.description}
             </Typography>
 
-            {/* Button at bottom */}
-            <Box sx={{ mt: "auto", display: "flex", justifyContent: "center" }}>
+            {/* Button */}
+            <Box sx={{ mt: 1.5, display: "flex", justifyContent: "center" }}>
               <Button
                 onClick={() => navigate(item.path)}
-                sx={{ width: "80%", mt: 5, mb: 1 }}
+                sx={{
+                  width: "75%",
+                  fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                  py: { xs: 0.5, sm: 0.75 },
+                  borderRadius: 2,
+                }}
                 variant="outlined"
               >
                 {item.buttonText}
@@ -269,16 +290,19 @@ const StudentDashboard = () => {
         ))}
       </Box>
 
+
+      {/* History & Notifications - Responsive Layout */}
       <Box
         sx={{
           display: "flex",
-          gap: 3,
+          flexDirection: { xs: "column", md: "row" },
+          gap: { xs: 2, md: 3 },
           mt: 3,
         }}
       >
         {/* Counseling History */}
-        <Box sx={{ display: "flex" }}>
-          <Card sx={{ borderRadius: 2, boxShadow: 3, width: 700 }}>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Card sx={{ borderRadius: 2, boxShadow: 3, height: "100%" }}>
             <CardContent>
               <Typography variant="h6" gutterBottom>
                 Counseling History
@@ -286,13 +310,13 @@ const StudentDashboard = () => {
               <Divider sx={{ mb: 2 }} />
               <Box
                 sx={{
-                  maxHeight: 400, // control your height here (px or vh)
+                  maxHeight: { xs: 300, md: 400 },
                   overflowY: "auto",
-                  pr: 1, // avoid scrollbar overlap
+                  pr: 1,
                 }}
               >
                 {history.length > 0 ? (
-                  <Stack spacing={2}>
+                  <Stack spacing={{ xs: 1.5, sm: 2 }}>
                     {history.map((item, index) => (
                       <Box
                         key={index}
@@ -300,7 +324,7 @@ const StudentDashboard = () => {
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "space-between",
-                          p: 1.5,
+                          p: { xs: 1, sm: 1.5 },
                           borderRadius: 1,
                           bgcolor: "grey.50",
                           transition: "all 0.3s ease",
@@ -316,22 +340,45 @@ const StudentDashboard = () => {
                           sx={{
                             display: "flex",
                             alignItems: "center",
-                            gap: 1.5,
+                            gap: { xs: 1, sm: 1.5 },
+                            flex: 1,
+                            minWidth: 0,
                           }}
                         >
-                          <CalendarTodayIcon color="primary" fontSize="small" />
-                          <Box>
-                            <Typography variant="body1" fontWeight="bold">
+                          <CalendarTodayIcon
+                            color="primary"
+                            fontSize="small"
+                            sx={{ fontSize: { xs: 18, sm: 20 } }}
+                          />
+                          <Box sx={{ minWidth: 0 }}>
+                            <Typography
+                              variant="body1"
+                              fontWeight="bold"
+                              sx={{
+                                fontSize: { xs: "0.8rem", sm: "0.875rem" },
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                              }}
+                            >
                               {item.date}
                             </Typography>
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography
+                              variant="body2"
+                              color="text.secondary"
+                              sx={{
+                                fontSize: { xs: "0.7rem", sm: "0.75rem" },
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                              }}
+                            >
                               {item.time} with{" "}
                               {`${item.first_name} ${item.last_name}`}
                             </Typography>
                           </Box>
                         </Box>
-
-                        <Stack direction="row" spacing={1}>
+                        <Stack direction="row" spacing={0.5}>
                           <Chip
                             label={item.status}
                             size="small"
@@ -339,15 +386,17 @@ const StudentDashboard = () => {
                               item.status === "Completed"
                                 ? "success"
                                 : item.status === "Scheduled"
-                                ? "info"
-                                : "default"
+                                  ? "info"
+                                  : "default"
                             }
+                            sx={{ fontSize: { xs: "0.65rem", sm: "0.75rem" } }}
                           />
                           {item.feedback && (
                             <Chip
                               label={item.feedback}
                               size="small"
                               variant="outlined"
+                              sx={{ fontSize: { xs: "0.65rem", sm: "0.75rem" } }}
                             />
                           )}
                         </Stack>
@@ -364,7 +413,7 @@ const StudentDashboard = () => {
                       color: "text.secondary",
                     }}
                   >
-                    <Typography variant="body1">
+                    <Typography variant="body1" fontSize={{ xs: "0.8rem", sm: "1rem" }}>
                       No counseling history available yet.
                     </Typography>
                   </Box>
@@ -375,23 +424,22 @@ const StudentDashboard = () => {
         </Box>
 
         {/* Notifications */}
-        <Box sx={{ display: "flex" }}>
-          <Card sx={{ borderRadius: 2, boxShadow: 3 }}>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Card sx={{ borderRadius: 2, boxShadow: 3, height: "100%" }}>
             <CardContent>
               <Typography variant="h6" gutterBottom>
                 Notifications
               </Typography>
               <Divider sx={{ mb: 2 }} />
-
-              <Stack spacing={2}>
+              <Stack spacing={{ xs: 1.5, sm: 2 }}>
                 {notificationsData.map((item) => (
                   <Box
                     key={item.id}
                     sx={{
                       display: "flex",
                       alignItems: "flex-start",
-                      gap: 1.5,
-                      p: 1.5,
+                      gap: { xs: 1, sm: 1.5 },
+                      p: { xs: 1, sm: 1.5 },
                       borderRadius: 1,
                       bgcolor: "grey.50",
                       transition: "all 0.3s ease",
@@ -403,13 +451,26 @@ const StudentDashboard = () => {
                       },
                     }}
                   >
-                    <NotificationsNoneIcon color="action" fontSize="small" />
-                    <Box>
-                      <Typography variant="body2">{item.message}</Typography>
+                    <NotificationsNoneIcon
+                      color="action"
+                      fontSize="small"
+                      sx={{ fontSize: { xs: 18, sm: 20 } }}
+                    />
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                          wordBreak: "break-word",
+                        }}
+                      >
+                        {item.message}
+                      </Typography>
                       <Typography
                         variant="caption"
                         color="text.secondary"
                         display="block"
+                        sx={{ fontSize: { xs: "0.65rem", sm: "0.75rem" } }}
                       >
                         {item.time}
                       </Typography>

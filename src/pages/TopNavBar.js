@@ -12,15 +12,19 @@ import {
   Skeleton,
 } from "@mui/material";
 import NotificationsIcon from "@mui/icons-material/Notifications";
+import MenuIcon from "@mui/icons-material/Menu";
+import { useTheme, useMediaQuery } from "@mui/material";
 import theme from "./../theme";
 import { useRole } from "../context/RoleContext";
 import useSnackbar from "../hooks/useSnackbar";
 import { useNavigate } from "react-router-dom";
 
-const TopNavBar = () => {
+const TopNavBar = ({ handleDrawerToggle }) => {
   const navigate = useNavigate();
   const { showSnackbar, SnackbarComponent } = useSnackbar();
   const { user, setUser, setRole } = useRole();
+  const muiTheme = useTheme();
+  const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
   const [userData, setUserData] = useState(null);
   const [show, setShow] = useState(true); // Track visibility
   const [lastScrollY, setLastScrollY] = useState(0);
@@ -147,27 +151,62 @@ const TopNavBar = () => {
   return (
     <Box
       sx={{
-        borderBottom: "1px solid gray",
-        height: 70,
+        borderBottom: "1px solid #e0e0e0",
+        height: { xs: 60, sm: 70 },
         display: show ? "flex" : "none",
         alignItems: "center",
         justifyContent: "space-between",
         top: 0,
-        zIndex: 1000,
+        zIndex: 1200,
         bgcolor: theme.palette.background.default,
-        px: 2,
+        px: { xs: 1, sm: 2 },
+        position: "sticky",
       }}
     >
-      {/* Left Logo + Title */}
+      {/* Left Side - Menu Button + Logo + Title */}
       <Box sx={{ display: "flex", alignItems: "center" }}>
+        {/* Mobile Menu Button */}
+        {isMobile && (
+          <IconButton
+            color="inherit"
+            aria-label="open drawer"
+            edge="start"
+            onClick={handleDrawerToggle}
+            sx={{ mr: 2 }}
+          >
+            <MenuIcon />
+          </IconButton>
+        )}
+        
         <Box
           component="img"
           src="/letranseal.png"
           alt="Letran Seal"
-          sx={{ width: 45, height: 45, ml: 1 }}
+          sx={{ 
+            width: { xs: 35, sm: 45 }, 
+            height: { xs: 35, sm: 45 }, 
+            ml: isMobile ? 0 : 1 
+          }}
         />
-        <Typography variant="h6" sx={{ ml: 2, fontWeight: "bold" }}>
+        <Typography 
+          variant="h6" 
+          sx={{ 
+            ml: 2, 
+            fontWeight: "bold",
+            display: { xs: 'none', sm: 'block' }
+          }}
+        >
           Students Guidance Information System
+        </Typography>
+        <Typography 
+          variant="h6" 
+          sx={{ 
+            ml: 2, 
+            fontWeight: "bold",
+            display: { xs: 'block', sm: 'none' }
+          }}
+        >
+          SGIS
         </Typography>
       </Box>
 
@@ -267,7 +306,12 @@ const TopNavBar = () => {
           {/* Loading for session/global */}
           {loading ? (
             <>
-              <Skeleton variant="text" width={120} height={24} />
+              <Skeleton 
+                variant="text" 
+                width={isMobile ? 80 : 120} 
+                height={24} 
+                sx={{ display: { xs: 'none', sm: 'block' } }}
+              />
               <Skeleton variant="circular" width={40} height={40} />
             </>
           ) : (
@@ -275,12 +319,22 @@ const TopNavBar = () => {
               {/* Loading for userData fetch */}
               {!userData ? (
                 <>
-                  <Skeleton variant="text" width={120} height={24} />
+                  <Skeleton 
+                    variant="text" 
+                    width={isMobile ? 80 : 120} 
+                    height={24} 
+                    sx={{ display: { xs: 'none', sm: 'block' } }}
+                  />
                   <Skeleton variant="circular" width={40} height={40} />
                 </>
               ) : (
                 <>
-                  <Typography sx={{ fontWeight: 700 }}>
+                  <Typography 
+                    sx={{ 
+                      fontWeight: 700,
+                      display: { xs: 'none', sm: 'block' }
+                    }}
+                  >
                     {`${userData.first_name || ""} ${
                       userData.last_name || ""
                     }`.trim()}

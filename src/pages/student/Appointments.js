@@ -409,6 +409,7 @@ const Appointments = () => {
       sx={{
         display: "flex",
         flexDirection: "column",
+       height: "100vh"
       }}
     >
       <Box sx={{ display: "flex", justifyContent: "space-between" }}>

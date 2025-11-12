@@ -4,7 +4,7 @@ const knex = require("../db/db"); // adjust the path based on your setup
 
 // Look up student - Get
 router.get(
-  "/caseRecordsCounselor/counselor/student_lookup",
+  "/counselor/student_lookup",
   async (req, res) => {
     try {
       const students = await knex("students as st")
@@ -27,6 +27,8 @@ router.get(
           "st.student_no"
         );
 
+        console.log(students, "students");
+
       // Format last_appointment (e.g. May 30, 2024)
       const formattedStudents = students.map((st) => ({
         ...st,
@@ -38,6 +40,8 @@ router.get(
             })
           : "No Appointment yet",
       }));
+
+      console.log(formattedStudents, "formattedStudents");
 
       res.json(formattedStudents);
     } catch (error) {

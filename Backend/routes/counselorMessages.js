@@ -138,6 +138,78 @@ router.get("/messages/lookup", async (req, res) => {
   }
 });
 
+// Unread Messages Count for counselor
+router.get("/unreadCount", async (req, res) => {
+  const { userId } = req.query;
+
+  if (!userId) {
+    return res.status(400).json({ error: "userId is required" });
+  }
+
+  try {
+    const result = await knex("messages")
+      .count("id as unreadCount")
+      .where("receiver_id", userId)
+      .andWhere("is_read", false)
+      .first();
+
+    res.json({ unreadCount: Number(result.unreadCount) || 0 });
+  } catch (error) {
+    console.error("Error fetching unread message count:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Unread counts grouped by conversation (appointment)
+router.get("/unreadByConversation", async (req, res) => {
+  const { userId } = req.query;
+
+  if (!userId) {
+    return res.status(400).json({ error: "userId is required" });
+  }
+
+  try {
+    const rows = await knex("messages")
+      .select("appointment_id")
+      .count("id as count")
+      .where("receiver_id", userId)
+      .andWhere("is_read", false)
+      .groupBy("appointment_id");
+
+    const map = {};
+    rows.forEach((r) => {
+      map[String(r.appointment_id)] = Number(r.count) || 0;
+    });
+    res.json(map);
+  } catch (error) {
+    console.error("Error fetching unread by conversation:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Mark messages as read when opening a conversation
+router.put("/mark-read", async (req, res) => {
+  const { userId, appointmentId } = req.body;
+
+  if (!userId || !appointmentId) {
+    return res
+      .status(400)
+      .json({ error: "userId and appointmentId are required" });
+  }
+
+  try {
+    await knex("messages")
+      .where({ receiver_id: userId, appointment_id: appointmentId })
+      .andWhere("is_read", false)
+      .update({ is_read: true });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error marking messages as read:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 // Appointment look up on request followup
 router.get("/appointments/lookup", async (req, res) => {
   const { appointmentId } = req.query;
@@ -211,6 +283,15 @@ router.put("/appointments/follow-up", async (req, res) => {
 
     if (updated.length === 0) {
       return res.status(404).json({ message: "Appointment not found" });
+    }
+
+    // Emit socket event to notify student about follow-up
+    if (req.io && updated[0].student_id) {
+      req.io.to(`user_${String(updated[0].student_id)}`).emit("appointment_followup", {
+        appointmentId: appointmentId,
+        status: "Follow-up",
+        newDateTime: dateTime
+      });
     }
 
     // Optionally, send a notification here if needed

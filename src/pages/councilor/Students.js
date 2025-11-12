@@ -30,6 +30,10 @@ const Students = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [markSelectedStudents, setMarkSelectedStudents] = useState([]);
   const [AllRecords, setAllRecords] = useState([]);
+  const [caseRecords, setCaseRecords] = useState([]);
+  console.log(caseRecords, "Case Records");
+  const [quickNotes, setQuickNotes] = useState([]);
+  const [loadingCases, setLoadingCases] = useState(false);
 
   // Fetch students
   useEffect(() => {
@@ -131,13 +135,34 @@ const Students = () => {
     setSelectedStudent(null);
     setTab(0);
   };
-  const handleOpenCase = (student) => {
+  const handleOpenCase = async (student) => {
     setSelectedStudent(student);
     setOpenCase(true);
+    await fetchCaseRecords(student.id);
   };
   const handleCloseCase = () => {
     setOpenCase(false);
     setSelectedStudent(null);
+    setCaseRecords([]);
+    setQuickNotes([]);
+  };
+
+  // Fetch case records for a student
+  const fetchCaseRecords = async (studentId) => {
+    setLoadingCases(true);
+    try {
+      const response = await fetch(
+        `/caseRecordsCounselor/student-cases/${studentId}`
+      );
+      if (!response.ok) throw new Error("Failed to fetch case records");
+      const data = await response.json();
+      setCaseRecords(data.caseRecords);
+      setQuickNotes(data.quickNotes);
+    } catch (error) {
+      console.error("Error fetching case records:", error);
+    } finally {
+      setLoadingCases(false);
+    }
   };
 
   const handleInactiveStudent = () => {
@@ -207,34 +232,47 @@ const Students = () => {
         </Box>
       )}
 
-      <Grid sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }} container spacing={4}>
+      <Grid
+        container
+        spacing={4}
+        justifyContent="center"
+        alignItems="flex-start" // align items at top
+      >
         {filteredStudents && filteredStudents.length > 0 ? (
           filteredStudents.map((student, index) => (
-            <Grid item xs={12} md={6} lg={4} key={index}>
+            <Grid item xs={12} sm={6} md={4} lg={3} key={index}>
               <Card
                 sx={{
                   borderRadius: 3,
                   boxShadow: 2,
                   border: markSelectedStudents.includes(student.student_no)
-                    ? `2px solid ${theme.palette.primary.main}` // use theme primary color
+                    ? `2px solid ${theme.palette.primary.main}`
                     : "none",
                   cursor: "pointer",
+                  display: "flex",
+                  flexDirection: "column",
+                  transition: "transform 0.2s",
+                  "&:hover": {
+                    transform: "scale(1.02)",
+                    boxShadow: 4,
+                  },
                 }}
                 onClick={() => {
                   if (isEditing) {
-                    setMarkSelectedStudents((prev) => {
-                      if (prev.includes(student.student_no)) {
-                        // remove from selected if already clicked
-                        return prev.filter((id) => id !== student.student_no);
-                      } else {
-                        // add to selected
-                        return [...prev, student.student_no];
-                      }
-                    });
+                    setMarkSelectedStudents((prev) =>
+                      prev.includes(student.student_no)
+                        ? prev.filter((id) => id !== student.student_no)
+                        : [...prev, student.student_no]
+                    );
                   }
                 }}
               >
-                <CardContent>
+                <CardContent sx={{ 
+                  height: "100%", 
+                  display: "flex", 
+                  flexDirection: "column",
+                  p: { xs: 1.5, sm: 2, md: 2 }
+                }}>
                   <Box display="flex" alignItems="center" gap={2} mb={2}>
                     <Avatar>{student.first_name.charAt(0)}</Avatar>
                     <Box>
@@ -258,29 +296,48 @@ const Students = () => {
                     </Box>
                   </Box>
 
-                  <Typography variant="body2" color="text.secondary" mb={2}>
-                    Last Session:{" "}
-                    {student.last_appointment || "No Appointments yet"}
+                  <Typography 
+                    variant="body2" 
+                    color="text.secondary" 
+                    sx={{ 
+                      mb: 2, 
+                      flexGrow: 1,
+                      fontSize: { xs: "0.75rem", sm: "0.875rem" }
+                    }}
+                  >
+                    Last Session: {student.last_appointment || "No Appointments yet"}
                   </Typography>
-                  <Box display="flex" gap={1}>
+
+                  <Box 
+                    display="flex" 
+                    gap={1} 
+                    sx={{ 
+                      mt: "auto",
+                      flexDirection: { xs: "column", sm: "row" }
+                    }}
+                  >
                     <Button
                       onClick={(e) => {
-                        e.stopPropagation(); // prevent card click
+                        e.stopPropagation();
                         handleOpenCase(student);
                       }}
                       variant="contained"
                       size="small"
+                      fullWidth={{ xs: true, sm: false }}
+                      sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
                     >
                       View Case
                     </Button>
                     <Button
                       onClick={(e) => {
-                        e.stopPropagation(); // prevent card click
+                        e.stopPropagation();
                         handleOpenProfile(student);
                         fetchRecords(student.id);
                       }}
                       variant="outlined"
                       size="small"
+                      fullWidth={{ xs: true, sm: false }}
+                      sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
                     >
                       View Profile
                     </Button>
@@ -296,7 +353,7 @@ const Students = () => {
               flexDirection="column"
               alignItems="center"
               justifyContent="center"
-              sx={{ py: 6, width: '100%' }}
+              sx={{ py: 6, width: "100%" }}
             >
               <Typography variant="h6" color="text.secondary" gutterBottom>
                 No students found
@@ -309,6 +366,7 @@ const Students = () => {
         )}
       </Grid>
 
+
       {/* Modals remain the same */}
       {/* Profile Modal */}
       <Modal open={openProfile} onClose={handleCloseProfile}>
@@ -318,13 +376,16 @@ const Students = () => {
             top: "50%",
             left: "50%",
             transform: "translate(-50%, -50%)",
-            width: "70%",
+            width: { xs: "95%", sm: "85%", md: "70%", lg: "60%" },
+            maxWidth: 800,
             bgcolor: "background.paper",
             borderRadius: 3,
             boxShadow: 24,
-            p: 3,
-            maxHeight: "90vh",
+            p: { xs: 2, sm: 3 },
+            maxHeight: { xs: "95vh", sm: "90vh" },
             overflowY: "auto",
+            display: "flex",
+            flexDirection: "column",
           }}
         >
           {selectedStudent && (
@@ -411,12 +472,14 @@ const Students = () => {
               {tab === 1 && (
                 <Box
                   sx={{
-                    p: 3,
+                    p: { xs: 2, sm: 3 },
                     display: "flex",
                     flexDirection: "column",
                     gap: 2,
-                    maxHeight: 300, // maximum height in px, adjust as needed
-                    overflowY: "auto", // vertical scroll
+                    maxHeight: { xs: 250, sm: 300, md: 350 },
+                    overflowY: "auto",
+                    minHeight: 0,
+                    flexGrow: 1,
                   }}
                 >
                   <Typography
@@ -622,13 +685,16 @@ const Students = () => {
             top: "50%",
             left: "50%",
             transform: "translate(-50%, -50%)",
-            width: "60%",
+            width: { xs: "95%", sm: "80%", md: "60%", lg: "50%" },
+            maxWidth: 700,
             bgcolor: "background.paper",
             borderRadius: 3,
             boxShadow: 24,
-            p: 3,
-            maxHeight: "80vh",
+            p: { xs: 2, sm: 3 },
+            maxHeight: { xs: "95vh", sm: "85vh", md: "80vh" },
             overflowY: "auto",
+            display: "flex",
+            flexDirection: "column",
           }}
         >
           {selectedStudent && (
@@ -648,26 +714,158 @@ const Students = () => {
 
               <Divider sx={{ mb: 2 }} />
 
-              <Typography variant="body1" mb={2}>
-                Case notes and history for {selectedStudent.first_name} will be
-                displayed here.
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Example: Last counseling session was on{" "}
-                {selectedStudent.last_appointment
-                  ? selectedStudent.last_appointment
-                  : "N/A"}
-                .
-              </Typography>
+              {loadingCases ? (
+                <Box sx={{ textAlign: "center", p: 3 }}>
+                  <Typography>Loading case records...</Typography>
+                </Box>
+              ) : caseRecords.length > 0 ? (
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 2,
+                    flexGrow: 1,
+                    minHeight: 0,
+                    overflowY: "auto",
+                    p: 1,
+                  }}
+                >
+                  {caseRecords.map((caseRecord) => {
+                    const relatedNotes = quickNotes.filter(
+                      (note) => note.case_record_id === caseRecord.id
+                    );
+
+                    return (
+                      <Card
+                        key={caseRecord.id}
+                        sx={{
+                          borderRadius: 3,
+                          boxShadow: 3,
+                          p: 2,
+                          transition: "transform 0.2s, box-shadow 0.2s",
+                          "&:hover": {
+                            transform: "translateY(-3px)",
+                            boxShadow: 6,
+                          },
+                          border: "1px solid green",
+                          // ---- NEW ----
+                          display: "flex",
+                          flexDirection: "column",
+                          minHeight: 300,          // enough space for empty card
+                          maxHeight: 550,          // optional upper bound
+                          overflowY: "auto",       // scroll inside card if needed
+                        }}
+                      >
+                        {/* ---------- Header ---------- */}
+                        <Box
+                          sx={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            mb: 1,
+                          }}
+                        >
+                          <Typography variant="h6" fontWeight="bold">
+                            {caseRecord.case_type}
+                          </Typography>
+                          <Chip
+                            label={caseRecord.session_type}
+                            size="small"
+                            color="primary"
+                            sx={{ fontWeight: 500 }}
+                          />
+                        </Box>
+
+                        {/* ---------- Info Grid ---------- */}
+                        <Box
+                          sx={{
+                            display: "flex",
+                            flexWrap: "wrap",
+                            flexDirection: "column",
+                            gap: 1,
+                            mb: 2,
+                          }}
+                        >
+                          <Typography variant="body2" color="text.secondary" sx={{ minWidth: 150 }}>
+                            <strong>Date:</strong> {caseRecord.date}
+                          </Typography>
+
+                          {caseRecord.offense && (
+                            <Typography variant="body2" color="text.secondary" sx={{ minWidth: 150 }}>
+                              <strong>Offense:</strong> {caseRecord.offense}
+                            </Typography>
+                          )}
+
+                          {caseRecord.counselor_first_name && (
+                            <Typography variant="body2" color="text.secondary" sx={{ minWidth: 180 }}>
+                              <strong>Counselor:</strong> {caseRecord.counselor_first_name}{" "}
+                              {caseRecord.counselor_last_name}
+                            </Typography>
+                          )}
+
+                          {caseRecord.remarks && (
+                            <Typography variant="body2" color="text.secondary" sx={{ flex: 1 }}>
+                              <strong>Remarks:</strong> {caseRecord.remarks}
+                            </Typography>
+                          )}
+                        </Box>
+
+                        {/* ---------- Quick Notes (always visible) ---------- */}
+                        <Box sx={{ mt: "auto" /* push to bottom if card grows */ }}>
+                          <Typography variant="body2" fontWeight="bold" sx={{ mb: 1 }}>
+                            Quick Notes:
+                          </Typography>
+
+                          {relatedNotes.length > 0 ? (
+                            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                              {relatedNotes.map((note) => (
+                                <Chip
+                                  key={note.id}
+                                  label={note.name}
+                                  size="small"
+                                  variant="outlined"
+                                  color="secondary"
+                                />
+                              ))}
+                            </Box>
+                          ) : (
+                            <Typography variant="body2" color="text.disabled">
+                              No quick notes added yet.
+                            </Typography>
+                          )}
+                        </Box>
+                      </Card>
+                    );
+                  })}
+                </Box>
+              ) : (
+                <Box sx={{ textAlign: "center", p: 3 }}>
+                  <Typography variant="body1" color="text.secondary">
+                    No case records found for {selectedStudent.first_name}.
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                    Case records will appear here once they are created.
+                  </Typography>
+                </Box>
+              )}
             </>
           )}
         </Box>
       </Modal>
-
-      {isEditing && (
-        <Button onClick={handleStatus} sx={{ mt: 3 }} variant="outlined">
-          SAVE CHANGES
-        </Button>
+          {/* Only shows if there are selected students and is Editing */}
+      {isEditing && markSelectedStudents.length > 0 && (
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
+          <Button 
+            onClick={handleStatus} 
+            variant="outlined"
+            sx={{ 
+              minWidth: { xs: 120, sm: 150 },
+              fontSize: { xs: "0.875rem", sm: "1rem" }
+            }}
+          >
+            SAVE CHANGES
+          </Button>
+        </Box>
       )}
     </Box>
   );
