@@ -8,8 +8,8 @@ import {
   MenuItem,
 } from "@mui/material";
 
-
 const AdminReports = () => {
+  const [lookupData, setLookupData] = useState({});
   const [filters, setFilters] = useState({
     reportType: "",
     studentGroup: "",
@@ -25,10 +25,10 @@ const AdminReports = () => {
   useEffect(() => {
     const handleLookupData = async () => {
       try {
-        const response = await fetch('/adminGenerateReportRoute/lookup-data', {
-          method: 'GET',
+        const response = await fetch("/adminGenerateReportRoute/lookup-data", {
+          method: "GET",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
         });
 
@@ -38,14 +38,13 @@ const AdminReports = () => {
 
         const data = await response.json();
         setLookupData(data);
-
       } catch (error) {
-        console.error('Error looking up data:', error);
+        console.error("Error looking up data:", error);
       }
     };
 
     handleLookupData();
-  }, [])
+  }, []);
 
   return (
     <Box sx={{ p: 4 }}>
