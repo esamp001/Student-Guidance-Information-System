@@ -59,6 +59,9 @@ const createNotification = require("./routes/notificationRoutes");
 const caseRecordsCounselor = require("./routes/caseRecordsCounselor");
 const counselorDashboard = require("./routes/counselorDashboard");
 const adminGuidanceCaseRecords = require("./routes/adminGuidanceCaseRecords");
+const adminDashboardRoutes = require("./routes/adminDashboardRoutes");
+const counselorGenerateReportRoute = require("./routes/counselorGenerateReportRoute");
+const adminGenerateReportRoute = require("./routes/adminGenerateReportRoute");
 
 // Create a new Socket.IO server instance
 const io = new Server(server, {
@@ -92,6 +95,10 @@ app.use("/createNotification", createNotification);
 app.use("/caseRecordsCounselor", caseRecordsCounselor);
 app.use("/counselorDashboard", counselorDashboard);
 app.use("/adminGuidanceCaseRecords", adminGuidanceCaseRecords);
+app.use("/adminDashboardRoutes", adminDashboardRoutes);
+app.use("/counselorGenerateReportRoute", counselorGenerateReportRoute);
+app.use("/adminGenerateReportRoute", adminGenerateReportRoute);
+
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
   socket.on("register_user", (userId) => {

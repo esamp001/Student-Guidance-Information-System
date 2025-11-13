@@ -215,105 +215,13 @@ const StudentManagement = () => {
           onChange={(e, val) => setTab(val)}
           textColor="primary"
         >
-          <Tab label="Student Profiles" />
-          <Tab label="Behavior & Counseling" />
           <Tab label="Academic Records" />
         </Tabs>
       </Paper>
 
       {/* Student Profiles Tab */}
+
       {tab === 0 && (
-        <Paper sx={{ p: 2, borderRadius: 3, boxShadow: 3 }}>
-          <Box display="flex" justifyContent="space-between" mb={2}>
-            <TextField
-              variant="outlined"
-              placeholder="Search students..."
-              size="small"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Search />
-                  </InputAdornment>
-                ),
-              }}
-              sx={{ width: "85%" }}
-            />
-            <Button
-              variant="contained"
-              startIcon={<Add />}
-              onClick={() => handleOpen()}
-            >
-              Add Student
-            </Button>
-          </Box>
-
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Name</TableCell>
-                <TableCell>Year</TableCell>
-                <TableCell>Contact</TableCell>
-                <TableCell align="right">Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {students.map((student) => (
-                <TableRow key={student.id}>
-                  <TableCell>{student.full_name}</TableCell>
-                  <TableCell>{student.course}</TableCell>{" "}
-                  {/* or year if you have that */}
-                  <TableCell>{student.student_no}</TableCell>{" "}
-                  {/* or contact if applicable */}
-                  <TableCell align="right">
-                    <IconButton onClick={() => handleOpen(student)}>
-                      <DriveFileRenameOutlineRoundedIcon color="primary" />
-                    </IconButton>
-                    <IconButton onClick={() => handleDelete(student.id)}>
-                      <RemoveCircleTwoToneIcon color="error" />
-                    </IconButton>
-                    <IconButton>
-                      <Visibility />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {students.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={4} align="center">
-                    No matching records found
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </Paper>
-      )}
-
-      {/* Behavior & Counseling History */}
-      {tab === 1 && (
-        <Paper sx={{ p: 2, borderRadius: 3, boxShadow: 3 }}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Name</TableCell>
-                <TableCell>Behavior / Counseling Notes</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {students.map((student) => (
-                <TableRow key={student.id}>
-                  <TableCell>{student.name}</TableCell>
-                  <TableCell>{student.behavior}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </Paper>
-      )}
-
-      {tab === 2 && (
         <Paper
           sx={{ p: 2, borderRadius: 3, boxShadow: 3, border: "1px solid" }}
         >

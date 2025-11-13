@@ -56,6 +56,52 @@ const Appointments = () => {
     return null; // All good
   };
 
+  const handleConfirmFollowUp = async (appointmentId) => {
+    try {
+      const response = await fetch(
+        `/studentAppointmentSchedRoutes/student/appointment/${appointmentId}/confirm_follow_up`,
+        {
+          method: "POST",
+          credentials: "include",
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to confirm follow-up");
+      }
+
+      showSnackbar("Follow-up confirmed successfully", "success");
+      loadAppointments();
+      setOpen(false);
+    } catch (error) {
+      console.error("Error confirming follow-up:", error);
+      showSnackbar("Failed to confirm follow-up", "error");
+    }
+  };
+
+  const handleRejectFollowUp = async (appointmentId) => {
+    try {
+      const response = await fetch(
+        `/studentAppointmentSchedRoutes/student/appointment/${appointmentId}/reject_follow_up`,
+        {
+          method: "POST",
+          credentials: "include",
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to reject follow-up");
+      }
+
+      showSnackbar("Follow-up rejected successfully", "success");
+      loadAppointments();
+      setOpen(false);
+    } catch (error) {
+      console.error("Error rejecting follow-up:", error);
+      showSnackbar("Failed to reject follow-up", "error");
+    }
+  };
+
   // Look for for counselors
   useEffect(() => {
     const loadCounselors = async () => {
@@ -409,7 +455,6 @@ const Appointments = () => {
       sx={{
         display: "flex",
         flexDirection: "column",
-       height: "100vh"
       }}
     >
       <Box sx={{ display: "flex", justifyContent: "space-between" }}>
@@ -868,6 +913,68 @@ const Appointments = () => {
                                   color="error"
                                 >
                                   Decline
+                                </Button>
+                              </Box>
+                            </Box>
+                          )}
+
+                          {selectedAppointment.status === "Follow-up" && (
+                            <Box
+                              sx={{
+                                p: 2,
+                                mb: 2,
+                                mt: 2,
+                                border: "1px solid #ccc",
+                                borderRadius: 2,
+                                backgroundColor: "#f9f9f9",
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: 2,
+                              }}
+                            >
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  width: "100%",
+                                  justifyContent: "center",
+                                  alignItems: "center",
+                                }}
+                              >
+                                <Typography variant="body1">
+                                  Counselor request for follow-up, do you want
+                                  to accept?
+                                </Typography>
+                              </Box>
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  gap: 1,
+                                  justifyContent: "center",
+                                  alignItems: "center",
+                                }}
+                              >
+                                <Button
+                                  onClick={() =>
+                                    handleConfirmFollowUp(
+                                      selectedAppointment.id
+                                    )
+                                  }
+                                  variant="contained"
+                                  color="primary"
+                                >
+                                  Confirm Follow-up
+                                </Button>
+
+                                <Button
+                                  onClick={() =>
+                                    handleRejectFollowUp(
+                                      selectedAppointment.id
+                                    )
+                                  }
+                                  variant="outlined"
+                                  color="error"
+                                >
+                                  Reject
                                 </Button>
                               </Box>
                             </Box>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Typography,
@@ -6,18 +6,130 @@ import {
   TextField,
   Button,
   MenuItem,
+  CircularProgress,
+  Alert,
+  Snackbar,
 } from "@mui/material";
+import { useRole } from "../../context/RoleContext";
 
 const ReportsCounselor = () => {
+  const { user } = useRole();
   const [filters, setFilters] = useState({
-    reportType: "Academic Performance",
-    studentGroup: "All Students",
-    counselor: "All Counselors",
-    dateRange: "",
+    reportType: "",
+    studentGroup: "",
+    startDate: "",
+    endDate: "",
   });
+  console.log(filters, "filtersxxxx")
+  const [loading, setLoading] = useState(false);
+  const [lookupData, setLookupData] = useState({});
+  console.log(lookupData, "lookupDataxxxx")
+  const [notification, setNotification] = useState({
+    open: false,
+    message: "",
+    severity: "success"
+  });
+
+  
+
+  // Look up data
+  useEffect(() => {
+    const handleLookupData = async () => {
+      try {
+        const response = await fetch('/counselorGenerateReportRoute/lookup-data/?GenerateReport=' + filters.reportType, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        setLookupData(data);
+
+      } catch (error) {
+        console.error('Error looking up data:', error);
+      }
+    };
+
+    handleLookupData();
+  }, [filters.reportType]);
 
   const handleChange = (e) => {
     setFilters({ ...filters, [e.target.name]: e.target.value });
+  };
+
+  const handleExportToExcel = async () => {
+    try {
+      setLoading(true);
+      
+      const response = await fetch('/counselorGenerateReportRoute/generate-excel', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          reportType: filters.reportType,
+          studentGroup: filters.studentGroup,
+          startDate: filters.startDate,
+          endDate: filters.endDate,
+          userId: user.id
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      // Get the filename from the response headers
+      const contentDisposition = response.headers.get('Content-Disposition');
+      let filename = `${filters.reportType.replace(/\s+/g, '_')}_Report_${new Date().toISOString().split('T')[0]}.xlsx`;
+      
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+        if (filenameMatch) {
+          filename = filenameMatch[1];
+        }
+      }
+
+      // Convert response to blob
+      const blob = await response.blob();
+      
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      
+      // Cleanup
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(link);
+      
+      setNotification({
+        open: true,
+        message: "Excel report generated and downloaded successfully!",
+        severity: "success"
+      });
+      
+    } catch (error) {
+      console.error('Error generating Excel report:', error);
+      setNotification({
+        open: true,
+        message: "Failed to generate Excel report. Please try again.",
+        severity: "error"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCloseNotification = () => {
+    setNotification({ ...notification, open: false });
   };
 
   return (
@@ -51,10 +163,10 @@ const ReportsCounselor = () => {
             <MenuItem value="Academic Performance">
               Academic Performance
             </MenuItem>
-            <MenuItem value="Student Offense Records">
-              Student Offense Records
+            <MenuItem value="Appointment Report">
+              Appointment Report
             </MenuItem>
-            <MenuItem value="Counseling Sessions">Counseling Sessions</MenuItem>
+            <MenuItem value="Case Records">Case Records</MenuItem>
           </TextField>
 
           {/* Student Group */}
@@ -66,44 +178,66 @@ const ReportsCounselor = () => {
             onChange={handleChange}
             sx={{ flex: "1 1 200px" }}
           >
-            <MenuItem value="All Students">All Students</MenuItem>
-            <MenuItem value="Freshmen">Freshmen</MenuItem>
-            <MenuItem value="Sophomores">Sophomores</MenuItem>
-            <MenuItem value="Graduating">Graduating</MenuItem>
-          </TextField>
+            {lookupData.StudentGroup?.map((student) => (
+              <MenuItem key={student.id} value={parseInt(student.id)}>
+                {`${student.first_name} ${student.middle_name} ${student.last_name}`}
+              </MenuItem>
 
-          {/* Counselor */}
-          <TextField
-            select
-            label="Counselor"
-            name="counselor"
-            value={filters.counselor}
-            onChange={handleChange}
-            sx={{ flex: "1 1 200px" }}
-          >
-            <MenuItem value="All Counselors">All Counselors</MenuItem>
-            <MenuItem value="Counselor A">Counselor A</MenuItem>
-            <MenuItem value="Counselor B">Counselor B</MenuItem>
+            ))}
           </TextField>
 
           {/* Date Range */}
           <TextField
             type="date"
-            label="Date Range"
-            name="dateRange"
+            label="Start Date"
+            name="startDate"
             InputLabelProps={{ shrink: true }}
-            value={filters.dateRange}
+            value={filters.startDate}
             onChange={handleChange}
             sx={{ flex: "1 1 200px" }}
           />
+
+          <TextField
+            type="date"
+            label="End Date"
+            name="endDate"
+            InputLabelProps={{ shrink: true }}
+            value={filters.endDate}
+            onChange={handleChange}
+            sx={{ flex: "1 1 200px" }}
+          />
+        
         </Box>
 
         {/* Export Buttons */}
-        <Box sx={{ display: "flex", gap: 2 }}>
-          <Button variant="outlined">Export to PDF</Button>
-          <Button variant="outlined">Export to Excel</Button>
+        <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+          <Button 
+            variant="contained"
+            onClick={handleExportToExcel}
+            disabled={loading}
+            startIcon={loading ? <CircularProgress size={20} /> : null}
+            sx={{ minWidth: 140 }}
+          >
+            {loading ? "Generating..." : "Export to Excel"}
+          </Button>
         </Box>
       </Paper>
+
+      {/* Notification Snackbar */}
+      <Snackbar
+        open={notification.open}
+        autoHideDuration={6000}
+        onClose={handleCloseNotification}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert 
+          onClose={handleCloseNotification} 
+          severity={notification.severity}
+          sx={{ width: '100%' }}
+        >
+          {notification.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

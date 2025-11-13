@@ -114,4 +114,30 @@ router.get("/student/appointment/lookup", async (req, res) => {
   }
 });
 
+// API - handle accept follow - up
+router.post("/student/appointment/:id/confirm_follow_up", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await knex("appointments").where("id", id).update({
+      status: "Confirmed Follow-up",
+    });
+    res.json({ success: true, data: result });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// API - handle reject follow - up
+router.post("/student/appointment/:id/reject_follow_up", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await knex("appointments").where("id", id).update({
+      status: "Rejected Follow-up",
+    });
+    res.json({ success: true, data: result });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

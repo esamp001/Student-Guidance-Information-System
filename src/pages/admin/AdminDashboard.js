@@ -11,6 +11,7 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
+import { useEffect, useState } from "react";
 
 // Register the required components
 ChartJS.register(
@@ -24,6 +25,8 @@ ChartJS.register(
 );
 
 const AdminDashboard = () => {
+  const [dashboardData, setDashboardData] = useState({});
+
   const data = {
     labels: [
       "Jan",
@@ -49,6 +52,20 @@ const AdminDashboard = () => {
       },
     ],
   };
+
+  // Fetch Data
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch("/adminDashboardRoutes/data");
+        const data = await response.json();
+        setDashboardData(data);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    };
+    fetchData();
+  }, []);
 
   const StatCard = ({ title, value }) => (
     <Paper
@@ -79,13 +96,13 @@ const AdminDashboard = () => {
       {/* Top Summary Cards */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid item xs={12} sm={4}>
-          <StatCard title="Total Students Registered" value="1,250" />
+          <StatCard title="Total Students Registered" value={dashboardData.students} />
         </Grid>
         <Grid item xs={12} sm={4}>
-          <StatCard title="Active Counselors" value="15" />
+          <StatCard title="Active Counselors" value={dashboardData.counselors} />
         </Grid>
         <Grid item xs={12} sm={4}>
-          <StatCard title="Active Guidance Cases" value="85" />
+          <StatCard title="Active Guidance Cases" value={dashboardData.inProgressGuidanceRecords} />
         </Grid>
       </Grid>
 

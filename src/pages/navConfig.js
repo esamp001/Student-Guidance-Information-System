@@ -90,10 +90,10 @@ export const navConfig = {
       path: "admin/reports",
       icon: <AssessmentIcon />,
     },
-    {
-      label: "System Settings",
-      path: "admin/settings",
-      icon: <SettingsIcon />,
-    },
+    // {
+    //   label: "System Settings",
+    //   path: "admin/settings",
+    //   icon: <SettingsIcon />,
+    // },
   ],
 };

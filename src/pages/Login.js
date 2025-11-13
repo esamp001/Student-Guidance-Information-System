@@ -336,11 +336,11 @@ const Login = () => {
             <Typography variant="subtitle2" sx={{ mb: 1, mt: 3 }}>
               Password
             </Typography>
-            {/* <TextField
+            <TextField
               sx={{ width: "100%" }}
               name="password"
               id="outlined-basic"
-              type="password"
+              type={showPassword ? "text" : "password"} // toggles input type
               value={formData.password}
               onChange={handleChangeForm}
               label="Str0nGP@ssw0rd"
@@ -348,48 +348,23 @@ const Login = () => {
               size="small"
               InputProps={{
                 style: { fontSize: 12 },
-              }}
-              InputLabelProps={{
-                style: { fontSize: 12 },
-              }}
-            /> */}
-
-            <FormControl sx={{ width: "100%" }} variant="outlined">
-              <InputLabel
-                htmlFor="outlined-adornment-password"
-                sx={{ fontSize: 12 }}
-              >
-                Password
-              </InputLabel>
-              <OutlinedInput
-                id="outlined-adornment-password"
-                name="password"
-                value={formData.password}
-                onChange={handleChangeForm}
-                type={showPassword ? "text" : "password"}
-                label="Password" // this connects the outline to the label
-                endAdornment={
+                endAdornment: ( // add visibility toggle button
                   <InputAdornment position="end">
                     <IconButton
-                      aria-label={
-                        showPassword ? "hide password" : "show password"
-                      }
                       onClick={handleClickShowPassword}
                       edge="end"
+                      aria-label={showPassword ? "hide password" : "show password"}
+                      size="small"
                     >
                       {showPassword ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
                   </InputAdornment>
-                }
-                size="small"
-                sx={{
-                  "& .MuiInputBase-input": {
-                    fontSize: 12, // smaller text inside
-                    padding: "8px 12px", //  tighter padding for compact look
-                  },
-                }}
-              />
-            </FormControl>
+                ),
+              }}
+              InputLabelProps={{
+                style: { fontSize: 12 },
+              }}
+            />
 
             <Box
               sx={{
