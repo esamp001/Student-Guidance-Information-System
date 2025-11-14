@@ -13,7 +13,10 @@ router.get("/admin/all_students/lookup", async (req, res) => {
         "st.middle_name",
         "st.last_name",
         "st.student_no",
-        "st.course"
+        "st.course",
+        "st.student_no",
+        "st.contact_no",
+        "st.behavior_record",
       )
       .leftJoin("users as us", "us.id", "st.user_id") // join users
       .where("us.role", "student")
@@ -32,6 +35,8 @@ router.get("/admin/all_students/lookup", async (req, res) => {
       }`.trim(),
       student_no: st.student_no,
       course: st.course,
+      contact_no: st.contact_no,
+      behavior_record: st.behavior_record,
     }));
 
     res.json(formatted);

@@ -112,8 +112,8 @@ router.get("/AllCaseRecords", async (req, res) => {
 // Lookup Appointments
 router.get("/appointments", async (req, res) => {
   try {
-    const appointments = await knex("appointments").select("id", "type", "mode");
-    console.log(appointments, "appointments");
+    const appointments = await knex("appointments AS a").select("a.id", "a.type", "a.mode", "a.student_id", "a.reason", "st.first_name", "st.last_name")
+    .innerJoin("students AS st", "st.id", "a.student_id");
     res.json(appointments);
   } catch (error) {
     console.error("Error fetching appointments:", error);

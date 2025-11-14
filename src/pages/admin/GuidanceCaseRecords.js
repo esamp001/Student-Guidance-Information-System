@@ -302,7 +302,7 @@ const GuidanceCaseRecords = () => {
           const newCase = await response.json(); // get saved record from backend
           showSnackbar("Case saved successfully", "success");
 
-          // 🧠 Update the local UI immediately
+          // Update the local UI immediately
           setCases((prev) => [newCase, ...(Array.isArray(prev) ? prev : [])]); // prepend new record
 
           closeForm();

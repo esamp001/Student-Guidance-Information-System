@@ -254,10 +254,17 @@ router.put("/appointments/completed/:id", async (req, res) => {
       return res.status(404).json({ message: "Appointment not found" });
     }
 
+    console.log(id, "id");
+
     const updated = await knex("appointments")
       .where({ id })
       .update({ status })
       .returning("*");
+
+    // Also update guidance case record's remark
+    await knex("guidance_case_records")
+      .where({ appointment_id: id })
+      .update({ remarks: "Resolved" });
 
     // Log the status change
     await logStatusChange(

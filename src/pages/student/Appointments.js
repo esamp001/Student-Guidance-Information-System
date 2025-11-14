@@ -482,7 +482,6 @@ const Appointments = () => {
                   </Typography>
 
                   {/* Appointment Type */}
-                  {/* Appointment Type */}
                   <Typography variant="subtitle2" sx={{ mb: 1 }}>
                     Appointment Type
                   </Typography>

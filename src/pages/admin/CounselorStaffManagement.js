@@ -137,6 +137,14 @@ const CounselorStaffManagement = () => {
         body: JSON.stringify(formData),
       });
 
+      // If response is okay, automatically update the UI without refresh
+      if (response.ok) {
+        setCounselors((prev) => [...prev, formData]);
+      }
+
+      // Close the modal
+      setOpen(false);
+
       const data = await response.json();
 
       if (!response.ok) {

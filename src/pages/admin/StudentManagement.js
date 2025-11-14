@@ -27,6 +27,10 @@ import {
   MenuItem,
   Autocomplete,
   TableContainer,
+  Card,
+  CardContent,
+  Avatar,
+  Chip,
 } from "@mui/material";
 
 const StudentManagement = () => {
@@ -36,6 +40,8 @@ const StudentManagement = () => {
   const [academicRecords, setAcademicRecords] = useState([]);
   const [overallNotes, setOverallNotes] = useState({});
   const [students, setStudents] = useState([]);
+  const [allStudents, setAllStudents] = useState([]);
+  console.log(allStudents, "All Students");
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [originalRecords, setOriginalRecords] = useState([]);
   const [originalOverallNote, setOriginalOverallNote] = useState("");
@@ -113,6 +119,27 @@ const StudentManagement = () => {
       showSnackbar("An error occurred while saving records.", "error");
     }
   };
+
+  useEffect(() => {
+    const fetchStudents = async () => {
+      try {
+        const response = await fetch(
+          `/adminAcademicRecordsRoutes/admin/all_students/lookup?search=${encodeURIComponent(inputValue)}`
+        );
+        const data = await response.json();
+        setAllStudents(data);
+      } catch (error) {
+        console.error("Error fetching students:", error);
+      }
+    };
+
+    // debounce to avoid too many requests
+    const timeoutId = setTimeout(() => {
+      fetchStudents();
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [inputValue]);
 
   useEffect(() => {
     const fetchAcademicRecords = async () => {
@@ -216,6 +243,7 @@ const StudentManagement = () => {
           textColor="primary"
         >
           <Tab label="Academic Records" />
+          <Tab label="Student Records" />
         </Tabs>
       </Paper>
 
@@ -223,7 +251,7 @@ const StudentManagement = () => {
 
       {tab === 0 && (
         <Paper
-          sx={{ p: 2, borderRadius: 3, boxShadow: 3, border: "1px solid" }}
+          sx={{ p: 2, borderRadius: 3, boxShadow: 3, }}
         >
           <Typography variant="h6" gutterBottom>
             Academic Records
@@ -433,6 +461,162 @@ const StudentManagement = () => {
         </Paper>
       )}
 
+      {tab === 1 && (
+        <>
+          <Paper
+            sx={{ p: 2, borderRadius: 3, boxShadow: 3 }}
+          >
+            <Typography variant="h6" gutterBottom>
+              Academic Records
+            </Typography>
+
+            {/*  Search Bar */}
+            <Autocomplete
+              options={students}
+              getOptionLabel={(option) => option.full_name || ""}
+              value={selectedStudent}
+              onChange={(event, newValue) => setSelectedStudent(newValue)}
+              inputValue={inputValue}
+              onInputChange={(event, newInputValue) =>
+                setInputValue(newInputValue)
+              }
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Search Student"
+                  variant="outlined"
+                  size="small"
+                  sx={{ mb: 3, width: "100%" }}
+                />
+              )}
+            />
+          </Paper>
+          <Box
+            sx={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 3,
+              p: { xs: 1, md: 2 },
+            }}
+          >
+            {allStudents.map((student) => (
+              <Card
+                key={student.id}
+                sx={{
+                  borderRadius: 4,
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+                  display: "flex",
+                  flexDirection: "column",
+                  flex: "1 1 260px",
+                  maxWidth: 320,
+                  border: "1px solid",
+                  borderColor: "grey.200",
+                  transition: "transform 0.2s, box-shadow 0.2s",
+                  "&:hover": {
+                    transform: "translateY(-4px)",
+                    boxShadow: "0 8px 20px rgba(0,0,0,0.12)",
+                  },
+                  overflow: "hidden",
+                }}
+              >
+                <CardContent
+                  sx={{
+                    p: { xs: 2, sm: 3 },
+                    display: "flex",
+                    flexDirection: "column",
+                    height: "100%",
+                    gap: 1.5,
+                  }}
+                >
+                  {/* Header: Avatar + Name + Status */}
+                  <Box display="flex" alignItems="center" gap={2.5}>
+                    <Avatar
+                      sx={{
+                        bgcolor: "primary.main",
+                        width: 48,
+                        height: 48,
+                        fontWeight: 600,
+                        fontSize: "1.1rem",
+                      }}
+                    >
+                      {student.full_name.charAt(0)}
+                    </Avatar>
+                    <Box sx={{ minWidth: 0 }}> {/* Prevent text overflow */}
+                      <Typography
+                        variant="h6"
+                        fontWeight={600}
+                        sx={{
+                          fontSize: { xs: "1rem", sm: "1.1rem" },
+                          lineHeight: 1.3,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                        title={student.full_name} // Tooltip on long names
+                      >
+                        {student.full_name}
+                      </Typography>
+                      <Chip
+                        label="Active"
+                        size="small"
+                        sx={{
+                          mt: 0.5,
+                          bgcolor: "#e8f5e9",
+                          color: "#2e7d32",
+                          fontWeight: 600,
+                          fontSize: "0.7rem",
+                          height: 22,
+                          "& .MuiChip-label": { px: 1 },
+                        }}
+                      />
+                    </Box>
+                  </Box>
+
+                  {/* Student Details */}
+                  <Box sx={{ mt: 1, display: "flex", flexDirection: "column", gap: 1 }}>
+                    <Box display="flex" justifyContent="space-between" alignItems="center">
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        fontWeight={500}
+                        sx={{ fontSize: "0.8rem" }}
+                      >
+                        Student No.
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        fontWeight={600}
+                        sx={{ fontSize: "0.9rem", color: "text.primary" }}
+                      >
+                        {student.student_no}
+                      </Typography>
+                    </Box>
+
+                    <Box display="flex" justifyContent="space-between" alignItems="center">
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        fontWeight={500}
+                        sx={{ fontSize: "0.8rem" }}
+                      >
+                        Course
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        fontWeight={600}
+                        sx={{ fontSize: "0.9rem", color: "text.primary" }}
+                      >
+                        {student.course}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </CardContent>
+              </Card>
+            ))}
+          </Box>
+        </>
+      )}
+
       {/* Dialog for Add/Edit */}
       <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
         <DialogTitle>
@@ -448,6 +632,7 @@ const StudentManagement = () => {
               setFormData((f) => ({ ...f, name: e.target.value }))
             }
           />
+
           <TextField
             margin="dense"
             label="Year"
@@ -457,6 +642,7 @@ const StudentManagement = () => {
               setFormData((f) => ({ ...f, year: e.target.value }))
             }
           />
+
           <TextField
             margin="dense"
             label="Contact"
@@ -466,6 +652,7 @@ const StudentManagement = () => {
               setFormData((f) => ({ ...f, contact: e.target.value }))
             }
           />
+
           <TextField
             margin="dense"
             label="Behavior / Counseling Notes"
@@ -475,6 +662,7 @@ const StudentManagement = () => {
               setFormData((f) => ({ ...f, behavior: e.target.value }))
             }
           />
+          
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>Cancel</Button>

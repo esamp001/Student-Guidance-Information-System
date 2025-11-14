@@ -130,8 +130,9 @@ const CaseRecords = () => {
         setFormData({
           ...formData,
           appointmentId: value,
-          caseType: selectedAppointment.type || "", // populate caseType
+          studentId: selectedAppointment.student_id,
           sessionType: selectedAppointment.mode || "",   // populate sessionType
+          offense: selectedAppointment.reason || "", // populate reason
         });
         return; // exit early
       }
@@ -200,20 +201,6 @@ const CaseRecords = () => {
           Add New Record
         </Typography>
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          <TextField
-            select
-            label="Student"
-            name="studentId"
-            value={formData.studentId}
-            onChange={handleChange}
-            fullWidth
-          >
-            {students.map((s) => (
-              <MenuItem key={s.id} value={s.id}>
-                {s.first_name} {s.last_name}
-              </MenuItem>
-            ))}
-          </TextField>
 
           {/* Select the appointment to populate other data */}
           <TextField
@@ -224,25 +211,106 @@ const CaseRecords = () => {
             onChange={handleChange}
             fullWidth
           >
-            {appointments.map((a, index) => (
-              <MenuItem key={index} value={a.id}>
-                {a.type} - {a.mode}
+            {appointments.map((a) => (
+              <MenuItem key={a.id} value={a.id} sx={{ py: 1.5, px: 2 }}>
+                <Box display="flex" flexDirection="column">
+                  <Typography variant="body1" sx={{ fontWeight: 600, mb: 0.5 }}>
+                    {a.type} ({a.mode})
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 0.3 }}>
+                    Reason: {a.reason}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Student: {a.first_name} {a.last_name}
+                  </Typography>
+                </Box>
+              </MenuItem>
+            ))}
+
+          </TextField>
+
+          <TextField
+            select
+            label="Student"
+            name="studentId"
+            value={formData.studentId}
+            onChange={handleChange}
+            fullWidth
+          >
+            {students.map((s) => (
+              <MenuItem key={s.id} value={s.id}>
+                {s.first_name} {s.middle_name} {s.last_name}
               </MenuItem>
             ))}
           </TextField>
 
           <TextField
+            select
             label="Case Type"
             name="caseType"
             value={formData.caseType}
+            onChange={handleChange}
             fullWidth
-            InputProps={{
-              readOnly: true, // extra safety, ensures no typing
-            }}
-          />
+          >
+            {/* Academic-Related Cases */}
+            <MenuItem value="Academic Difficulty">Academic Difficulty</MenuItem>
+            <MenuItem value="Low Academic Performance">Low Academic Performance</MenuItem>
+            <MenuItem value="Chronic Absenteeism / Attendance Concern">
+              Chronic Absenteeism / Attendance Concern
+            </MenuItem>
+            <MenuItem value="Identified Learning Difficulty">
+              Identified Learning Difficulty
+            </MenuItem>
+            <MenuItem value="Academic At-Risk Case">Academic At-Risk Case</MenuItem>
 
-             <TextField
-            label="Concern / Offense"
+            {/* Personal / Emotional Cases */}
+            <MenuItem value="Emotional Distress">Emotional Distress</MenuItem>
+            <MenuItem value="Stress or Anxiety Case">Stress or Anxiety Case</MenuItem>
+            <MenuItem value="Self-Esteem Issue">Self-Esteem Issue</MenuItem>
+            <MenuItem value="Adjustment Difficulty">Adjustment Difficulty</MenuItem>
+            <MenuItem value="Personal Crisis Case">Personal Crisis Case</MenuItem>
+
+            {/* Behavioral & Disciplinary Cases */}
+            <MenuItem value="Minor Misconduct">Minor Misconduct</MenuItem>
+            <MenuItem value="Major Misconduct">Major Misconduct</MenuItem>
+            <MenuItem value="Classroom Misbehavior">Classroom Misbehavior</MenuItem>
+            <MenuItem value="Violation of School Rules">Violation of School Rules</MenuItem>
+            <MenuItem value="Repeated Behavioral Offense">
+              Repeated Behavioral Offense
+            </MenuItem>
+
+            {/* Peer & Social Cases */}
+            <MenuItem value="Peer Conflict">Peer Conflict</MenuItem>
+            <MenuItem value="Bullying (Victim)">Bullying (Victim)</MenuItem>
+            <MenuItem value="Bullying (Offender)">Bullying (Offender)</MenuItem>
+            <MenuItem value="Social Relationship Issue">Social Relationship Issue</MenuItem>
+            <MenuItem value="Interpersonal Conflict">Interpersonal Conflict</MenuItem>
+
+            {/* Family-Related Cases */}
+            <MenuItem value="Family Conflict">Family Conflict</MenuItem>
+            <MenuItem value="Parental Concern">Parental Concern</MenuItem>
+            <MenuItem value="Home Environment Issue">Home Environment Issue</MenuItem>
+
+            {/* Career-Related Cases */}
+            <MenuItem value="Career Concern">Career Concern</MenuItem>
+            <MenuItem value="Course Misalignment Case">Course Misalignment Case</MenuItem>
+            <MenuItem value="Work Readiness Issue">Work Readiness Issue</MenuItem>
+
+            {/* Crisis Cases */}
+            <MenuItem value="Crisis Intervention Case">Crisis Intervention Case</MenuItem>
+            <MenuItem value="High-Risk Behavior">High-Risk Behavior</MenuItem>
+            <MenuItem value="Safety Concern">Safety Concern</MenuItem>
+
+            {/* Referral Cases */}
+            <MenuItem value="Referred to Psychologist">Referred to Psychologist</MenuItem>
+            <MenuItem value="Referred to External Agency">Referred to External Agency</MenuItem>
+            <MenuItem value="Referred to Teacher/Department">
+              Referred to Teacher/Department
+            </MenuItem>
+          </TextField>
+
+          <TextField
+            label="Appointment Reason / Concern"
             name="offense"
             value={formData.offense}
             onChange={handleChange}

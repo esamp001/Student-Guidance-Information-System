@@ -62,7 +62,6 @@ const AppointmentsCounselor = () => {
   const handleClose = () => setOpen(false);
 
   const handleSave = async (selected) => {
-    console.log(selected, "selected");
     try {
       const response = await fetch(
         `/appointmentRequest/${selected.appointment_id}/reschedule`,
@@ -584,7 +583,7 @@ const AppointmentsCounselor = () => {
                         </>
                       )}
 
-                      {selected.status === "Follow-up" && (
+                      {/* {selected.status === "Follow-up" && (
                         <Button
                           onClick={() => handleApprove(selected)}
                           variant="contained"
@@ -592,7 +591,7 @@ const AppointmentsCounselor = () => {
                         >
                           Confirm Follow-up
                         </Button>
-                      )}
+                      )} */}
 
                       {selected.status?.toLowerCase().includes("confirmed") && (
                         <>
