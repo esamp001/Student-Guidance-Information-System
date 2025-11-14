@@ -46,6 +46,16 @@ router.get("/admin/all_students/lookup", async (req, res) => {
   }
 });
 
+router.get("/admin/allowed_student_ids", async (req, res) => {
+  try {
+    const data = await knex("allowed_student_ids").select("id","student_id");
+    res.json(data);
+  } catch (error) {
+    console.error("Error fetching allowed student IDs:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 router.put("/admin/save/academic_record", async (req, res) => {
   const { student_id, overall_note, records } = req.body;
 
@@ -102,6 +112,30 @@ router.get("/admin/get/academic_record/:student_id", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to fetch academic records" });
+  }
+});
+
+router.post("/admin/allowed_student_ids", async (req, res) => {
+  const { student_id } = req.body;
+
+  try {
+    await knex("allowed_student_ids").insert({ student_id });
+    res.json({ message: "Student ID added successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to add student ID" });
+  }
+});
+
+router.delete("/admin/allowed_student_ids/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    await knex("allowed_student_ids").where({ id }).del();
+    res.json({ message: "Student ID deleted successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to delete student ID" });
   }
 });
 

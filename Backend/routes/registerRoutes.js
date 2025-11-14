@@ -15,6 +15,12 @@ router.post("/register/student", async (req, res) => {
       return res.status(400).json({ message: "User data is required." });
     }
 
+    // Check if the input student is exist on allowed student id's table
+    const allowedStudentIds = await trx("allowed_student_ids").select("student_id");
+    if (!allowedStudentIds.some((id) => id.student_id === userForm.studentID)) {
+      return res.status(400).json({ message: "Cannot register this student. Student ID is not allowed." });
+    }
+
     //  Destructure userForm fields
     const {
       firstName,
