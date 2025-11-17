@@ -223,11 +223,13 @@ const Login = () => {
         body: JSON.stringify({ userForm }),
       });
 
+      const data = await response.json();
+
       if (response.ok) {
         showSnackbar("Registration successful!", "success");
         setUserForm(initialUser);
       } else {
-        showSnackbar("Registration failed", "error");
+        showSnackbar(data.message || "Registration failed", "error");
       }
     } catch (error) {
       showSnackbar("Something went wrong.", "error");

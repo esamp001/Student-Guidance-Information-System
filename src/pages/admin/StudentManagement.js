@@ -41,14 +41,16 @@ const StudentManagement = () => {
   const [overallNotes, setOverallNotes] = useState({});
   const [students, setStudents] = useState([]);
   const [allStudents, setAllStudents] = useState([]);
-  console.log(allStudents, "All Students");
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [originalRecords, setOriginalRecords] = useState([]);
   const [originalOverallNote, setOriginalOverallNote] = useState("");
   const [inputValue, setInputValue] = useState(""); // what user types
   const [tab, setTab] = useState(0);
-  const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  // const [st, setStudentID] = useState([]);
+  const [StudentIDField, setStudentIDField] = useState("");
+  const [allowedStudentIds, setAllowedStudentIds] = useState([]);
   const [formData, setFormData] = useState({
     id: null,
     name: "",
@@ -57,12 +59,14 @@ const StudentManagement = () => {
     behavior: "",
   });
 
+
   const handleOpen = (student = null) => {
     setFormData(
       student || { id: null, name: "", year: "", contact: "", behavior: "" }
     );
     setOpen(true);
   };
+
 
   const handleOverallNoteChange = (studentId, value) => {
     setOverallNotes((prev) => ({
@@ -117,6 +121,30 @@ const StudentManagement = () => {
     } catch (error) {
       console.error(error);
       showSnackbar("An error occurred while saving records.", "error");
+    }
+  };
+
+  const handleDeleteStudentID = async (id) => {
+    if (!id) return;
+    console.log(id);
+
+    try {
+      const response = await fetch(`/adminAcademicRecordsRoutes/admin/allowed_student_ids/${id}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error("Failed to delete student ID");
+
+      showSnackbar("Student ID deleted successfully!", "success");
+
+      // Re-fetch full list to stay in sync
+      const fetchResponse = await fetch("/adminAcademicRecordsRoutes/admin/allowed_student_ids");
+      if (fetchResponse.ok) {
+        const data = await fetchResponse.json();
+        setAllowedStudentIds(data);
+      }
+    } catch (err) {
+      console.error(err);
+      showSnackbar(err.message || "Failed to delete student ID", "error");
     }
   };
 
@@ -230,6 +258,58 @@ const StudentManagement = () => {
     fetchStudents();
   }, [inputValue]);
 
+  const handleStudentIDChange = (e) => {
+    // Only can type number
+    const value = e.target.value.replace(/[^0-9]/g, "");
+    setStudentIDField(value);
+  };
+
+  const handleAddStudentID = async () => {
+    if (!StudentIDField.trim()) return;
+
+    try {
+      const response = await fetch("/adminAcademicRecordsRoutes/admin/allowed_student_ids", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ student_id: StudentIDField }),
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error || "Failed to add student ID");
+      }
+
+      showSnackbar("Student ID added successfully!", "success");
+      setStudentIDField("");
+
+      // Re-fetch full list to stay in sync
+      const fetchResponse = await fetch("/adminAcademicRecordsRoutes/admin/allowed_student_ids");
+      if (fetchResponse.ok) {
+        const data = await fetchResponse.json();
+        setAllowedStudentIds(data);
+      }
+    } catch (err) {
+      console.error(err);
+      showSnackbar(err.message || "Failed to add student ID", "error");
+    }
+  };
+
+
+  // Api look up for allowed student Ids
+  useEffect(() => {
+    const fetchAllowedStudentIds = async () => {
+      try {
+        const response = await fetch("/adminAcademicRecordsRoutes/admin/allowed_student_ids");
+        if (!response.ok) throw new Error("Failed to fetch allowed student IDs");
+        const data = await response.json();
+        setAllowedStudentIds(data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchAllowedStudentIds();
+  }, []);
+
   return (
     <Box p={3}>
       <Typography variant="h4" fontWeight="bold" gutterBottom>
@@ -244,6 +324,7 @@ const StudentManagement = () => {
         >
           <Tab label="Academic Records" />
           <Tab label="Student Records" />
+          <Tab label="Setup Student ID Number" />
         </Tabs>
       </Paper>
 
@@ -613,6 +694,85 @@ const StudentManagement = () => {
                 </CardContent>
               </Card>
             ))}
+          </Box>
+        </>
+      )}
+
+      {tab === 2 && (
+        <>
+          <Box
+            sx={{
+              p: 3,
+              borderRadius: 3,
+              boxShadow: 3,
+              backgroundColor: "white",
+            }}
+          >
+            <Typography variant="h6" fontWeight="bold" gutterBottom>
+              Allowed Student ID Numbers
+            </Typography>
+
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Only the student numbers listed here will be allowed to register an account.
+            </Typography>
+
+            {/* Search Field */}
+            <TextField
+              label="Search Student Number"
+              variant="outlined"
+              size="small"
+              fullWidth
+              sx={{ mb: 2 }}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+
+
+            {/* Add New Allowed ID */}
+            <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
+              <TextField
+                label="Enter Student Number"
+                value={StudentIDField}
+                onChange={handleStudentIDChange}
+                variant="outlined"
+                size="small"
+                fullWidth
+              />
+              <Button onClick={handleAddStudentID} variant="contained" color="primary">
+                Add
+              </Button>
+            </Box>
+
+            {/* Table of Allowed IDs */}
+            <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
+              <Table size="small">
+                <TableHead>
+                  <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
+                    <TableCell sx={{ fontWeight: "bold" }}>Student Number</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: "bold" }}>
+                      Actions
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+
+                <TableBody>
+                  {allowedStudentIds
+                    .filter((id) =>
+                      id.student_id.toString().includes(searchTerm)
+                    )
+                    .map((id, i) => (
+                      <TableRow key={i} hover>
+                        <TableCell>{id.student_id}</TableCell>
+                        <TableCell align="right">
+                          <IconButton onClick={() => handleDeleteStudentID(id.id)} color="error">
+                            <RemoveCircleTwoToneIcon />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
           </Box>
         </>
       )}
