@@ -16,7 +16,7 @@ router.get("/admin/all_students/lookup", async (req, res) => {
         "st.course",
         "st.student_no",
         "st.contact_no",
-        "st.behavior_record",
+        "st.behavior_record"
       )
       .leftJoin("users as us", "us.id", "st.user_id") // join users
       .where("us.role", "student")
@@ -48,7 +48,7 @@ router.get("/admin/all_students/lookup", async (req, res) => {
 
 router.get("/admin/allowed_student_ids", async (req, res) => {
   try {
-    const data = await knex("allowed_student_ids").select("id","student_id");
+    const data = await knex("allowed_student_ids").select("id", "student_id");
     res.json(data);
   } catch (error) {
     console.error("Error fetching allowed student IDs:", error);
@@ -124,6 +124,22 @@ router.post("/admin/allowed_student_ids", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to add student ID" });
+  }
+});
+
+router.put("/admin/toggle_student/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const student = await knex("students").where({ id }).first();
+
+    const newStatus = student.status === "Active" ? "Inactive" : "Active";
+
+    await knex("students").where({ id }).update({ status: newStatus });
+
+    res.json({ message: "Status updated", status: newStatus });
+  } catch (err) {
+    res.status(500).json({ error: "Something went wrong" });
   }
 });
 

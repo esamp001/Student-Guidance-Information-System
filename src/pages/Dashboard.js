@@ -17,12 +17,25 @@ const Dashboard = () => {
   };
 
   return (
-    <Box sx={{ height: "100vh", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+    <Box
+      sx={{
+        height: "100vh",
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
       {/* Top Header */}
-      <TopNavBar handleDrawerToggle={handleDrawerToggle} sx={{ position: "relative" }} />
+      <TopNavBar
+        handleDrawerToggle={handleDrawerToggle}
+        sx={{ position: "relative" }}
+      />
       <Box sx={{ display: "flex", flex: 1, minHeight: 0 }}>
         {/* Side Nav Items */}
-        <SideNavBar mobileOpen={mobileOpen} handleDrawerToggle={handleDrawerToggle} />
+        <SideNavBar
+          mobileOpen={mobileOpen}
+          handleDrawerToggle={handleDrawerToggle}
+        />
         {/* Main Content */}
         <Box
           sx={{

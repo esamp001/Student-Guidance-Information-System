@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import RemoveCircleTwoToneIcon from "@mui/icons-material/RemoveCircleTwoTone";
 import DriveFileRenameOutlineRoundedIcon from "@mui/icons-material/DriveFileRenameOutlineRounded";
 import useSnackbar from "../../hooks/useSnackbar";
@@ -48,9 +48,10 @@ const StudentManagement = () => {
   const [tab, setTab] = useState(0);
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  // const [st, setStudentID] = useState([]);
+  const [studentStatus, setStudentStatus] = useState("");
   const [StudentIDField, setStudentIDField] = useState("");
   const [allowedStudentIds, setAllowedStudentIds] = useState([]);
+  const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     id: null,
     name: "",
@@ -59,6 +60,10 @@ const StudentManagement = () => {
     behavior: "",
   });
 
+  const handleisEditing = () => {
+    // Handle also close using prev
+    setIsEditing((prev) => !prev);
+  };
 
   const handleOpen = (student = null) => {
     setFormData(
@@ -66,7 +71,6 @@ const StudentManagement = () => {
     );
     setOpen(true);
   };
-
 
   const handleOverallNoteChange = (studentId, value) => {
     setOverallNotes((prev) => ({
@@ -87,6 +91,45 @@ const StudentManagement = () => {
       },
     ]);
   };
+
+  const handleToggleStatus = useCallback(async (id) => {
+    try {
+      const response = await fetch(
+        `/adminAcademicRecordsRoutes/admin/toggle_student/${id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+      const data = await response.json();
+
+      if (!response.ok) throw new Error("Failed to toggle student status");
+
+      // Auto update the student status in both selectedStudent and allStudents arrays
+      setSelectedStudent((prev) =>
+        prev && prev.id === id ? { ...prev, status: data.status } : prev
+      );
+
+      setAllStudents((prev) =>
+        prev.map((student) =>
+          student.id === id ? { ...student, status: data.status } : student
+        )
+      );
+
+      setStudents((prev) =>
+        prev.map((student) =>
+          student.id === id ? { ...student, status: data.status } : student
+        )
+      );
+
+      setIsEditing(false);
+
+      showSnackbar("Student status updated!", "success");
+    } catch (err) {
+      console.error(err);
+      showSnackbar("Failed to update student status.", "error");
+    }
+  }, []);
 
   const handleDeleteRecord = (index) => {
     setAcademicRecords((prev) => prev.filter((_, i) => i !== index));
@@ -128,15 +171,20 @@ const StudentManagement = () => {
     if (!id) return;
 
     try {
-      const response = await fetch(`/adminAcademicRecordsRoutes/admin/allowed_student_ids/${id}`, {
-        method: "DELETE",
-      });
+      const response = await fetch(
+        `/adminAcademicRecordsRoutes/admin/allowed_student_ids/${id}`,
+        {
+          method: "DELETE",
+        }
+      );
       if (!response.ok) throw new Error("Failed to delete student ID");
 
       showSnackbar("Student ID deleted successfully!", "success");
 
       // Re-fetch full list to stay in sync
-      const fetchResponse = await fetch("/adminAcademicRecordsRoutes/admin/allowed_student_ids");
+      const fetchResponse = await fetch(
+        "/adminAcademicRecordsRoutes/admin/allowed_student_ids"
+      );
       if (fetchResponse.ok) {
         const data = await fetchResponse.json();
         setAllowedStudentIds(data);
@@ -151,7 +199,9 @@ const StudentManagement = () => {
     const fetchStudents = async () => {
       try {
         const response = await fetch(
-          `/adminAcademicRecordsRoutes/admin/all_students/lookup?search=${encodeURIComponent(inputValue)}`
+          `/adminAcademicRecordsRoutes/admin/all_students/lookup?search=${encodeURIComponent(
+            inputValue
+          )}`
         );
         const data = await response.json();
         setAllStudents(data);
@@ -267,11 +317,14 @@ const StudentManagement = () => {
     if (!StudentIDField.trim()) return;
 
     try {
-      const response = await fetch("/adminAcademicRecordsRoutes/admin/allowed_student_ids", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ student_id: StudentIDField }),
-      });
+      const response = await fetch(
+        "/adminAcademicRecordsRoutes/admin/allowed_student_ids",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ student_id: StudentIDField }),
+        }
+      );
 
       if (!response.ok) {
         const error = await response.text();
@@ -282,7 +335,9 @@ const StudentManagement = () => {
       setStudentIDField("");
 
       // Re-fetch full list to stay in sync
-      const fetchResponse = await fetch("/adminAcademicRecordsRoutes/admin/allowed_student_ids");
+      const fetchResponse = await fetch(
+        "/adminAcademicRecordsRoutes/admin/allowed_student_ids"
+      );
       if (fetchResponse.ok) {
         const data = await fetchResponse.json();
         setAllowedStudentIds(data);
@@ -293,13 +348,15 @@ const StudentManagement = () => {
     }
   };
 
-
   // Api look up for allowed student Ids
   useEffect(() => {
     const fetchAllowedStudentIds = async () => {
       try {
-        const response = await fetch("/adminAcademicRecordsRoutes/admin/allowed_student_ids");
-        if (!response.ok) throw new Error("Failed to fetch allowed student IDs");
+        const response = await fetch(
+          "/adminAcademicRecordsRoutes/admin/allowed_student_ids"
+        );
+        if (!response.ok)
+          throw new Error("Failed to fetch allowed student IDs");
         const data = await response.json();
         setAllowedStudentIds(data);
       } catch (err) {
@@ -330,9 +387,7 @@ const StudentManagement = () => {
       {/* Student Profiles Tab */}
 
       {tab === 0 && (
-        <Paper
-          sx={{ p: 2, borderRadius: 3, boxShadow: 3, }}
-        >
+        <Paper sx={{ p: 2, borderRadius: 3, boxShadow: 3 }}>
           <Typography variant="h6" gutterBottom>
             Academic Records
           </Typography>
@@ -543,11 +598,9 @@ const StudentManagement = () => {
 
       {tab === 1 && (
         <>
-          <Paper
-            sx={{ p: 2, borderRadius: 3, boxShadow: 3 }}
-          >
+          <Paper sx={{ p: 2, borderRadius: 3, boxShadow: 3 }}>
             <Typography variant="h6" gutterBottom>
-              Academic Records
+              Student Records
             </Typography>
 
             {/*  Search Bar */}
@@ -571,6 +624,16 @@ const StudentManagement = () => {
               )}
             />
           </Paper>
+
+          <Box sx={{ mt: 2 }}>
+            <Button
+              onClick={handleisEditing}
+              variant="contained"
+              color="primary"
+            >
+              Set active/inactive
+            </Button>
+          </Box>
           <Box
             sx={{
               display: "flex",
@@ -621,7 +684,9 @@ const StudentManagement = () => {
                     >
                       {student.full_name.charAt(0)}
                     </Avatar>
-                    <Box sx={{ minWidth: 0 }}> {/* Prevent text overflow */}
+                    <Box sx={{ minWidth: 0 }}>
+                      {" "}
+                      {/* Prevent text overflow */}
                       <Typography
                         variant="h6"
                         fontWeight={600}
@@ -636,25 +701,58 @@ const StudentManagement = () => {
                       >
                         {student.full_name}
                       </Typography>
-                      <Chip
-                        label="Active"
-                        size="small"
-                        sx={{
-                          mt: 0.5,
-                          bgcolor: "#e8f5e9",
-                          color: "#2e7d32",
-                          fontWeight: 600,
-                          fontSize: "0.7rem",
-                          height: 22,
-                          "& .MuiChip-label": { px: 1 },
-                        }}
-                      />
+                      {isEditing ? (
+                        <Button
+                          onClick={() => handleToggleStatus(student.id)}
+                          sx={{
+                            color:
+                              student.status === "Active"
+                                ? "error.main"
+                                : "success.main",
+                          }}
+                        >
+                          {student.status === "Active"
+                            ? "Make Inactive"
+                            : "Make Active"}
+                        </Button>
+                      ) : (
+                        <Chip
+                          label={student.status}
+                          size="small"
+                          sx={{
+                            mt: 0.5,
+                            bgcolor:
+                              student.status === "Active"
+                                ? "#e8f5e9" // light green
+                                : "#ffebee", // light red
+                            color:
+                              student.status === "Active"
+                                ? "#2e7d32" // dark green
+                                : "#c62828", // dark red
+                            fontWeight: 600,
+                            fontSize: "0.7rem",
+                            height: 22,
+                            "& .MuiChip-label": { px: 1 },
+                          }}
+                        />
+                      )}
                     </Box>
                   </Box>
 
                   {/* Student Details */}
-                  <Box sx={{ mt: 1, display: "flex", flexDirection: "column", gap: 1 }}>
-                    <Box display="flex" justifyContent="space-between" alignItems="center">
+                  <Box
+                    sx={{
+                      mt: 1,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 1,
+                    }}
+                  >
+                    <Box
+                      display="flex"
+                      justifyContent="space-between"
+                      alignItems="center"
+                    >
                       <Typography
                         variant="caption"
                         color="text.secondary"
@@ -672,7 +770,11 @@ const StudentManagement = () => {
                       </Typography>
                     </Box>
 
-                    <Box display="flex" justifyContent="space-between" alignItems="center">
+                    <Box
+                      display="flex"
+                      justifyContent="space-between"
+                      alignItems="center"
+                    >
                       <Typography
                         variant="caption"
                         color="text.secondary"
@@ -712,7 +814,8 @@ const StudentManagement = () => {
             </Typography>
 
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Only the student numbers listed here will be allowed to register an account.
+              Only the student numbers listed here will be allowed to register
+              an account.
             </Typography>
 
             {/* Search Field */}
@@ -726,7 +829,6 @@ const StudentManagement = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
 
-
             {/* Add New Allowed ID */}
             <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
               <TextField
@@ -737,7 +839,11 @@ const StudentManagement = () => {
                 size="small"
                 fullWidth
               />
-              <Button onClick={handleAddStudentID} variant="contained" color="primary">
+              <Button
+                onClick={handleAddStudentID}
+                variant="contained"
+                color="primary"
+              >
                 Add
               </Button>
             </Box>
@@ -747,7 +853,9 @@ const StudentManagement = () => {
               <Table size="small">
                 <TableHead>
                   <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-                    <TableCell sx={{ fontWeight: "bold" }}>Student Number</TableCell>
+                    <TableCell sx={{ fontWeight: "bold" }}>
+                      Student Number
+                    </TableCell>
                     <TableCell align="right" sx={{ fontWeight: "bold" }}>
                       Actions
                     </TableCell>
@@ -763,7 +871,10 @@ const StudentManagement = () => {
                       <TableRow key={i} hover>
                         <TableCell>{id.student_id}</TableCell>
                         <TableCell align="right">
-                          <IconButton onClick={() => handleDeleteStudentID(id.id)} color="error">
+                          <IconButton
+                            onClick={() => handleDeleteStudentID(id.id)}
+                            color="error"
+                          >
                             <RemoveCircleTwoToneIcon />
                           </IconButton>
                         </TableCell>
@@ -821,7 +932,6 @@ const StudentManagement = () => {
               setFormData((f) => ({ ...f, behavior: e.target.value }))
             }
           />
-          
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>Cancel</Button>
