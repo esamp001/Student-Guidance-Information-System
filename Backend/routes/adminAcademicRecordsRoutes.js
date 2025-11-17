@@ -14,6 +14,7 @@ router.get("/admin/all_students/lookup", async (req, res) => {
         "st.last_name",
         "st.student_no",
         "st.course",
+        "st.status",
         "st.student_no",
         "st.contact_no",
         "st.behavior_record"
@@ -35,6 +36,7 @@ router.get("/admin/all_students/lookup", async (req, res) => {
       }`.trim(),
       student_no: st.student_no,
       course: st.course,
+      status: st.status,
       contact_no: st.contact_no,
       behavior_record: st.behavior_record,
     }));
