@@ -801,7 +801,6 @@ const AppointmentsCounselor = () => {
             <Card sx={{ borderRadius: 3, minHeight: "300px" }}>
               <CardContent>
                 {selectedAssigned ? (
-                  (console.log(selectedAssigned, "selectedAssigned"),
                   (
                     <>
                       <Typography variant="h6" fontWeight="bold" mb={2}>
@@ -860,7 +859,7 @@ const AppointmentsCounselor = () => {
                       </Button>
                     </>
                   ))
-                ) : (
+                : (
                   <Box textAlign="center" sx={{ alignItems: "center" }} py={4}>
                     <Typography variant="h6" color="text.secondary">
                       No student selected yet.
@@ -875,6 +874,7 @@ const AppointmentsCounselor = () => {
           </Box>
         </Box>
       )}
+
 
       {/* Create Appointment Dialog */}
       <Dialog

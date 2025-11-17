@@ -126,7 +126,6 @@ const StudentManagement = () => {
 
   const handleDeleteStudentID = async (id) => {
     if (!id) return;
-    console.log(id);
 
     try {
       const response = await fetch(`/adminAcademicRecordsRoutes/admin/allowed_student_ids/${id}`, {
