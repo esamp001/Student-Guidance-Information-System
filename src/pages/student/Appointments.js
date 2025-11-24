@@ -263,8 +263,9 @@ const Appointments = () => {
 
       // Notify counselor about accepted reschedule
       const apptForNotify =
-        upcomingAppointments.find((a) => a.id === appointment || a.appointment_id === appointment) ||
-        selectedAppointment;
+        upcomingAppointments.find(
+          (a) => a.id === appointment || a.appointment_id === appointment
+        ) || selectedAppointment;
       if (apptForNotify?.counselor_user_id) {
         await sendNotification({
           userId: apptForNotify.counselor_user_id,
@@ -420,11 +421,9 @@ const Appointments = () => {
       );
 
       setSelectedAppointment((prev) =>
-        prev && prev.id === appointment
-          ? { ...prev, status: "Rejected" }
-          : prev
+        prev && prev.id === appointment ? { ...prev, status: "Rejected" } : prev
       );
-      
+
       handleClose();
     } catch (error) {
       console.error("Error declining appointment:", error);
@@ -496,9 +495,15 @@ const Appointments = () => {
                     displayEmpty
                   >
                     <MenuItem value="">Select appointment type</MenuItem>
+                    <MenuItem value="Personality Testing">
+                      Personality Testing
+                    </MenuItem>
+                    <MenuItem value="Orientation">Orientation</MenuItem>
+                    <MenuItem value="Seminar">Seminar</MenuItem>
                     <MenuItem value="Academic Counseling">
                       Academic Counseling
                     </MenuItem>
+                    <MenuItem value="Referal">Referal</MenuItem>
                     <MenuItem value="Study Skills Counseling">
                       Study Skills Counseling
                     </MenuItem>
@@ -574,7 +579,9 @@ const Appointments = () => {
                         ...formData,
                         counselor_id: e.target.value,
                         counselor_user_id:
-                          counselors.find((c) => String(c.id) === String(e.target.value))?.counselor_user_id || "",
+                          counselors.find(
+                            (c) => String(c.id) === String(e.target.value)
+                          )?.counselor_user_id || "",
                       })
                     }
                     fullWidth
@@ -877,8 +884,12 @@ const Appointments = () => {
                               </Box>
                               {selectedAppointment.reason && (
                                 <Box sx={{ px: 1 }}>
-                                  <Typography variant="body2" color="text.secondary">
-                                    <strong>Reason:</strong> {selectedAppointment.reason}
+                                  <Typography
+                                    variant="body2"
+                                    color="text.secondary"
+                                  >
+                                    <strong>Reason:</strong>{" "}
+                                    {selectedAppointment.reason}
                                   </Typography>
                                 </Box>
                               )}
@@ -966,9 +977,7 @@ const Appointments = () => {
 
                                 <Button
                                   onClick={() =>
-                                    handleRejectFollowUp(
-                                      selectedAppointment.id
-                                    )
+                                    handleRejectFollowUp(selectedAppointment.id)
                                   }
                                   variant="outlined"
                                   color="error"
